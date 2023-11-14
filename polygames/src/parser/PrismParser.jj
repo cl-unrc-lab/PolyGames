@@ -3,6 +3,11 @@
 //	Copyright (c) 2002-
 //	Authors:
 //	* Dave Parker <david.parker@comlab.ox.ac.uk> (University of Oxford, formerly University of Birmingham)
+//
+//  Modified version to support polytope games (2023)
+//  The definition of update is was redefined to add the possibility of uncertainty using linear restrictions.
+//  @author Axel
+//  @author Pablo
 //	
 //------------------------------------------------------------------------------
 //	
@@ -23,6 +28,8 @@
 //	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //	
 //==============================================================================
+
+
 
 options {
 	LOOKAHEAD = 1;
