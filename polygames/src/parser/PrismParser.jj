@@ -892,6 +892,12 @@ Updates Updates() throws PrismLangException :
 		// Several probabilistic updates
 		( prob = ProbOrRateOrInterval() <COLON> update = Update() { updates.addUpdate(prob, update); }
 		( <PLUS> prob = ProbOrRateOrInterval() <COLON> update = Update() { updates.addUpdate(prob, update); } )* )
+        (
+            <LBRACE>
+                <REG_DOUBLE> <TIMES> Identifier() (<PLUS> <REG_DOUBLE> <TIMES> Identifier())* (<LE> | <GE>) <REG_DOUBLE>
+                (<COMMA> <REG_DOUBLE> <TIMES> Identifier() (<PLUS> <REG_DOUBLE> <TIMES> Identifier())* (<LE> | <GE>) <REG_DOUBLE>)*
+            <RBRACE>
+        )?
 	)
 	{ updates.setPosition(begin, getToken(0)); return updates; }
 }
