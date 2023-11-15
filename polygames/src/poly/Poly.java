@@ -1,17 +1,17 @@
 /******************************************************************************
- * Copyright (c) 2021-
+ * Copyright (c) 2023-
  * Authors:
  * Pablo Castro <pcastro@dc.exa.unrc.edu.ar> (National University of Rio Cuarto - Argentina)
- * Luciano Putruele <lputruele@dc.exa.unrc.edu.ar> (National University of Rio Cuarto - Argentina)
+ * Axel Bassegio <abassegio@dc.exa.unrc.edu.ar> (National University of Rio Cuarto - Argentina)
  *
- * This file is part of FairyGames
+ * This file is part of PolyGames
  *
- * FairyGames is free software; you can redistribute it and/or modify
+ * PolyGames is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * FairyGames is distributed in the hope that it will be useful,
+ * PolyGames is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -21,7 +21,7 @@
  * Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package fairy;
+package poly;
 
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -47,14 +47,14 @@ import prism.PrismFileLog;
  *
  */
 
-public class Fairy extends Prism {
+public class Poly extends Prism {
 
 	
 	/**
 	 * Construct a new Prism object.
 	 * @param mainLog PrismLog where all output will be sent.
 	 */
-	public Fairy(PrismLog mainLog)
+	public Poly(PrismLog mainLog)
 	{
 		super(mainLog);
 	}
@@ -64,7 +64,7 @@ public class Fairy extends Prism {
 	 * @return	the name of the tool
 	 */
 	public static String getToolName(){
-		return "Fairy Tool";
+		return "PolyGames Tool";
 	}
 	
 	/**
@@ -72,7 +72,7 @@ public class Fairy extends Prism {
 	 * it hides the original methods of prism 
 	 */
 	public static String getCommandLineName(){
-		return "fairy";
+		return "PolyGames";
 	}
 	
 	/**
@@ -89,7 +89,7 @@ public class Fairy extends Prism {
 	public void initialise() throws PrismException
 	{
 		// a little hack, we cannot override getToolName because it is static...
-		// a better solution is to implement a FairyLog.. 
+		// a better solution is to implement a PolyLog.. 
 		PrismFileLog tempLog = new PrismFileLog("log");
 		PrismLog oldLog = this.getLog();
 		this.setMainLog(tempLog);
