@@ -1,4 +1,5 @@
 # a simple todo file
-- [ ] Axel: add files to the repo
 - [ ] Pablo: See the grammar
 - [ ] Axel: Modify the expresion hierarchy
+- [ ] Axel: Extends ASTVisitor and implements ASTTraverse
+- [ ] Axel: extends the grammar with -u->
