@@ -480,6 +480,7 @@ TOKEN :
 |	< NONDETERMINISTIC:	"nondeterministic" >
 |	< OBSERVABLE:		"observable" >
 |	< OBSERVABLES:		"observables" >
+|   < UNCERTAIN:        "uncertain" >
 //|	< OF:				"of" >
 |	< PMAXMAX:			"Pmaxmax" >
 |	< PMAXMIN:			"Pmaxmin" >
@@ -521,6 +522,7 @@ TOKEN :
 |	< IMPLIES:		"=>" >
 |	< IFF:			"<=>" >
 |	< RARROW:		"->" >
+|   < URARROW:      "-U->" >
 |	< COLON:		":" >
 |	< SEMICOLON:	";" >
 |	< COMMA:		"," >
@@ -837,6 +839,7 @@ DeclarationType DeclarationVarType() throws PrismLangException :
 		{ declType = new DeclarationArray(low, high, subtype); } )
 		// TODO: sort initial values */
 	| ( <CLOCK> { declType = new DeclarationClock(); } )
+	| ( <UNCERTAIN> { declType = new DeclarationIntUnbounded(); } ) //
 	))
 	{ declType.setPosition(begin, getToken(0)); return declType; }
 }
@@ -875,8 +878,27 @@ Command Command() throws PrismLangException :
 	// Synchronisation action-label
 	begin = <LBRACKET> synchs = ActionList() { comm.setSynchs(synchs); } <RBRACKET>
 	// Guard/updates
-	guard = Expression(false, false) { comm.setGuard(guard); } <RARROW> updates = Updates() { comm.setUpdates(updates); } <SEMICOLON>
+	(
+	    guard = Expression(false, false) { comm.setGuard(guard); }
+	    (
+	         <RARROW> updates = Updates() { comm.setUpdates(updates); }
+	       | <URARROW> UncertainUpdates()
+	    )
+	    <SEMICOLON>
+	)
 	{ comm.setPosition(begin, getToken(0)); return comm; }
+}
+
+// Uncertain Updates
+void UncertainUpdates() throws PrismLangException :
+{}
+{
+    UncertainExpression() <COLON> Update()
+    ( <PLUS> UncertainExpression() <COLON> Update() )*
+    <LBRACE>
+        <REG_DOUBLE> <TIMES> UncertainExpression() (<PLUS> <REG_DOUBLE> <TIMES> UncertainExpression())* (<LE> | <GE>) <REG_DOUBLE>            // EQUATION
+        (<COMMA> <REG_DOUBLE> <TIMES> UncertainExpression() (<PLUS> <REG_DOUBLE> <TIMES> UncertainExpression())* (<LE> | <GE>) <REG_DOUBLE>)* // ONE OR MORE EQUATIONS
+    <RBRACE>
 }
 
 // Updates
@@ -899,12 +921,6 @@ Updates Updates() throws PrismLangException :
 		// Several probabilistic updates
 		( prob = ProbOrRateOrInterval() <COLON> update = Update() { updates.addUpdate(prob, update); }
 		( <PLUS> prob = ProbOrRateOrInterval() <COLON> update = Update() { updates.addUpdate(prob, update); } )* )
-        (
-            <LBRACE>
-                <REG_DOUBLE> <TIMES> Identifier() (<PLUS> <REG_DOUBLE> <TIMES> Identifier())* (<LE> | <GE>) <REG_DOUBLE>
-                (<COMMA> <REG_DOUBLE> <TIMES> Identifier() (<PLUS> <REG_DOUBLE> <TIMES> Identifier())* (<LE> | <GE>) <REG_DOUBLE>)*
-            <RBRACE>
-        )?
 	)
 	{ updates.setPosition(begin, getToken(0)); return updates; }
 }
@@ -2211,6 +2227,12 @@ String Identifier() :
 }
 {
 	<REG_IDENT> { return getToken(0).image; }
+}
+
+void UncertainExpression() :
+{}
+{
+    Identifier()
 }
 
 // Identifier (returns ExpressionIdent, storing position info)
