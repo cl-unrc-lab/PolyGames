@@ -13,12 +13,15 @@ public class UncertainUpdates extends Updates{
     }
 
     public void addUpdate(Expression un, Update up) {
+        if (un == null) { throw new IllegalArgumentException(); }
+        if (up == null) { throw new IllegalArgumentException(); }
         this.uncertains.add(un);
         this.updates.add(up);
         up.setParent(this);
     }
 
     public void setUncertain(int i, Expression un) {
+        if (un == null) { throw new IllegalArgumentException(); }
         this.uncertains.add(i, un);
     }
 
