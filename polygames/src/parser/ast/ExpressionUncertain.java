@@ -1,15 +1,16 @@
 package parser.ast;
 
 import parser.EvaluateContext;
+import parser.visitor.ASTUncertainVisitor;
 import parser.visitor.ASTVisitor;
 import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
-public class UncertainExpression extends Expression{
+public class ExpressionUncertain extends Expression{
 
     private String name;
 
-    public UncertainExpression(String name) {
+    public ExpressionUncertain(String name) {
         this.name = name;
     }
 
@@ -23,7 +24,8 @@ public class UncertainExpression extends Expression{
 
     @Override
     public Object accept(ASTVisitor v) throws PrismLangException {
-        return null;
+        ASTUncertainVisitor visitor = (ASTUncertainVisitor) v;
+        return visitor.visit(this);
     }
 
     @Override
