@@ -7,7 +7,7 @@ public class UncertainUpdates extends Updates{
     private double[][] coefficients;
     private double[] constants;
 
-    public UncertainUpdates(int coefficients, int constants) {
+    public UncertainUpdates() {
         super();
         this.uncertains   = new ArrayList<Expression>();
     }
@@ -26,4 +26,13 @@ public class UncertainUpdates extends Updates{
     }
 
     public Expression getUncertain(int i) { return this.uncertains.get(i); }
+
+    public void addCoefficient(double c, int i, int j)
+    {
+        this.coefficients[i][j] = c;
+    }
+
+    public void addConstant(double c, int i) {
+        this.constants[i] = c;
+    }
 }

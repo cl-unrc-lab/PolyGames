@@ -881,24 +881,44 @@ Command Command() throws PrismLangException :
 	(
 	    guard = Expression(false, false) { comm.setGuard(guard); }
 	    (
-	         <RARROW> updates = Updates() { comm.setUpdates(updates); }
-	       | <URARROW> UncertainUpdates()
-	    )
+	         <RARROW>   updates = Updates()
+	       | <URARROW> updates = UncertainUpdates()
+	    ) { comm.setUpdates(updates); }
 	    <SEMICOLON>
 	)
 	{ comm.setPosition(begin, getToken(0)); return comm; }
 }
 
 // Uncertain Updates
-void UncertainUpdates() throws PrismLangException :
-{}
+UncertainUpdates UncertainUpdates() throws PrismLangException :
 {
-    UncertainExpression() <COLON> Update()
-    ( <PLUS> UncertainExpression() <COLON> Update() )*
+    Expression uncertain;
+    Update update;
+    UncertainUpdates updates = new UncertainUpdates();
+    int i = 0;
+}
+{
+    uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); }
+    ( <PLUS> uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); } )*
     <LBRACE>
-        <REG_DOUBLE> <TIMES> UncertainExpression() (<PLUS> <REG_DOUBLE> <TIMES> UncertainExpression())* (<LE> | <GE>) <REG_DOUBLE>            // EQUATION
-        (<COMMA> <REG_DOUBLE> <TIMES> UncertainExpression() (<PLUS> <REG_DOUBLE> <TIMES> UncertainExpression())* (<LE> | <GE>) <REG_DOUBLE>)* // ONE OR MORE EQUATIONS
+        updates = Equation(updates, i) ( { i++; } <COMMA> updates = Equation(updates, i) )*
     <RBRACE>
+    { return updates; }
+}
+
+UncertainUpdates Equation(UncertainUpdates updates, int i)
+{
+    Token token;
+    double coeff;
+    double cte;
+    int j= 0 ;
+}
+{
+    token = <REG_DOUBLE> <TIMES> UncertainExpression() { coeff = Double.parseDouble(token.image); updates.addCoefficient(coeff, i, j); }
+    ({ j++; } <PLUS> token = <REG_DOUBLE> <TIMES> UncertainExpression() { coeff = Double.parseDouble(token.image); updates.addCoefficient(coeff, i, j); } )*
+    (<LE> | <GE>)
+    token = <REG_DOUBLE> { cte = Double.parseDouble(token.image); updates.addConstant(cte, i); }
+    { return updates; }
 }
 
 // Updates
