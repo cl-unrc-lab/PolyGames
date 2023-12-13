@@ -43,18 +43,18 @@ public class Updates extends ASTElement
 {
 	// Pairs of probabilities/updates
 	private ArrayList<Expression> probs;
-	private ArrayList<Update> updates;
+	protected ArrayList<Update> updates;
 	// Parent command
-	private Command parent;
+	protected Command parent;
 
 	/**
 	 * Construct an empty Updates object.
 	 */
 	public Updates()
 	{
-		probs = new ArrayList<Expression>();
+		probs   = new ArrayList<Expression>();
 		updates = new ArrayList<Update>();
-		parent = null;
+		parent  = null;
 	}
 
 	// Set methods
