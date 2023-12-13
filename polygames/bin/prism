@@ -3,7 +3,7 @@
 # Startup script for PRISM (Mac OS X)
 
 # PRISM home directory
-PRISM_DIR="/Users/pablo/University/Tools/PolyGames/prism-games/prism"
+PRISM_DIR="/Users/pablo/University/Tools/PolyGames/polygames"
 
 # Command to launch Java
 if [ "$PRISM_JAVA" = "" ]; then

@@ -66,7 +66,7 @@ public class PolyCL implements PrismModelListener{
 	Exception modelBuildException = null;
 		
 	// prism object
-	Prism prism = null;
+	Poly prism = null;
 	
 	
 	@Override
@@ -90,7 +90,7 @@ public class PolyCL implements PrismModelListener{
 			this.mainLog = new PrismFileLog("stdout");
 		
 			// create prism object(s)
-			this.prism = new Prism(mainLog);
+			this.prism = new Poly(mainLog);
 			prism.addModelListener(this);
 		
 			// initialise

@@ -3,7 +3,7 @@
 # Startup script for PRISM GUI (Linux/Solaris)
 
 # PRISM home directory
-PRISM_DIR="/Users/pablo/University/Tools/PolyGames/prism-games/prism"
+PRISM_DIR="/Users/pablo/University/Tools/PolyGames/polygames"
 
 # Launch using main PRISM script
 PRISM_MAINCLASS=userinterface.GUIPrism

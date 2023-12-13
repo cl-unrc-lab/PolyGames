@@ -1,2 +1,5 @@
 # PolyGames
-A simple tool for using stochastic games with polytopes. This current version extends PRISM-games for supporting polytopes.
+
+PolyGames is a simple extension of PrismGames for supporting the use of polytopes in the definition of games.
+
+
