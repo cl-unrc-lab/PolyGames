@@ -88,6 +88,8 @@ import parser.ast.SystemRename;
 import parser.ast.Update;
 import parser.ast.UpdateElement;
 import parser.ast.Updates;
+import parser.ast.UncertainUpdates;
+import parser.ast.UncertainExpression;
 import prism.PrismLangException;
 
 /**
@@ -219,6 +221,12 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(Updates e) throws PrismLangException
+	{
+		return e.clone().deepCopy(this);
+	}
+	
+	@Override
+	public Object visit(UncertainUpdates e) throws PrismLangException
 	{
 		return e.clone().deepCopy(this);
 	}
@@ -459,6 +467,12 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(ExpressionFilter e) throws PrismLangException
+	{
+		return e.clone().deepCopy(this);
+	}
+	
+	@Override
+	public Object visit(UncertainExpression e) throws PrismLangException
 	{
 		return e.clone().deepCopy(this);
 	}

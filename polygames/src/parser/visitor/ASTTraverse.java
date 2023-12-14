@@ -263,7 +263,7 @@ public class ASTTraverse implements ASTVisitor
 	public Object visit(UncertainUpdates e) throws PrismLangException
 	{
 			//TBD
-			visitPost(e);
+			//visitPost(e);
 			return null;
 	}
 	public void visitPost(UncertainUpdates e) throws PrismLangException { defaultVisitPost(e); }
