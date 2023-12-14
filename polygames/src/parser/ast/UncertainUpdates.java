@@ -10,14 +10,17 @@ public class UncertainUpdates extends Updates{
     public UncertainUpdates() {
         super();
         this.uncertains   = new ArrayList<Expression>();
+        this.coefficients = new double[9][9]; // we have to do a resize of arrays
+        this.constants = new double[9];
     }
 
     public void addUpdate(Expression un, Update up) {
         if (un == null) { throw new IllegalArgumentException(); }
         if (up == null) { throw new IllegalArgumentException(); }
         this.uncertains.add(un);
-        this.updates.add(up);
-        up.setParent(this);
+        //this.updates.add(up);
+        super.addUpdate(un, up); // we call the super version
+        //up.setParent(this);
     }
 
     public void setUncertain(int i, Expression un) {

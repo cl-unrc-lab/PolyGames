@@ -145,8 +145,4 @@ public class TokenMgrError extends Error
     this(LexicalErr(EOFSeen, lexState, errorLine, errorColumn, errorAfter, curChar), reason);
   }
 }
-<<<<<<< HEAD
-/* JavaCC - OriginalChecksum=e91e0e66d4dd0cdd0c9358f11a60962a (do not edit this line) */
-=======
 /* JavaCC - OriginalChecksum=1fb51abc16849d831acd10e24a616816 (do not edit this line) */
->>>>>>> develop

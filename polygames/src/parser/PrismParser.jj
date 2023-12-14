@@ -906,9 +906,9 @@ UncertainUpdates UncertainUpdates() throws PrismLangException :
     { return updates; }
 }
 
-UncertainUpdates Equation(UncertainUpdates updates, int i)
+UncertainUpdates Equation(UncertainUpdates updates, int i) :
 {
-    Token token;
+    Token token; 
     double coeff;
     double cte;
     int j= 0 ;
@@ -2249,10 +2249,13 @@ String Identifier() :
 	<REG_IDENT> { return getToken(0).image; }
 }
 
-void UncertainExpression() :
-{}
+UncertainExpression UncertainExpression() :
 {
-    Identifier()
+	String ident;
+}
+{
+    ident = Identifier()
+    { return new UncertainExpression(ident); }
 }
 
 // Identifier (returns ExpressionIdent, storing position info)

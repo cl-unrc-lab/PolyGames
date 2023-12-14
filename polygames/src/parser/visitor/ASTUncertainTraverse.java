@@ -15,18 +15,18 @@ public class ASTUncertainTraverse implements ASTUncertainVisitor{
     public void defaultVisitPre(ASTElement e) throws PrismLangException {}
     public void defaultVisitPost(ASTElement e) throws PrismLangException {}
 
-    public void visitPre(ExpressionUncertain e) throws PrismLangException {
+    public void visitPre(UncertainExpression e) throws PrismLangException {
         defaultVisitPre(e);
     }
 
     @Override
-    public Object visit(ExpressionUncertain e) throws PrismLangException {
+    public Object visit(UncertainExpression e) throws PrismLangException {
         visitPre(e);
         visitPost(e);
         return null;
     }
 
-    public void visitPost(ExpressionUncertain e) throws PrismLangException {
+    public void visitPost(UncertainExpression e) throws PrismLangException {
         defaultVisitPost(e);
     }
 

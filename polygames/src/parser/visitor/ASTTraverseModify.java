@@ -268,6 +268,15 @@ public class ASTTraverseModify implements ASTVisitor
 		return e;
 	}
 	public void visitPost(Updates e) throws PrismLangException { defaultVisitPost(e); }
+	
+	public void visitPre(UncertainUpdates e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(UncertainUpdates e) throws PrismLangException
+	{
+		// TBD
+		return e;
+	}
+	public void visitPost(UncertainUpdates e) throws PrismLangException { defaultVisitPost(e); }
+	
 	// -----------------------------------------------------------------------------------
 	public void visitPre(Update e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(Update e) throws PrismLangException
@@ -718,6 +727,14 @@ public class ASTTraverseModify implements ASTVisitor
 		return e;
 	}
 	public void visitPost(ForLoop e) throws PrismLangException { defaultVisitPost(e); }
+	//------------------------------------------------------------------------------------
+	public void visitPre(UncertainExpression e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(UncertainExpression e) throws PrismLangException
+	{
+		// TBD
+		return e;
+	}
+	public void visitPost(UncertainExpression e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
 	public void visitPre(Filter e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(Filter e) throws PrismLangException
