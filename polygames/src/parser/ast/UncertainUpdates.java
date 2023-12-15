@@ -2,6 +2,9 @@ package parser.ast;
 
 import java.util.ArrayList;
 
+import parser.visitor.ASTVisitor;
+import prism.PrismLangException;
+
 public class UncertainUpdates extends Updates{
     private ArrayList<Expression> uncertains;
     private double[][] coefficients;
@@ -38,4 +41,12 @@ public class UncertainUpdates extends Updates{
     public void addConstant(double c, int i) {
         this.constants[i] = c;
     }
+    
+    /**
+	 * Visitor method.
+	 */
+	public Object accept(ASTVisitor v) throws PrismLangException
+	{
+		return v.visit(this);
+	}
 }

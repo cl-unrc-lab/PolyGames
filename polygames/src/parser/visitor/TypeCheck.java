@@ -132,8 +132,6 @@ public class TypeCheck extends ASTTraverse
 				boolean typeOK = TypeDouble.getInstance().canAssign(typeProb);
 				typeOK |= typeProb instanceof TypeInterval && TypeDouble.getInstance().canAssign(((TypeInterval) typeProb).getSubType());
 				if (!typeOK) {
-					e = null;
-					System.out.println(e.toString());
 					throw new PrismLangException("Type error: Update probability/rate cannot have type " + typeProb, e.getProbability(i));
 				}
 			}
