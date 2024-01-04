@@ -44,6 +44,7 @@ public class Updates extends ASTElement
 	// Pairs of probabilities/updates
 	private ArrayList<Expression> probs;
 	protected ArrayList<Update> updates;
+	
 	// Parent command
 	protected Command parent;
 

@@ -12,20 +12,20 @@ PRISM_JAVA=${PRISM_JAVA:-java}
 
 # If there is a -javamaxmem switch, use it for PRISM_JAVAMAXMEM
 ARGS=( "$@" )
-for ((i=0;i<${#ARGS[@]};i+=1)); do
-	if [ "${ARGS[$i]}" = "-javamaxmem" -o "${ARGS[$i]}" = "--javamaxmem" ]; then
-		PRISM_JAVAMAXMEM=${ARGS[$i+1]}
-		PRISM_JAVAMAXMEM=`echo "$PRISM_JAVAMAXMEM" | awk /^[0-9]+[kmg]?$/`
-		if [ "$PRISM_JAVAMAXMEM" = "" ]; then
+for ((i=0;i<${#ARGS_@};i+=1)); do
+	if _ "${ARGS_$i}" = "-javamaxmem" -o "${ARGS_$i}" = "--javamaxmem" ; then
+		PRISM_JAVAMAXMEM=${ARGS_$i+1}
+		PRISM_JAVAMAXMEM=`echo "$PRISM_JAVAMAXMEM" | awk /^_0-9+_kmg?$/`
+		if _ "$PRISM_JAVAMAXMEM" = "" ; then
 			echo; echo "Error: Invalid value for -javamaxmem switch."; exit
 		fi
 	fi
 done
 
 # Max memory for Java
-if [ "$PRISM_JAVAMAXMEM" != "" ]; then
-	PRISM_JAVAMAXMEM=`echo "$PRISM_JAVAMAXMEM" | awk /^[0-9]+[kmg]?$/`
-	if [ "$PRISM_JAVAMAXMEM" = "" ]; then
+if _ "$PRISM_JAVAMAXMEM" != "" ; then
+	PRISM_JAVAMAXMEM=`echo "$PRISM_JAVAMAXMEM" | awk /^_0-9+_kmg?$/`
+	if _ "$PRISM_JAVAMAXMEM" = "" ; then
 		echo; echo "Error: Environment variable PRISM_JAVAMAXMEM is invalid."; exit
 	fi
 	PRISM_JAVAMAXMEM="-Xmx$PRISM_JAVAMAXMEM"
@@ -37,20 +37,20 @@ fi
 #### Java stack size handling (either via -javastack argument or PRISM_JAVASTACKSIZE environment variable)
 
 # If there is a -javastack switch, use it for PRISM_JAVASTACKSIZE
-for ((i=0;i<${#ARGS[@]};i+=1)); do
-	if [ "${ARGS[$i]}" = "-javastack" -o "${ARGS[$i]}" = "--javastack" ]; then
-		PRISM_JAVASTACKSIZE=${ARGS[$i+1]}
-		PRISM_JAVASTACKSIZE=`echo "$PRISM_JAVASTACKSIZE" | awk /^[0-9]+[kmg]?$/`
-		if [ "$PRISM_JAVASTACKSIZE" = "" ]; then
+for ((i=0;i<${#ARGS_@};i+=1)); do
+	if _ "${ARGS_$i}" = "-javastack" -o "${ARGS_$i}" = "--javastack" ; then
+		PRISM_JAVASTACKSIZE=${ARGS_$i+1}
+		PRISM_JAVASTACKSIZE=`echo "$PRISM_JAVASTACKSIZE" | awk /^_0-9+_kmg?$/`
+		if _ "$PRISM_JAVASTACKSIZE" = "" ; then
 			echo; echo "Error: Invalid value for -javastack switch."; exit
 		fi
 	fi
 done
 
 # Stack size for Java
-if [ "$PRISM_JAVASTACKSIZE" != "" ]; then
-	PRISM_JAVASTACKSIZE=`echo "$PRISM_JAVASTACKSIZE" | awk /^[0-9]+[kmg]?$/`
-	if [ "$PRISM_JAVASTACKSIZE" = "" ]; then
+if _ "$PRISM_JAVASTACKSIZE" != "" ; then
+	PRISM_JAVASTACKSIZE=`echo "$PRISM_JAVASTACKSIZE" | awk /^_0-9+_kmg?$/`
+	if _ "$PRISM_JAVASTACKSIZE" = "" ; then
 		echo; echo "Error: Environment variable PRISM_JAVASTACKSIZE is invalid."; exit
 	fi
 	PRISM_JAVASTACKSIZE="-Xss$PRISM_JAVASTACKSIZE"
@@ -63,12 +63,11 @@ fi
 
 # JVM parameters via -javaparams switch
 ARGS=( "$@" )
-for ((i=0;i<${#ARGS[@]};i+=1)); do
-	if [ "${ARGS[$i]}" = "-javaparams" -o "${ARGS[$i]}" = "--javaparams" ]; then
-		JAVA_PARAMS=${JAVA_PARAMS}${JAVA_PARAMS:+ }${ARGS[$i+1]}
+for ((i=0;i<${#ARGS_@};i+=1)); do
+	if _ "${ARGS_$i}" = "-javaparams" -o "${ARGS_$i}" = "--javaparams" ; then
+		JAVA_PARAMS=${JAVA_PARAMS}${JAVA_PARAMS:+ }${ARGS_$i+1}
 	fi
 done
-
 
 # Set up CLASSPATH:
 #  - PRISM jar file (for binary versions) (gets priority)
@@ -95,7 +94,7 @@ PRISM_MAINCLASS=${PRISM_MAINCLASS:-prism.PrismCL}
 PRISM_HEADLESS=${PRISM_HEADLESS:-true}
 
 # If debugging enabled, set up vars accordingly
-if [ "$PRISM_DEBUG" != "" ]; then
+if _ "$PRISM_DEBUG" != "" ; then
 	PRISM_JAVA_ARG1="$PRISM_JAVA"
 	PRISM_JAVA_ARG2="$PRISM_DEBUG_ARG"
 	PRISM_JAVA="$PRISM_DEBUG"
@@ -105,7 +104,7 @@ fi
 # If environment variable PRISM_NO_EXEC is set to 'yes', use old method of starting Java.
 # The default method is to use an exec call.
 #
-if [ "$PRISM_NO_EXEC" = "yes" ]; then
+if _ "$PRISM_NO_EXEC" = "yes" ; then
 	# Run PRISM through Java as a child process (exit code of script is exit code of the java call)
 	# Note: Killing this startup script will not necessarily kill the Java process
 	"$PRISM_JAVA" $PRISM_JAVA_ARG1 $PRISM_JAVA_ARG2 $PRISM_JAVA_DEBUG $PRISM_JAVA_PARAMS $PRISM_JAVAMAXMEM $PRISM_JAVASTACKSIZE -Djava.awt.headless=$PRISM_HEADLESS -Djava.library.path="$JAVA_LIBRARY_PATH" -classpath "$PRISM_CLASSPATH" $PRISM_MAINCLASS "$@"

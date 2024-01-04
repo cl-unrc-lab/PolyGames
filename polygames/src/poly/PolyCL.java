@@ -37,6 +37,7 @@ import prism.PrismFileLog;
 import prism.PrismException;
 import prism.Prism;
 import parser.ast.ModulesFile;
+import parser.visitor.ASTUncertainVisitor;
 import prism.ModelType;
 
 
@@ -105,6 +106,9 @@ public class PolyCL implements PrismModelListener{
 		try {
 			mainLog.print("\nParsing model file \"" + modelFilename + "\"...\n");
 			modulesFile = prism.parseModelFile(new File(modelFilename), null);	
+			ASTUncertainVisitor visitor = new ASTUncertainVisitor();
+			ModulesFile mf = visitor.copy(modulesFile);
+			System.out.println(mf);
 			prism.loadPRISMModel(modulesFile);
 		}catch (FileNotFoundException e) {
 			errorAndExit("File \"" + modelFilename + "\" not found");
@@ -116,6 +120,7 @@ public class PolyCL implements PrismModelListener{
 		if (!((prism.getModelType() == ModelType.SMG) || (prism.getModelType() == ModelType.STPG))){
 			errorAndExit("Model type must be SMG or STPG");
 		}
+		
 		
 	}
 	

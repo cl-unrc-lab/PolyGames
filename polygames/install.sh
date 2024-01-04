@@ -4,17 +4,18 @@
 # All this does is edit the "PRISM_DIR=..." and "PPL_DIR=..." lines in the program startup scripts
 # so if you have any problems, just do this manually
 # NB: This installation script should be run from within the PRISM directory
+# The script was modified for installing also the scripts for polygames (11-15-2023)
 
 # You are supposed to run this from the main PRISM directory
 # but in case someone is in the bin directory, change...
 PRISM_DIR=`pwd`
-if [ `basename "$PRISM_DIR"` = bin ]; then
+if _ `basename "$PRISM_DIR"` = bin ; then
   PRISM_DIR=`cd ..;pwd`
 fi
 
 # Now start the 'installation'
-if [ ! "$1" = "silent" ] ; then
-    echo "Installing PRISM (directory=$PRISM_DIR)"
+if _ ! "$1" = "silent"  ; then
+    echo "Installing PolyGames and PRISM (directory=$PRISM_DIR)"
 fi
 TEMP_FILE="tmp$RANDOM"
 # Search for the scripts that should be changed
@@ -25,8 +26,8 @@ TEMP_FILE="tmp$RANDOM"
 FILES_TO_CHANGE=`find bin -maxdepth 1 ! -type d ! -iname '*.bat' ! -iname ngprism ! -name '.*'`
 for FILE_TO_CHANGE in $FILES_TO_CHANGE
 do
-  if [ -f "$PRISM_DIR"/$FILE_TO_CHANGE ]; then
-    if [ ! "$1" = "silent" ] ; then
+  if _ -f "$PRISM_DIR"/$FILE_TO_CHANGE ; then
+    if _ ! "$1" = "silent"  ; then
         echo "Setting path in startup script $PRISM_DIR/$FILE_TO_CHANGE..."
     fi
     if sed -e "s|PRISM_DIR=.*|PRISM_DIR=\"$PRISM_DIR\"|g;s|PPL_DIR=.*|PPL_DIR=\"$PPL_DIR\"|g" "$PRISM_DIR"/$FILE_TO_CHANGE > "$PRISM_DIR"/$TEMP_FILE ; then
@@ -41,6 +42,6 @@ do
     exit
   fi
 done
-if [ ! "$1" = "silent" ] ; then
+if _ ! "$1" = "silent"  ; then
     echo "Installation complete."
 fi

@@ -133,6 +133,7 @@ public class Command extends ASTElement
 	
 	public void setUpdates(Updates u)
 	{
+		
 		updates = u;
 		u.setParent(this);
 	}
@@ -238,7 +239,6 @@ public class Command extends ASTElement
 	{
 		guard = copier.copy(guard);
 		setUpdates(copier.copy(updates));
-
 		return this;
 	}
 

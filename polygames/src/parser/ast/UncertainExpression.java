@@ -10,7 +10,6 @@ public class UncertainExpression extends Expression{
 
     private String name;
     
-    
 
     public UncertainExpression(String name) {
         this.name = name;
@@ -32,7 +31,7 @@ public class UncertainExpression extends Expression{
 
     @Override
     public String toString() {
-        return null;
+        return name;
     }
 
     @Override
@@ -61,4 +60,5 @@ public class UncertainExpression extends Expression{
     public Expression deepCopy(DeepCopy copier) throws PrismLangException {
         return null;
     }
+    
 }

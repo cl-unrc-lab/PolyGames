@@ -882,8 +882,8 @@ Command Command() throws PrismLangException :
 	    guard = Expression(false, false) { comm.setGuard(guard); }
 	    (
 	         <RARROW>   updates = Updates()
-	       | <URARROW> updates = UncertainUpdates()
-	    ) { comm.setUpdates(updates); }
+	       | <URARROW>  updates = UncertainUpdates()
+	    ) { comm.setUpdates(updates);}
 	    <SEMICOLON>
 	)
 	{ comm.setPosition(begin, getToken(0)); return comm; }
@@ -908,16 +908,18 @@ UncertainUpdates UncertainUpdates() throws PrismLangException :
 
 UncertainUpdates Equation(UncertainUpdates updates, int i) :
 {
-    Token token; 
+  	UncertainExpression ue;
+    Token token;
+    Token ineqs;
     double coeff;
     double cte;
     int j= 0 ;
 }
 {
-    token = <REG_DOUBLE> <TIMES> UncertainExpression() { coeff = Double.parseDouble(token.image); updates.addCoefficient(coeff, i, j); }
-    ({ j++; } <PLUS> token = <REG_DOUBLE> <TIMES> UncertainExpression() { coeff = Double.parseDouble(token.image); updates.addCoefficient(coeff, i, j); } )*
-    (<LE> | <GE>)
-    token = <REG_DOUBLE> { cte = Double.parseDouble(token.image); updates.addConstant(cte, i); }
+    token = <REG_DOUBLE> <TIMES> ue = UncertainExpression() { coeff = Double.parseDouble(token.image); updates.addCoefficient(coeff, i, ue); }
+    ({ j++; } <PLUS> token = <REG_DOUBLE> <TIMES> ue = UncertainExpression() { coeff = Double.parseDouble(token.image); updates.addCoefficient(coeff, i, ue); } )*
+    (ineqs = <LE> | ineqs = <GE>)
+    token = <REG_DOUBLE> { cte = Double.parseDouble(token.image); updates.addConstant(cte, i, ineqs.image); }
     { return updates; }
 }
 
