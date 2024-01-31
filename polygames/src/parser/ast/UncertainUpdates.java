@@ -272,6 +272,9 @@ public class UncertainUpdates extends Updates{
 			result.add(c2);
 		}
 		
+		// Furthermore, the sum of all the vertices has to be 1
+		
+		
 		return result;
 	}
 	
