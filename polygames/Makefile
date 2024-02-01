@@ -262,7 +262,7 @@ ifeq ($(OSTYPE),linux)
 	endif
 	endif
 	endif
-	BIN_TARGETS=prism.linux xprism.linux
+	BIN_TARGETS=polygames.linux prism.linux xprism.linux
 	JFLAGS = -encoding UTF8
 	SHARED = -shared
 	#SHARED = -G
@@ -278,7 +278,7 @@ ifeq ($(OSTYPE),solaris)
 	CXXFLAGS = --std=c++11 $(CFLAGS)
 	LDFLAGS = $(CFLAGS)
 	BINDISTSUFFIX = solaris
-	BIN_TARGETS=prism.linux xprism.linux
+	BIN_TARGETS=polygames.linux prism.linux xprism.linux
 	JFLAGS = -encoding UTF8
 	SHARED = -shared -mimpure-text
 	EXE =
@@ -332,7 +332,7 @@ ifeq ($(OSTYPE),darwin)
 		CXXFLAGS = --std=c++11 $(CFLAGS)
 		LDFLAGS = $(CFLAGS) -Wl,-search_paths_first
 		BINDISTSUFFIX = osx32
-		BIN_TARGETS=prism.darwin32 xprism.linux
+		BIN_TARGETS=polygames.darwin64 prism.darwin32 xprism.linux
 	endif
 	endif
 	JFLAGS = -encoding UTF8

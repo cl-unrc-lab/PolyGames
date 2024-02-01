@@ -9,12 +9,12 @@
 # You are supposed to run this from the main PRISM directory
 # but in case someone is in the bin directory, change...
 PRISM_DIR=`pwd`
-if _ `basename "$PRISM_DIR"` = bin ; then
+if [ `basename "$PRISM_DIR"` = bin ]; then
   PRISM_DIR=`cd ..;pwd`
 fi
 
 # Now start the 'installation'
-if _ ! "$1" = "silent"  ; then
+if [ ! "$1" = "silent"  ]; then
     echo "Installing PolyGames and PRISM (directory=$PRISM_DIR)"
 fi
 TEMP_FILE="tmp$RANDOM"
@@ -26,8 +26,8 @@ TEMP_FILE="tmp$RANDOM"
 FILES_TO_CHANGE=`find bin -maxdepth 1 ! -type d ! -iname '*.bat' ! -iname ngprism ! -name '.*'`
 for FILE_TO_CHANGE in $FILES_TO_CHANGE
 do
-  if _ -f "$PRISM_DIR"/$FILE_TO_CHANGE ; then
-    if _ ! "$1" = "silent"  ; then
+  if [ -f "$PRISM_DIR"/$FILE_TO_CHANGE ]; then
+    if [ ! "$1" = "silent"  ]; then
         echo "Setting path in startup script $PRISM_DIR/$FILE_TO_CHANGE..."
     fi
     if sed -e "s|PRISM_DIR=.*|PRISM_DIR=\"$PRISM_DIR\"|g;s|PPL_DIR=.*|PPL_DIR=\"$PPL_DIR\"|g" "$PRISM_DIR"/$FILE_TO_CHANGE > "$PRISM_DIR"/$TEMP_FILE ; then
@@ -42,6 +42,6 @@ do
     exit
   fi
 done
-if _ ! "$1" = "silent"  ; then
+if [ ! "$1" = "silent"  ]; then
     echo "Installation complete."
 fi
