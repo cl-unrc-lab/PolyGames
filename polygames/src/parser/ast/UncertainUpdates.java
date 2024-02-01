@@ -273,7 +273,12 @@ public class UncertainUpdates extends Updates{
 		}
 		
 		// Furthermore, the sum of all the vertices has to be 1
-		
+		Linear_Expression lexp = new Linear_Expression_Coefficient(new Coefficient(0));
+		for (int i = 0; i < vars.size(); i++) {
+			lexp = new Linear_Expression_Sum(new Linear_Expression_Variable(vars.get(i)), lexp);
+		}
+		Constraint c = new Constraint(lexp, Relation_Symbol.EQUAL, new Linear_Expression_Coefficient(new Coefficient(1)));
+		result.add(c);
 		
 		return result;
 	}
