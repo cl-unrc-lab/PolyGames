@@ -38,10 +38,9 @@ public class UncertainUpdates extends Updates{
     private ArrayList<Expression> uncertains; // the list of uncertains
     private HashMap<String, HashMap<Integer, Double>> coefficients;  // coefficients contains for each uncertain the corresponding column of coefficients
     																 // for instance, coefficients.get(uncertain).get(i) returns the coefficiente corresponding to row i, null if none
-    private ArrayList<Double> constants;
-    private ArrayList<relOps> ineqs; // the ineqs in the constraints: Relation_Symbol.LESS_OR_EQUAL, or Relation_Symbol.G
-    int div = 1; // the divisor allows us to move the decimal point, PPL only allows for integers.
-    //int numberUncertains;
+    private ArrayList<Double> constants;							 // constains the columns of constants in the equations
+    private ArrayList<relOps> ineqs;								 // the ineqs in the constraints: Relation_Symbol.LESS_OR_EQUAL, or Relation_Symbol.G
+    int div = 1; 													 // the divisor allows us to move the decimal point, PPL only allows for integers.
     
     /**
      * Basic constructor, it initializes the object, all the coefficients and constants are initialized to zero,
@@ -228,37 +227,24 @@ public class UncertainUpdates extends Updates{
 			vars.add(new Variable(i));
 		}
 		
-		// we check if the columns of coefficients has the correct size for each constant
-		//for (int i = 0; i < uncertains.size(); i++) {
-		//	String ue = ((UncertainExpression) uncertains.get(i)).getName();
-		//	if (coefficients.get(ue).size() < constants.size()) {
-		//		for (int j = coefficients.get(ue).size() - 1; j < constants.size(); j++ ) {
-		//			coefficients.get(ue).add(j, 0.0); // we complete the uncertains with 0.0
-		//		}
-		//	}
-		//}
-		
-		
+		// An array of expressions, exprs[i] corresponds to the left expression in the ith row  of the equation system
 		Linear_Expression[] exprs = new Linear_Expression[this.constants.size()];
 		
-		
-		// check if there is no uncertains, an error must be thrown
-		
-		// we build the equation system, one equation for each constant
+		// We build the equation system, one equation for each constant: expr <> constants[i]
 		for (int i = 0; i < this.constants.size(); i++) {
 			Linear_Expression lexp = new Linear_Expression_Coefficient(new Coefficient(0)); // we start with 0
-			for (int j = 0; j < this.uncertains.size(); j++){
+			for (int j = 0; j < this.uncertains.size(); j++){ // for each uncertain we construct the rows
 				String uncertainName = ((UncertainExpression) this.uncertains.get(j)).getName();
-				if (this.coefficients.get(((UncertainExpression) this.uncertains.get(j)).getName()).get(i) != null) {
+				if (this.coefficients.get(((UncertainExpression) this.uncertains.get(j)).getName()).get(i) != null) { // we get the corresponding coefficient to the uncertain
 					Integer coef = this.coefficients.get(uncertainName).get(i).intValue();
 					Linear_Expression times = new Linear_Expression_Times(new Coefficient(coef), vars.get(j));
-					lexp = new Linear_Expression_Sum(times, lexp); // we sum the expression
+					lexp = new Linear_Expression_Sum(times, lexp); // we sum the expression to create the corresponding expression for the row
 				}
 			}
 			exprs[i] = lexp;
 		}
 		
-		// TO DO: Add other relations
+		// TO DO: Add other relations:  Equality for example
 		// we build the constrain system
 		for (int i = 0; i < this.constants.size(); i++) {
 			Constraint c = new Constraint(exprs[i], this.ineqs.get(i) == relOps.LE ? Relation_Symbol.LESS_OR_EQUAL : Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(constants.get(i).intValue())));

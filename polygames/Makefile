@@ -319,14 +319,14 @@ ifeq ($(OSTYPE),darwin)
 		CXXFLAGS = --std=c++11 $(CFLAGS)
 		LDFLAGS = $(CFLAGS) -Wl,-search_paths_first
 		BINDISTSUFFIX = osx64
-		BIN_TARGETS=prism.darwin64 xprism.linux
+		BIN_TARGETS=polygames.darwin64 prism.darwin64 xprism.linux
 	else
 	ifeq ($(ARCH),arm64)
 		CFLAGS = -arch arm64 -fPIC -DPIC -DHAVE_IEEE_754 -DBSD -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8 -fno-common $(DEBUG) $(OPTIMISE) $(WARNINGS)
 		CXXFLAGS = --std=c++11 $(CFLAGS)
 		LDFLAGS = $(CFLAGS) -Wl,-search_paths_first
 		BINDISTSUFFIX = osx64
-		BIN_TARGETS=prism.darwin64 xprism.linux
+		BIN_TARGETS=polygames.darwin64 prism.darwin64 xprism.linux
 	else
 		CFLAGS = -arch i386 -DHAVE_IEEE_754 -DBSD -fno-common $(DEBUG) $(OPTIMISE) $(WARNINGS)
 		CXXFLAGS = --std=c++11 $(CFLAGS)

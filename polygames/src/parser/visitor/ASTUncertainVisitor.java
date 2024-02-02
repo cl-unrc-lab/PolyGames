@@ -113,7 +113,7 @@ public  class ASTUncertainVisitor extends DeepCopy{
 			throw new PrismLangException("Parma Polyhedra Library could not be loaded/initialised");
 		}
     	
-    	e.convertToInt(); // all have to be Int
+    	e.convertToInt(); // all have to be Int, this function converts all the constants to Int
     	NNC_Polyhedron ph = new NNC_Polyhedron(e.getPPLConstraintSystem());
     	
     	System.out.println(e.getPPLConstraintSystem());
