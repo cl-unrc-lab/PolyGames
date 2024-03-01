@@ -1,0 +1,71 @@
+smg 
+
+const int MAX_X = 15;
+const int MAX_Y = 15;
+const int MAX_Z = 15;
+
+formula done = dest | red_zone | colition;
+formula colition = (x1 = x2 & y1 = y2 & z1 = z2);
+formula red_zone = (xregion0 & yregion0 & zregion0) | (xregion1 & yregion1 & zregion1) | (xregion2 & yregion2 & zregion2) | (xregion3 & yregion3 & zregion3) | (xregion4 & yregion4 & zregion4);
+formula dest  = (xregion5 & yregion5 & zregion5);
+formula xregion0 =  0 <= x1 & x1 < 4; // red region 0
+formula xregion1 =  4 <= x1 & x1 < 9; // red region 1
+formula xregion2 =  5 <= x1 & x1 < 9; // red region 2
+formula xregion3 =  0 <= x1 & x1 < 5; // red region 3
+formula xregion4 = 11 <= x1 & x1 < MAX_X; // red region 4
+formula xregion5 = 12 <= x1 & x1 < MAX_X; // green region
+
+formula yregion0 =  0 <= y1 & y1 < 4;  // red region 0
+formula yregion1 =  4 <= y1 & y1 < 9;  // red region 1
+formula yregion2 =  7 <= y1 & y1 < 11; // red region 2
+formula yregion3 = 11 <= y1 & y1 < MAX_Y; // red region 3
+formula yregion4 = 12 <= y1 & y1 < MAX_Y; // red region 4
+formula yregion5 = 12 <= y1 & y1 < MAX_Y; // green region
+
+formula zregion0 = 11 <= z1 & z1 < MAX_Z; // red region 0
+formula zregion1 =  7 <= z1 & z1 < 11;    // red region 1
+formula zregion2 = 11 <= z1 & z1 < MAX_Z; // red region 2
+formula zregion3 =  0 <= z1 & z1 < 3;     // red region 3
+formula zregion4 =  0 <= z1 & z1 < 4;     // red region 4
+formula zregion5 = 12 <= z1 & z1 < MAX_Z; // green region
+
+const double p1;
+
+player player1 [uav1] endplayer
+player player2 [uav2] endplayer
+
+module control
+    c : [0..1] init 0;
+    [uav1] c = 0 -> 1: (c'=1);
+    [uav2] c = 1 -> 1: (c'=0);
+endmodule
+
+module mod
+
+    x1 : [0..MAX_X] init 0; // north south
+    y1 : [0..MAX_Y] init 0; // east  west
+    z1 : [0..MAX_Z] init 0; // up    down
+
+    x2 : [0..MAX_X] init 0; 
+    y2 : [0..MAX_Y] init 0; 
+    z2 : [0..MAX_Z] init 0; 
+
+    [uav1] x1 = 0 & !done              -> 1 : (x1'=x1+1);
+    [uav1] x1 > 0 & x1 < MAX_X & !done -> 0.5 : (x1'=x1-1) + 0.5 : (x1'=x1+1);
+    [uav1] x1 = MAX_X & !done          -> 1 : (x1'=x1'-1);
+
+    [uav1] y1 = 0 & !done              -> 1 : (y1'=y1+1);
+    [uav1] y1 > 0 & y1 < MAX_Y & !done -> 0.5 : (y1'=y1-1) + 0.5 : (y1'=y1+1);
+    [uav1] y1 = MAX_Y & !done          -> 1 : (y1'=y1'-1);
+
+    [uav1] z1 = 0 & !done              -> 1 : (z1'=z1+1);
+    [uav1] z1 > 0 & z1 < MAX_Y & !done -> 0.5 : (z1'=z1-1) + 0.5 : (z1'=z1+1);
+    [uav1] z1 = MAX_Y & !done          -> 1 : (z1'=z1'-1);
+
+    [auv2] x2 > 0 & !done     -> 1 : (x2'=x2-1);
+    [auv2] x2 < MAX_X & !done -> 1 : (x2'=x2+1);
+    [auv2] y2 > 0 & !done     -> 1 : (y2'=x2-1);
+    [auv2] y2 < MAX_Y & !done -> 1 : (y2'=x2+1);
+    [auv2] z2 > 0 & !done     -> 1 : (z2'=x2-1);
+    [auv2] z2 < MAX_Z & !done -> 1 : (z2'=x2+1);
+endmodule
