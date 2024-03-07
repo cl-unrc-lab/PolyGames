@@ -116,7 +116,7 @@ public  class ASTUncertainVisitor extends DeepCopy{
     	e.convertToInt(); // all have to be Int, this function converts all the constants to Int
     	NNC_Polyhedron ph = new NNC_Polyhedron(e.getPPLConstraintSystem());
     	
-    	System.out.println(e.getPPLConstraintSystem());
+    	//System.out.println(e.getPPLConstraintSystem());
     	
     	// We check that the polyhedral is bounded
     	// the polyhedra is always bounded beacuse the added restrictions
@@ -133,8 +133,10 @@ public  class ASTUncertainVisitor extends DeepCopy{
     			List<Double> vertices = PPLSupport.getGeneratorAsVector(g, e.getNumberUncertains());
     			for (int i = 0; i < vertices.size(); i++) {
     				//Updates ups = new Updates();
-        			ups.addUpdate(new ExpressionLiteral(TypeDouble.getInstance(), vertices.get(i), vertices.get(i).toString()), e.getUpdate(i));
-        			ups.setParent(e.getParent());		
+    				if (vertices.get(i) != 0 ) {
+    					ups.addUpdate(new ExpressionLiteral(TypeDouble.getInstance(), vertices.get(i), vertices.get(i).toString()), e.getUpdate(i));
+    					ups.setParent(e.getParent());		
+    				}
     			}
     			result.add(ups);
     		}
