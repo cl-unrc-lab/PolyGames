@@ -1,0 +1,82 @@
+smg
+// A basic version of the roborta vs rigoberto example. 
+// there are certain locations that are muddy in which the robots cannot choose a specific location, but they
+// can choose between ceartain probabilities
+
+player p1
+  roborta, [robl], [robf], [robr], [robmud]
+endplayer
+
+player p2
+  rigoborto, [rigl], [rigf], [rigr], [rigmud]
+endplayer
+
+// A  basic grid
+const int WIDTH = 10;
+const int LENGTH = 10;
+
+rewards "r1"
+	robrow < LENGTH : 1;
+	robrow = LENGTH : 0; 
+endrewards
+
+// a variable for scheduling, roborta starts 
+global sched : [0..1];
+
+// In this case Roborta is a minimizer she wants to reach the exit asap
+// on the other hand Rigoborto wants to maximize, that is to stop Roborta.
+rewards "r0"
+    Collision : 10;
+	!Collision & robrow < LENGTH : 1;
+	!Collision & robrow = LENGTH : 0; 
+endrewards
+
+// This formula says that there was a collision
+formula Collision = (robcol = rigcol) & (robrow = rigrow);
+
+// This formula says that roborta reached the end fo the grid
+formula Robwins =  (robrow = LENGTH);
+
+// for this case we consider just the diagonal as a muddy cell, more interesting cases can be thought
+formula muddyRob = true;//robcol=robrow;
+
+formula muddyRig = true;//rigcol=rigrow;
+
+// the reward structure, for a collision is 0 for Roborta (maximizer) and the exit is 1
+
+
+// Module for Roborta, in case a collision the games finishes
+module roborta
+	robcol : [0..WIDTH-1] init 0;
+	robrow : [0..LENGTH] init 0;
+	[robl] (sched = 0) & !muddyRob & (robrow < LENGTH) & !Collision  -> (robcol'= mod((robcol-1),WIDTH)) & (sched' = 1); // roborta advances to the left
+	[robr] (sched = 0) & !muddyRob & (robrow < LENGTH) & !Collision  -> (robcol'= mod((robcol+1), WIDTH))  & (sched' = 1); // to the right
+    [robf] (sched = 0) & !muddyRob & !Collision & (robrow < LENGTH)  -> (robrow'= robrow+1)  & (sched' = 1); // forward
+    // the next case is the case of a muddy cell, in such as case we have uncertainty in the probabilities
+    [robmud]  (sched = 0) &  muddyRob & (robrow < LENGTH) & !Collision   -U->  pr : (robcol'=mod((robcol-1),WIDTH))  & (sched' = 1)  + pl : (robcol'=mod((robcol+1),WIDTH))  & (sched' = 1) +  pf : (robrow'= robrow+1)  & (sched' = 1)
+									  {
+										// p + q = 1.0 is assumed
+										1.0 * pr >= 0.25,
+										1.0 * pl >= 0.25,
+                                        1.0 * pf >= 0.10,
+                                        1.0 * pr <= 0.70
+									  };
+endmodule
+
+// and similarly for Rigoborto
+module rigoborto
+    rigcol : [0..WIDTH-1] init WIDTH-1; // rigborto starts in the opposite cell
+	rigrow : [0..LENGTH-1] init LENGTH-1;
+    [rigl] (sched = 1) & !muddyRig & !Collision  -> (rigcol'= mod((rigcol-1),WIDTH)) & (sched' = 0) ;
+	[rigr] (sched = 1) & !muddyRig & !Collision  -> (rigcol'= mod((rigcol+1), WIDTH))& (sched' = 0);
+    [rigf] (sched = 1) & !muddyRig & (rigrow > 0) & !Collision  -> (rigrow'= rigrow-1)& (sched' = 0);
+    [rigmud] (sched = 1) &  muddyRig & (rigrow > 0) & !Collision  -U->  pr : (rigcol'=mod((rigcol-1),WIDTH)) & (sched' = 0)  + pl : (rigcol'=mod((rigcol+1),WIDTH)) & (sched' = 0) +  pf : (rigrow'= rigrow-1) & (sched' = 0)
+									  {
+										// p + q = 1.0 is assumed
+										1.0 * pr >= 0.25,
+										1.0 * pl >= 0.25,
+                                        1.0 * pf >= 0.10,
+                                        1.0 * pr <= 0.70
+									  };
+endmodule
+

@@ -1,0 +1,61 @@
+smg
+
+    const int MAX_X = 5;
+    const int MAX_Y = 5;
+
+    player roborta   [rob] endplayer
+    player rigoborto [rig] endplayer
+
+module mod   [rob] rob_x= 0 -> 1 : rob_x'=1;
+   [rob] rob_x=1 -> 0.5 : (rob_x'=rob_x-1) + 0.5 : (rob_x'=rob_x+1);
+   [rob] rob_x=2 -> 0.5 : (rob_x'=rob_x-1) + 0.5 : (rob_x'=rob_x+1);
+   [rob] rob_x=3 -> 0.5 : (rob_x'=rob_x-1) + 0.5 : (rob_x'=rob_x+1);
+   [rob] rob_x= 4 -> 1 : rob_x'=3;
+   [rob] rob_y= 0 -> 1 : rob_y'=1;
+   [rob] rob_y=1 -> 0.5 : (rob_y'=rob_y-1) + 0.5 : (rob_y'=rob_y+1);
+   [rob] rob_y=2 -> 0.5 : (rob_y'=rob_y-1) + 0.5 : (rob_y'=rob_y+1);
+   [rob] rob_y=3 -> 0.5 : (rob_y'=rob_y-1) + 0.5 : (rob_y'=rob_y+1);
+   [rob] rob_y= 4 -> 1 : rob_y'=3;
+   [rob] rob_x= 0 & there_is_mud & dir=right -U-> p1 : rob_x'=1 + p2 : rob_x'=0;
+   [rob] rob_x=1 & there_is_mud & dir=right -U-> p1 : (rob_x'=rob_x+1) + p2 : (rob_x'=rob_x);
+   [rob] rob_x=1 & there_is_mud & dir=left  -U-> p1 : (rob_x'=rob_x-1) + p2 : (rob_x'=rob_x);
+   [rob] rob_x=2 & there_is_mud & dir=right -U-> p1 : (rob_x'=rob_x+1) + p2 : (rob_x'=rob_x);
+   [rob] rob_x=2 & there_is_mud & dir=left  -U-> p1 : (rob_x'=rob_x-1) + p2 : (rob_x'=rob_x);
+   [rob] rob_x=3 & there_is_mud & dir=right -U-> p1 : (rob_x'=rob_x+1) + p2 : (rob_x'=rob_x);
+   [rob] rob_x=3 & there_is_mud & dir=left  -U-> p1 : (rob_x'=rob_x-1) + p2 : (rob_x'=rob_x);
+   [rob] rob_x= 4 & there_is_mud & dir=left -U-> p1 : rob_x'=3 + p2 : rob_x'=rob_x;
+   [rob] rob_y= 0 & there_is_mud & dir=right -U-> p1 : rob_y'=1 + p2 : rob_y'=0;
+   [rob] rob_y=1 & there_is_mud & dir=right -U-> p1 : (rob_y'=rob_y+1) + p2 : (rob_y'=rob_y);
+   [rob] rob_y=1 & there_is_mud & dir=left  -U-> p1 : (rob_y'=rob_y-1) + p2 : (rob_y'=rob_y);
+   [rob] rob_y=2 & there_is_mud & dir=right -U-> p1 : (rob_y'=rob_y+1) + p2 : (rob_y'=rob_y);
+   [rob] rob_y=2 & there_is_mud & dir=left  -U-> p1 : (rob_y'=rob_y-1) + p2 : (rob_y'=rob_y);
+   [rob] rob_y=3 & there_is_mud & dir=right -U-> p1 : (rob_y'=rob_y+1) + p2 : (rob_y'=rob_y);
+   [rob] rob_y=3 & there_is_mud & dir=left  -U-> p1 : (rob_y'=rob_y-1) + p2 : (rob_y'=rob_y);
+   [rob] rob_y= 4 & there_is_mud & dir=left -U-> p1 : rob_y'=3 + p2 : rob_y'=rob_y;
+   [rig] rig_x= 0 -> 1 : rig_x'=1;
+   [rig] rig_x=1 -> 0.5 : (rig_x'=rig_x-1) + 0.5 : (rig_x'=rig_x+1);
+   [rig] rig_x=2 -> 0.5 : (rig_x'=rig_x-1) + 0.5 : (rig_x'=rig_x+1);
+   [rig] rig_x=3 -> 0.5 : (rig_x'=rig_x-1) + 0.5 : (rig_x'=rig_x+1);
+   [rig] rig_x= 4 -> 1 : rig_x'=3;
+   [rig] rig_y= 0 -> 1 : rig_y'=1;
+   [rig] rig_y=1 -> 0.5 : (rig_y'=rig_y-1) + 0.5 : (rig_y'=rig_y+1);
+   [rig] rig_y=2 -> 0.5 : (rig_y'=rig_y-1) + 0.5 : (rig_y'=rig_y+1);
+   [rig] rig_y=3 -> 0.5 : (rig_y'=rig_y-1) + 0.5 : (rig_y'=rig_y+1);
+   [rig] rig_y= 4 -> 1 : rig_y'=3;
+   [rig] rig_x= 0 & there_is_mud & dir=right -U-> p1 : rig_x'=1 + p2 : rig_x'=0;
+   [rig] rig_x=1 & there_is_mud & dir=right -U-> p1 : (rig_x'=rig_x+1) + p2 : (rig_x'=rig_x);
+   [rig] rig_x=1 & there_is_mud & dir=left  -U-> p1 : (rig_x'=rig_x-1) + p2 : (rig_x'=rig_x);
+   [rig] rig_x=2 & there_is_mud & dir=right -U-> p1 : (rig_x'=rig_x+1) + p2 : (rig_x'=rig_x);
+   [rig] rig_x=2 & there_is_mud & dir=left  -U-> p1 : (rig_x'=rig_x-1) + p2 : (rig_x'=rig_x);
+   [rig] rig_x=3 & there_is_mud & dir=right -U-> p1 : (rig_x'=rig_x+1) + p2 : (rig_x'=rig_x);
+   [rig] rig_x=3 & there_is_mud & dir=left  -U-> p1 : (rig_x'=rig_x-1) + p2 : (rig_x'=rig_x);
+   [rig] rig_x= 4 & there_is_mud & dir=left -U-> p1 : rig_x'=3 + p2 : rig_x'=rig_x;
+   [rig] rig_y= 0 & there_is_mud & dir=right -U-> p1 : rig_y'=1 + p2 : rig_y'=0;
+   [rig] rig_y=1 & there_is_mud & dir=right -U-> p1 : (rig_y'=rig_y+1) + p2 : (rig_y'=rig_y);
+   [rig] rig_y=1 & there_is_mud & dir=left  -U-> p1 : (rig_y'=rig_y-1) + p2 : (rig_y'=rig_y);
+   [rig] rig_y=2 & there_is_mud & dir=right -U-> p1 : (rig_y'=rig_y+1) + p2 : (rig_y'=rig_y);
+   [rig] rig_y=2 & there_is_mud & dir=left  -U-> p1 : (rig_y'=rig_y-1) + p2 : (rig_y'=rig_y);
+   [rig] rig_y=3 & there_is_mud & dir=right -U-> p1 : (rig_y'=rig_y+1) + p2 : (rig_y'=rig_y);
+   [rig] rig_y=3 & there_is_mud & dir=left  -U-> p1 : (rig_y'=rig_y-1) + p2 : (rig_y'=rig_y);
+   [rig] rig_y= 4 & there_is_mud & dir=left -U-> p1 : rig_y'=3 + p2 : rig_y'=rig_y;
+endmodule
