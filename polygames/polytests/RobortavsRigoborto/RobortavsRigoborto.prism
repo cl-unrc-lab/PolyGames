@@ -38,9 +38,9 @@ formula Collision = (robcol = rigcol) & (robrow = rigrow);
 formula Robwins =  (robrow = LENGTH);
 
 // for this case we consider just the diagonal as a muddy cell, more interesting cases can be thought
-formula muddyRob = true;//robcol=robrow;
+formula muddyRob = robrow = mod((robcol+1),WIDTH);//robcol=robrow;
 
-formula muddyRig = true;//rigcol=rigrow;
+formula muddyRig = rigrow = mod((rigcol+1),WIDTH);//rigcol=rigrow;
 
 // the reward structure, for a collision is 0 for Roborta (maximizer) and the exit is 1
 
@@ -65,8 +65,8 @@ endmodule
 
 // and similarly for Rigoborto
 module rigoborto
-    rigcol : [0..WIDTH-1] init WIDTH-1; // rigborto starts in the opposite cell
-	rigrow : [0..LENGTH-1] init LENGTH-1;
+    rigcol : [0..WIDTH-1] init WIDTH-5; // rigborto starts in the opposite cell
+	rigrow : [0..LENGTH-1] init LENGTH-6;
     [rigl] (sched = 1) & !muddyRig & !Collision  -> (rigcol'= mod((rigcol-1),WIDTH)) & (sched' = 0) ;
 	[rigr] (sched = 1) & !muddyRig & !Collision  -> (rigcol'= mod((rigcol+1), WIDTH))& (sched' = 0);
     [rigf] (sched = 1) & !muddyRig & (rigrow > 0) & !Collision  -> (rigrow'= rigrow-1)& (sched' = 0);
