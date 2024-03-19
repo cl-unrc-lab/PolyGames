@@ -1,0 +1,3 @@
+CREDITS.o: CREDITS.cc CREDITS.hh
+
+CREDITS.hh:

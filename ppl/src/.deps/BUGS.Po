@@ -1,0 +1,3 @@
+BUGS.o: BUGS.cc BUGS.hh
+
+BUGS.hh:
