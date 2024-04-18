@@ -1,0 +1,250 @@
+smg
+// A basic version of the roborta vs rigoberto example. 
+// there are certain locations that are muddy in which the robots cannot choose a specific location, but they
+// can choose between ceartain probabilities
+
+player p1
+  roborta, [robl], [robr], [robf], [robb]
+endplayer
+
+player p2
+  rigoborto, [rigl], [rigr], [rigf], [rigb]
+endplayer
+
+// Grid dimensions
+const int WIDTH = 4;
+const int LENGTH = 4;
+
+cons Q_TERRAIN_0_0 = 0.1;
+cons Q_TERRAIN_0_1 = 0.2;
+cons Q_TERRAIN_0_2 = 0.1;
+cons Q_TERRAIN_0_3 = 0.3;
+cons Q_TERRAIN_1_0 = 0.1;
+cons Q_TERRAIN_1_1 = 0.1;
+cons Q_TERRAIN_1_2 = 0.1;
+cons Q_TERRAIN_1_3 = 0.1;
+cons Q_TERRAIN_2_0 = 0.1;
+cons Q_TERRAIN_2_1 = 0.1;
+cons Q_TERRAIN_2_2 = 0.1;
+cons Q_TERRAIN_2_3 = 0.2;
+cons Q_TERRAIN_3_0 = 0.1;
+cons Q_TERRAIN_3_1 = 0.1;
+cons Q_TERRAIN_3_2 = 0.1;
+cons Q_TERRAIN_3_3 = 0.1;
+
+
+
+// Terrain quality:
+// Q_TERRAIN is a constant (WIDTH x LENGTH) matrix of floats in the interval [0,0.5]
+// where 0 means "optimal quality" while 0.5 corresponds to the worst quality
+
+// Terrain irregularities:
+// L_SLOPE is a constant (WIDTH x LENGTH) matrix of floats in the interval [-1,1]
+// corresponding to the lateral inclination where 0 indicats that the terrain has no lateral inclination,
+// -1 is the maximum inclination towards the left, and 1 is the maximum inclination towards the right.
+// F_SLOPE is a constant (WIDTH x LENGTH) matrix of floats in the interval [-1,1]
+// corresponding to the frontal inclination where 0 indicats that the terrain has no frontal inclination,
+// -1 is the maximum descending inclination, and 1 is the maximum ascending inclination.
+
+cons L_SLOPE_0_0 = 0.1;
+cons L_SLOPE_0_1 = 0.2;
+cons L_SLOPE_0_2 = 0.1;
+cons L_SLOPE_0_3 = 0.3;
+cons L_SLOPE_1_0 = 0.1;
+cons L_SLOPE_1_1 = 0.1;
+cons L_SLOPE_1_2 = 0.1;
+cons L_SLOPE_1_3 = 0.1;
+cons L_SLOPE_2_0 = 0.1;
+cons L_SLOPE_2_1 = 0.1;
+cons L_SLOPE_2_2 = 0.1;
+cons L_SLOPE_2_3 = 0.2;
+cons L_SLOPE_3_0 = 0.1;
+cons L_SLOPE_3_1 = 0.1;
+cons L_SLOPE_3_2 = 0.1;
+cons L_SLOPE_3_3 = 0.1;
+
+
+
+cons F_SLOPE_0_0 = 0.1;
+cons F_SLOPE_0_1 = 0.2;
+cons F_SLOPE_0_2 = 0.1;
+cons F_SLOPE_0_3 = 0.3;
+cons F_SLOPE_1_0 = 0.1;
+cons F_SLOPE_1_1 = 0.1;
+cons F_SLOPE_1_2 = 0.1;
+cons F_SLOPE_1_3 = 0.1;
+cons F_SLOPE_2_0 = 0.1;
+cons F_SLOPE_2_1 = 0.1;
+cons F_SLOPE_2_2 = 0.1;
+cons F_SLOPE_2_3 = 0.2;
+cons F_SLOPE_3_0 = 0.1;
+cons F_SLOPE_3_1 = 0.1;
+cons F_SLOPE_3_2 = 0.1;
+cons F_SLOPE_3_3 = 0.1;
+
+rewards "r1"
+	robrow < LENGTH : 1;
+	robrow = LENGTH : 0; 
+endrewards
+
+// a variable for scheduling, Roborta starts
+
+global sched : [0..1] init 0;
+
+// In this case Roborta is a minimizer she wants to reach the exit asap
+// on the other hand Rigoborto wants to maximize, that is to stop Roborta.
+rewards "r0"
+    Collision : 10;
+        !Collision & robrow < LENGTH : 1;
+        !Collision & robrow = LENGTH : 0; 
+endrewards
+
+// Roborta and Rigoborto occupy the same cell producing a collision
+formula Collision = (robcol = rigcol) & (robrow = rigrow);
+
+// Roborta reached the end fo the grid
+formula Robwins =  (robrow = LENGTH);
+
+
+// Module for Roborta, in case a collision the games finishes
+module roborta
+    robcol : [0..WIDTH-1] init 0;
+    robrow : [0..LENGTH] init 0;
+
+    [robl] (sched = 0) & (robrow < LENGTH) & !Collision  -U->
+
+        pl : (robcol' = (max(0, robcol-1)) & (sched' = 1) +         // The first four probabilistic options
+        pr : (robcol' = (min(WIDTH-1, robcol+1)) & (sched' = 1) +   // corresponds to environments setbacks
+        pf : (robrow' = (robrow+1) & (sched' = 1) +
+        pb : (robrow' = (max(0, robrow+1)) & (sched' = 1) +
+        pm : (robcol' = max(0, robcol-1)) & (sched' = 1)            // Command successful
+	{
+	    // Success is affected by the quality and inclination of the terrain
+	    pm <= 1 - ((Q_TERRAIN[robcol,robrow] + (1 - (1-abs(L_SLOPE[robcol,robrow])) * (1-abs(F_SLOPE[robcol,robrow])))) / 2),
+	    // The following are the conditions for the probabilities of sideways and frontal displacements
+	    (1-max(0,-L_SLOPE[robcol,robrow])) * pl - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,L_SLOPE[robcol,robrow])) * pr >= 0,
+	    (1-max(0,L_SLOPE[robcol,robrow])) * pr - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,-L_SLOPE[robcol,robrow])) * pl >= 0,
+	    (1-max(0,F_SLOPE[robcol,robrow])) * pf - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,-F_SLOPE[robcol,robrow])) * pb >= 0,
+	    (1-max(0,-F_SLOPE[robcol,robrow])) * pb - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,F_SLOPE[robcol,robrow])) * pf >= 0
+	};
+
+    [robr] (sched = 0) & (robrow < LENGTH) & !Collision  -U->
+        pl : (robcol' = (max(0, robcol-1)) & (sched' = 1) +         // The first four probabilistic options
+        pr : (robcol' = (min(WIDTH-1, robcol+1)) & (sched' = 1) +   // corresponds to environments setbacks
+        pf : (robrow' = (robrow+1) & (sched' = 1) +
+        pb : (robrow' = (max(0, robrow+1)) & (sched' = 1) +
+        pm : (robcol' = (min(WIDTH-1, robcol+1)) & (sched' = 1)     // Command successful
+	{
+	    // Success is affected by the quality and inclination of the terrain
+	    pm <= 1 - (Q_TERRAIN[robcol,robrow] + (1 - (1-abs(L_SLOPE[robcol,robrow])) * (1-abs(F_SLOPE[robcol,robrow]))) / 2),
+	    // The following are the conditions for the probabilities of sideways and frontal displacements
+	    (1-max(0,-L_SLOPE[robcol,robrow])) * pl - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,L_SLOPE[robcol,robrow])) * pr >= 0,
+	    (1-max(0,L_SLOPE[robcol,robrow])) * pr - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,-L_SLOPE[robcol,robrow])) * pl >= 0,
+	    (1-max(0,F_SLOPE[robcol,robrow])) * pf - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,-F_SLOPE[robcol,robrow])) * pb >= 0,
+	    (1-max(0,-F_SLOPE[robcol,robrow])) * pb - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,F_SLOPE[robcol,robrow])) * pf >= 0
+	};
+
+    [robf] (sched = 0) & (robrow < LENGTH) & !Collision  -U->
+        pl : (robcol' = (max(0, robcol-1)) & (sched' = 1) +         // The first four probabilistic options
+        pr : (robcol' = (min(WIDTH-1, robcol+1)) & (sched' = 1) +   // corresponds to environments setbacks
+        pf : (robrow' = (robrow+1) & (sched' = 1) +
+        pb : (robrow' = (max(0, robrow+1)) & (sched' = 1) +
+        pm : (robrow' = (robrow+1) & (sched' = 1)                   // Command successful
+	{
+	    // Success is affected by the quality and inclination of the terrain
+	    pm <= 1 - (Q_TERRAIN[robcol,robrow] + (1 - (1-abs(L_SLOPE[robcol,robrow])) * (1-abs(F_SLOPE[robcol,robrow]))) / 2),
+	    // The following are the conditions for the probabilities of sideways and frontal displacements
+	    (1-max(0,-L_SLOPE[robcol,robrow])) * pl - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,L_SLOPE[robcol,robrow])) * pr >= 0,
+	    (1-max(0,L_SLOPE[robcol,robrow])) * pr - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,-L_SLOPE[robcol,robrow])) * pl >= 0,
+	    (1-max(0,F_SLOPE[robcol,robrow])) * pf - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,-F_SLOPE[robcol,robrow])) * pb >= 0,
+	    (1-max(0,-F_SLOPE[robcol,robrow])) * pb - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,F_SLOPE[robcol,robrow])) * pf >= 0
+	};
+
+    [robb] (sched = 0) & (robrow < LENGTH) & !Collision  -U->
+        pl : (robcol' = (max(0, robcol-1)) & (sched' = 1) +         // The first four probabilistic options
+        pr : (robcol' = (min(WIDTH-1, robcol+1)) & (sched' = 1) +   // corresponds to environments setbacks
+        pf : (robrow' = (robrow+1) & (sched' = 1) +
+        pb : (robrow' = (max(0, robrow+1)) & (sched' = 1) +
+        pm : (robrow' = (max(0, robrow+1)) & (sched' = 1)           // Command successful
+	{
+	    // Success is affected by the quality and inclination of the terrain
+	    pm <= 1 - (Q_TERRAIN[robcol,robrow] + (1 - (1-abs(L_SLOPE[robcol,robrow])) * (1-abs(F_SLOPE[robcol,robrow]))) / 2),
+	    // The following are the conditions for the probabilities of sideways and frontal displacements
+	    (1-max(0,-L_SLOPE[robcol,robrow])) * pl - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,L_SLOPE[robcol,robrow])) * pr >= 0,
+	    (1-max(0,L_SLOPE[robcol,robrow])) * pr - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,-L_SLOPE[robcol,robrow])) * pl >= 0,
+	    (1-max(0,F_SLOPE[robcol,robrow])) * pf - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,-F_SLOPE[robcol,robrow])) * pb >= 0,
+	    (1-max(0,-F_SLOPE[robcol,robrow])) * pb - (1 - Q_TERRAIN[robcol,robrow]) * (1-max(0,F_SLOPE[robcol,robrow])) * pf >= 0
+	};
+
+endmodule
+
+// Module for Rigoborto, in case a collision the games finishes
+module rigoborto
+    rigcol : [0..WIDTH-1] init 0;
+    rigrow : [0..LENGTH] init 0;
+
+    [rigl] (sched = 0) & !Collision  -U->
+        pl : (rigcol' = (max(0, rigcol-1)) & (sched' = 0) +         // The first four probabilistic options
+        pr : (rigcol' = (min(WIDTH-1, rigcol+1)) & (sched' = 0) +   // corresponds to environments setbacks
+        pf : (rigrow' = (min(LENGTH-1, rigrow+1)) & (sched' = 0) +
+        pb : (rigrow' = (max(0, rigrow+1)) & (sched' = 0) +
+        pm : (rigcol' = max(0, rigcol-1)) & (sched' = 0)            // Command successful
+	{
+	    // Success is affected by the quality and inclination of the terrain
+	    pm <= 1 - (Q_TERRAIN[rigcol,rigrow] + (1 - (1-abs(L_SLOPE[rigcol,rigrow])) * (1-abs(F_SLOPE[rigcol,rigrow]))) / 2),
+	    // The following are the conditions for the probabilities of sideways and frontal displacements
+	    (1-max(0,-L_SLOPE[rigcol,rigrow])) * pl - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,L_SLOPE[rigcol,rigrow])) * pr >= 0,
+	    (1-max(0,L_SLOPE[rigcol,rigrow])) * pr - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,-L_SLOPE[rigcol,rigrow])) * pl >= 0,
+	    (1-max(0,F_SLOPE[rigcol,rigrow])) * pf - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,-F_SLOPE[rigcol,rigrow])) * pb >= 0,
+	    (1-max(0,-F_SLOPE[rigcol,rigrow])) * pb - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,F_SLOPE[rigcol,rigrow])) * pf >= 0
+	};
+
+    [rigr] (sched = 0) & !Collision  -U->
+        pl : (rigcol' = (max(0, rigcol-1)) & (sched' = 0) +         // The first four probabilistic options
+        pr : (rigcol' = (min(WIDTH-1, rigcol+1)) & (sched' = 0) +   // corresponds to environments setbacks
+        pf : (rigrow' = (min(LENGTH-1, rigrow+1)) & (sched' = 0) +
+        pb : (rigrow' = (max(0, rigrow+1)) & (sched' = 0) +
+        pm : (rigcol' = (min(WIDTH-1, rigcol+1)) & (sched' = 0)     // Command successful
+	{
+	    // Success is affected by the quality and inclination of the terrain
+	    pm <= 1 - (Q_TERRAIN[rigcol,rigrow] + (1 - (1-abs(L_SLOPE[rigcol,rigrow])) * (1-abs(F_SLOPE[rigcol,rigrow]))) / 2),
+	    // The following are the conditions for the probabilities of sideways and frontal displacements
+	    (1-max(0,-L_SLOPE[rigcol,rigrow])) * pl - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,L_SLOPE[rigcol,rigrow])) * pr >= 0,
+	    (1-max(0,L_SLOPE[rigcol,rigrow])) * pr - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,-L_SLOPE[rigcol,rigrow])) * pl >= 0,
+	    (1-max(0,F_SLOPE[rigcol,rigrow])) * pf - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,-F_SLOPE[rigcol,rigrow])) * pb >= 0,
+	    (1-max(0,-F_SLOPE[rigcol,rigrow])) * pb - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,F_SLOPE[rigcol,rigrow])) * pf >= 0
+	};
+
+    [rigf] (sched = 0) & !Collision  -U->
+        pl : (rigcol' = (max(0, rigcol-1)) & (sched' = 0) +         // The first four probabilistic options
+        pr : (rigcol' = (min(WIDTH-1, rigcol+1)) & (sched' = 0) +   // corresponds to environments setbacks
+        pf : (rigrow' = (min(LENGTH-1, rigrow+1)) & (sched' = 0) +
+        pb : (rigrow' = (max(0, rigrow+1)) & (sched' = 0) +
+        pm : (rigrow' = (min(LENGTH-1, rigrow+1)) & (sched' = 0)    // Command successful
+	{
+	    // Success is affected by the quality and inclination of the terrain
+	    pm <= 1 - (Q_TERRAIN[rigcol,rigrow] + (1 - (1-abs(L_SLOPE[rigcol,rigrow])) * (1-abs(F_SLOPE[rigcol,rigrow]))) / 2),
+	    // The following are the conditions for the probabilities of sideways and frontal displacements
+	    (1-max(0,-L_SLOPE[rigcol,rigrow])) * pl - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,L_SLOPE[rigcol,rigrow])) * pr >= 0,
+	    (1-max(0,L_SLOPE[rigcol,rigrow])) * pr - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,-L_SLOPE[rigcol,rigrow])) * pl >= 0,
+	    (1-max(0,F_SLOPE[rigcol,rigrow])) * pf - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,-F_SLOPE[rigcol,rigrow])) * pb >= 0,
+	    (1-max(0,-F_SLOPE[rigcol,rigrow])) * pb - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,F_SLOPE[rigcol,rigrow])) * pf >= 0
+	};
+
+    [rigb] (sched = 0) & !Collision  -U->
+        pl : (rigcol' = (max(0, rigcol-1)) & (sched' = 0) +         // The first four probabilistic options
+        pr : (rigcol' = (min(WIDTH-1, rigcol+1)) & (sched' = 0) +   // corresponds to environments setbacks
+        pf : (rigrow' = (min(LENGTH-1, rigrow+1)) & (sched' = 0) +
+        pb : (rigrow' = (max(0, rigrow+1)) & (sched' = 0) +
+        pm : (rigrow' = (max(0, rigrow+1)) & (sched' = 0)           // Command successful
+	{
+	    // Success is affected by the quality and inclination of the terrain
+	    pm <= 1 - (Q_TERRAIN[rigcol,rigrow] + (1 - (1-abs(L_SLOPE[rigcol,rigrow])) * (1-abs(F_SLOPE[rigcol,rigrow]))) / 2),
+	    // The following are the conditions for the probabilities of sideways and frontal displacements
+	    (1-max(0,-L_SLOPE[rigcol,rigrow])) * pl - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,L_SLOPE[rigcol,rigrow])) * pr >= 0,
+	    (1-max(0,L_SLOPE[rigcol,rigrow])) * pr - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,-L_SLOPE[rigcol,rigrow])) * pl >= 0,
+	    (1-max(0,F_SLOPE[rigcol,rigrow])) * pf - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,-F_SLOPE[rigcol,rigrow])) * pb >= 0,
+	    (1-max(0,-F_SLOPE[rigcol,rigrow])) * pb - (1 - Q_TERRAIN[rigcol,rigrow]) * (1-max(0,F_SLOPE[rigcol,rigrow])) * pf >= 0
+	};
+
+endmodule%                            
