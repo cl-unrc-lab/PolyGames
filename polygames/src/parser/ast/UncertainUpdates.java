@@ -41,7 +41,7 @@ public class UncertainUpdates extends Updates{
     private ArrayList<Double> constants;							 // constains the columns of constants in the equations
     private ArrayList<relOps> ineqs;								 // the ineqs in the constraints: Relation_Symbol.LESS_OR_EQUAL, or Relation_Symbol.G
     int div = 1; 													 // the divisor allows us to move the decimal point, PPL only allows for integers.
-    
+    int precision = 6; 												 // this is the precision, after that we truncate the number	
     /**
      * Basic constructor, it initializes the object, all the coefficients and constants are initialized to zero,
      * we assume that, when a uncertain is added, the coefficient is set to a number different from 0
@@ -104,6 +104,14 @@ public class UncertainUpdates extends Updates{
     public int getDivisor() {
     	return div;
     }
+    
+    /**
+     * 
+     * @return the precision of the constants and coefficients
+     */
+    public int getPrecision() {
+    	return precision;
+    }
     /**
      * @param c
      * @param i			the row of the coefficient
@@ -113,14 +121,17 @@ public class UncertainUpdates extends Updates{
     {	
     	// first, we determine the number of decimals in the coefficient
     	// and normalise the number
-    	int dec = 0;
-    	double newc = c;
-    	while ((newc - (int) newc) != 0){
-    		newc = newc * 10;
-    		dec++;
-    	}
+    	//int dec = 0;
+    	//double newc = c;
+    	//while ((newc - (int) newc) != 0 && dec <= precision){
+    	//	System.out.println("double:"+newc);
+    	//	System.out.println("int part:"+(int) newc);
+    		
+    	//	newc = newc * 10;
+    	//	dec++;
+    	//}
     	// we update the divisor
-    	div = Math.max(div, dec);
+    	//div = Math.max(div, dec);
     	
     	
     	String uncertainName = uncertain.getName();
@@ -136,14 +147,14 @@ public class UncertainUpdates extends Updates{
     	
     	// first, we determine the number of decimals in the coefficient
     	// and normalise the number
-    	int dec = 0;
-    	double newc = c;
-    	while ((newc - (int) newc) != 0){
-    		newc = newc * 10;
-    		dec++;
-    	}
+    	//int dec = 0;
+    	//double newc = c;
+    	//while ((newc - (int) newc) != 0){
+    	//	newc = newc * 10;
+    	//	dec++;
+    	//}
     	// we update the divisor
-    	div = Math.max(div, dec);
+    	//div = Math.max(div, dec);
     	
     	// we add the constants
         this.constants.add(i, c);
@@ -278,13 +289,13 @@ public class UncertainUpdates extends Updates{
 			String uncertainName = ((UncertainExpression) this.uncertains.get(i)).getName();
 			for (int j = 0; j < this.constants.size(); j++) {
 				if (this.coefficients.get(uncertainName).get(j) != null) {
-					this.coefficients.get(uncertainName).put(j, this.coefficients.get(uncertainName).get(j) * Math.pow(10, div));
+					this.coefficients.get(uncertainName).put(j, Math.floor(this.coefficients.get(uncertainName).get(j) * Math.pow(10, precision)));
 				}
 			}
 		}
 		
 		for (int i = 0; i < this.constants.size(); i++) {
-			this.constants.set(i, this.constants.get(i) * Math.pow(10, div));
+			this.constants.set(i, Math.floor(this.constants.get(i) * Math.pow(10, precision)));
 		}
 	}
 	

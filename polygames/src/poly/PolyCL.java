@@ -706,6 +706,15 @@ public class PolyCL implements PrismModelListener
 				ASTUncertainVisitor visitor = new ASTUncertainVisitor();
 				modulesFile = visitor.copy(modulesFile);
 				modulesFile.tidyUp();
+				try {
+					PrintWriter writer = new PrintWriter("modelRR.txt", "UTF-8");
+					writer.println(modulesFile.toString());
+					writer.close();
+				}
+				catch (Exception e) {
+					
+				}
+				System.out.println(modulesFile.toString());
 				//modulesFile.setModelTypeInFile(typeOverride);
 				prism.loadPRISMModel(modulesFile);		
 				//prism.loadPRISMModel(modulesFile);

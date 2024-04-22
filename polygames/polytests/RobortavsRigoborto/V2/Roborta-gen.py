@@ -25,7 +25,7 @@ def genBoard(seed, fileName) :
     # we define qterrain, the quality of the terrain for each cell
     for i in range(length-1) :
         for j in range(width) :
-            qterrain[i][j] = random.uniform(-1,1)
+            qterrain[i][j] = random.uniform(0,0.5)
             mFile.write(f"""// Q_TERRAIN[{i}][{j}] = {qterrain[i][j]}\n""") 
 
     for i in range(length-1) :
@@ -90,23 +90,23 @@ module roborta
     # probabilistic choices
     for i in range(0,length) :
         for j in range(0,width-1) :
-            mFile.write(f"""    [robl] (sched = 0) & robrow ={i} & robcol={j} & !Collision  -U->""")
+            mFile.write(f"""    [robl] (sched = 0) & (robrow = {i}) & (robcol = {j}) & !Collision  -U->""")
             mFile.write(f"""
         pl : (robcol' = {max(0, j-1)}) & (sched' = 1) +         // The first four probabilistic options
         pr : (robcol' = {min(width-1, j+1)}) & (sched' = 1) +   // corresponds to environments setbacks
-        pf : (robrow' = {i}+1) & (sched' = 1) +
+        pf : (robrow' = {i+1}) & (sched' = 1) +
         pb : (robrow' = {max(0, i-1)}) & (sched' = 1) +
         pm : (robcol' = {max(0, j-1)}) & (sched' = 1)            // Command successful
         """)
             mFile.write("{");
             mFile.write(f"""
         // Success is affected by the quality and inclination of the terrain
-        {1 - ((qterrain[j][i] + (1 - (1 - abs(lslope[j][i]))) * (1 - abs(fslope[j][i]))) / 2)} >= pm,
+        pm <= {1 - (qterrain[j][i] + (1 - (1 - abs(lslope[j][i])) * (1 - abs(fslope[j][i]))) / 2)},
         // The following are the conditions for the probabilities of sideways and frontal displacements
-        {(1-max(0,-lslope[j][i]))} * pl - {(1 - qterrain[j][i]) * (1 - max(0,lslope[j][i]))} * pr >= 0,
-        {(1-max(0,lslope[j][i]))} * pr - {(1 - qterrain[j][i]) * (1 - max(0,-lslope[j][i]))} * pl >= 0,
-        {(1-max(0,fslope[j][i]))} * pf - {(1 - qterrain[j][i]) * (1 - max(0,-fslope[j][i]))} * pb >= 0,
-        {1-max(0,-fslope[j][i])} * pb - {(1 - qterrain[j][i]) * (1 - max(0,fslope[j][i]))} * pf >= 0
+        {(1-max(0,-lslope[j][i]))} * pl + (- {(1 - qterrain[j][i]) * (1 - max(0,lslope[j][i]))} * pr) >= 0,
+        {(1-max(0,lslope[j][i]))} * pr + (- {(1 - qterrain[j][i]) * (1 - max(0,-lslope[j][i]))} * pl) >= 0,
+        {(1-max(0,fslope[j][i]))} * pf + (- {(1 - qterrain[j][i]) * (1 - max(0,-fslope[j][i]))} * pb) >= 0,
+        {1-max(0,-fslope[j][i])} * pb + (- {(1 - qterrain[j][i]) * (1 - max(0,fslope[j][i]))} * pf) >= 0
         """)
             mFile.write("};\n")
 
@@ -114,29 +114,29 @@ module roborta
             if (i < length) :
                 mFile.write(f"""    [robr] (sched = 0) & robrow = {i} & robrow = {j} & !Collision  -U->""")
                 mFile.write(f"""
-        pl : (robcol' = {max(0, j-1)} & (sched' = 1) +         // The first four probabilistic options
-        pr : (robcol' = {min(width-1, j+1)} & (sched' = 1) +   // corresponds to environments setbacks
-        pf : (robrow' = {i+1} & (sched' = 1) +
-        pb : (robrow' = {max(0, i+1)} & (sched' = 1) +
-        pm : (robcol' = {min(width-1, j+1)} & (sched' = 1)     // Command successful
+        pl : (robcol' = {max(0, j-1)}) & (sched' = 1) +         // The first four probabilistic options
+        pr : (robcol' = {min(width-1, j+1)}) & (sched' = 1) +   // corresponds to environments setbacks
+        pf : (robrow' = {i+1}) & (sched' = 1) +
+        pb : (robrow' = {max(0, i-1)}) & (sched' = 1) +
+        pm : (robcol' = {min(width-1, j+1)}) & (sched' = 1)     // Command successful
         """)
                 mFile.write("{")
                 mFile.write(f"""    
         // Success is affected by the quality and inclination of the terrain
-        {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i]))) * (1-abs(fslope[j][i]))) / 2} >= pm,
+        pm <= {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)},
         // The following are the conditions for the probabilities of sideways and frontal displacements
-        {(1-max(0,-lslope[j][i]))} * pl - {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr >= 0,
-        {(1-max(0,lslope[j][i]))} * pr - {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl >= 0,
-        {(1-max(0,fslope[j][i]))} * pf - {(1 - qterrain[j][i]) * (1- max(0,-fslope[j][i]))} * pb >= 0,
-        {(1-max(0,-fslope[j][i]))} * pb - {(1 - qterrain[j][i]) * (1 - fslope[j][i])} * pf >= 0 
+        {(1-max(0,-lslope[j][i]))} * pl + (- {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr) >= 0,
+        {(1-max(0,lslope[j][i]))} * pr + (- {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl) >= 0,
+        {(1-max(0,fslope[j][i]))} * pf + (- {(1 - qterrain[j][i]) * (1- max(0,-fslope[j][i]))} * pb) >= 0,
+        {(1-max(0,-fslope[j][i]))} * pb + (- {(1 - qterrain[j][i]) * (1 - fslope[j][i])} * pf) >= 0 
         """)
                 mFile.write("};")          
             # third action
             if (i < length) :
                 mFile.write(f"""
-        [robf] (sched = 0) &  robrow = {i} & robrow = {j}  & !Collision  -U->
+        [robf] (sched = 0) &  (robrow = {i}) & (robrow = {j})  & !Collision  -U->
         pl : (robcol' = {max(0, j-1)}) & (sched' = 1) +         // The first four probabilistic options
-        pr : (robcol' = {min(j-1, i+1)}) & (sched' = 1) +   // corresponds to environments setbacks
+        pr : (robcol' = {min(width-1, i+1)}) & (sched' = 1) +   // corresponds to environments setbacks
         pf : (robrow' = {i+1}) & (sched' = 1) +
         pb : (robrow' = {max(0, i-1)}) & (sched' = 1) +
         pm : (robrow' = {i+1}) & (sched' = 1)                   // Command successful 
@@ -144,34 +144,34 @@ module roborta
                 mFile.write("{")
                 mFile.write(f"""
         // Success is affected by the quality and inclination of the terrain
-        {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)} >= pm,
+        pm <= {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)},
         // The following are the conditions for the probabilities of sideways and frontal displacements
-        ({ (1-max(0,-lslope[j][i])) } * pl) - ({ (1 - qterrain[j][i]) * (1-max(0,lslope[j][i])) } * pr) >= 0,
-        ({ (1-max(0,lslope[j][i])) } * pr) - ({ (1 - qterrain[j][i]) * (1-max(0,-lslope[j][i])) } * pl) >= 0,
-        ({ (1-max(0,fslope[j][i])) } * pf) - ({ (1 - qterrain[j][i]) * (1- max(0,-fslope[j][i])) } * pb) >= 0,
-        ({ (1-max(0,-fslope[j][i]))} * pb) - ({ (1 - qterrain[j][i]) * (1-max(0,fslope[j][i])) } * pf) >= 0 
+        { (1-max(0,-lslope[j][i])) } * pl + (- { (1 - qterrain[j][i]) * (1-max(0,lslope[j][i])) } * pr) >= 0,
+        { (1-max(0,lslope[j][i])) } * pr + (-{(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i])) } * pl) >= 0,
+        { (1-max(0,fslope[j][i])) } * pf + (-{ (1 - qterrain[j][i]) * (1- max(0,-fslope[j][i])) } * pb) >= 0,
+        { (1-max(0,-fslope[j][i]))} * pb + (-{ (1 - qterrain[j][i]) * (1-max(0,fslope[j][i])) } * pf) >= 0 
         """)     
             
                 mFile.write("};\n")
             #fourth action
             if (i < length) :
                 mFile.write(f"""
-        [robb] (sched = 0) &  robrow = {i} & robrow = {j}  & !Collision  -U->
-        pl : (robcol' = {max(0, j-1)} & (sched' = 1) +         // The first four probabilistic options
-        pr : (robcol' = {min(width-1, j+1)} & (sched' = 1) +   // corresponds to environments setbacks
-        pf : (robrow' = {i+1} & (sched' = 1) +
-        pb : (robrow' = {max(0, i-1)} & (sched' = 1) +
-        pm : (robrow' = {max(0, i+1)} & (sched' = 1)           // Command successful
+        [robb] (sched = 0) &  (robrow = {i}) & (robrow = {j})  & !Collision  -U->
+        pl : (robcol' = {max(0, j-1)}) & (sched' = 1) +         // The first four probabilistic options
+        pr : (robcol' = {min(width-1, j+1)}) & (sched' = 1) +   // corresponds to environments setbacks
+        pf : (robrow' = {i+1}) & (sched' = 1) +
+        pb : (robrow' = {max(0, i-1)}) & (sched' = 1) +
+        pm : (robrow' = {max(0, i-1)}) & (sched' = 1)           // Command successful
         """)
                 mFile.write("{")
                 mFile.write(f"""
         // Success is affected by the quality and inclination of the terrain
-        {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i]))) * (1-abs(fslope[j][i])) / 2)} >= pm,
+        pm <= {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)},
         // The following are the conditions for the probabilities of sideways and frontal displacements
-        {(1-max(0,-lslope[j][i]))} * pl - {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr >= 0,
-        {(1-max(0,lslope[j][i]))} * pr - {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl >= 0,
-        {(1-max(0,fslope[j][i]))} * pf - {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb >= 0,
-        {(1-max(0,-fslope[j][i]))} * pb - {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf >= 0
+        {(1-max(0,-lslope[j][i]))} * pl + (- {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr) >= 0,
+        {(1-max(0,lslope[j][i]))} * pr + (- {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl) >= 0,
+        {(1-max(0,fslope[j][i]))} * pf + (- {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb) >= 0,
+        {(1-max(0,-fslope[j][i]))} * pb + (- {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf) >= 0
         """)
                 mFile.write("};\n") 
     mFile.write("endmodule\n")
@@ -184,92 +184,93 @@ def writeRigoborto(fileName) :
     mFile = open(fileName, "a")
     mFile.write(f""" // Module for Rigoborto, in case a collision the games finishes
             module rigoborto
-            rigcol : [0..{width}-1] init 0;
-            rigrow : [0..{length}] init 0;
+            rigcol : [0..{width-1}] init {width-1};
+            rigrow : [0..{length}] init {length-1};
             """)
     for i in range(0,length) :
         for j in range(0,width-1) :
 
         # action one
             mFile.write(f"""
-                [rigl] (sched = 0) & robrow = {i} & robrow = {j} & !Collision  -U->
-                pl : (rigcol' = { max(0, j-1)} & (sched' = 0) +         // The first four probabilistic options
-                pr : (rigcol' = {min(width-1, j+1)} & (sched' = 0) +   // corresponds to environments setbacks
-                pf : (rigrow' = {min(length-1, i+1)} & (sched' = 0) +
-                pb : (rigrow' = {max(0, i-1)} & (sched' = 0) +
-                pm : (rigcol' = {max(0, j-1)} & (sched' = 0)            // Command successful
+                [rigl] (sched = 1) & (robrow = {i}) & (robrow = {j}) & !Collision  -U->
+                pl : (rigcol' = { max(0, j-1)}) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = {min(width-1, j+1)}) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = {min(length-1, i+1)}) & (sched' = 0) +
+                pb : (rigrow' = {max(0, i-1)}) & (sched' = 0) +
+                pm : (rigcol' = {max(0, j-1)}) & (sched' = 0)            // Command successful
                 """)
             mFile.write("{\n")
             mFile.write(f"""
                 // Success is affected by the quality and inclination of the terrain
-	            {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i]))) * (1-abs(fslope[j][i])) / 2)} >= pm,
+	            pm <= {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)},
 	            // The following are the conditions for the probabilities of sideways and frontal displacements
-	            {(1-max(0,-lslope[j][i]))} * pl - {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr >= 0,
-	            {(1-max(0,lslope[j][i]))} * pr - {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl >= 0,
-	            {(1-max(0,fslope[j][i]))} * pf - {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb >= 0,
-	            {(1-max(0,-fslope[j][i]))} * pb - {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf >= 0 
+	            {(1-max(0,-lslope[j][i]))} * pl + (- {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr) >= 0,
+	            {(1-max(0,lslope[j][i]))} * pr + (- {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl) >= 0,
+	            {(1-max(0,fslope[j][i]))} * pf + (- {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb) >= 0,
+	            {(1-max(0,-fslope[j][i]))} * pb + (- {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf) >= 0 
             """)
             mFile.write("};")    
 
             #action two
             mFile.write(f""" 
-                [rigr] (sched = 0) &  robrow = {i} & robrow = {j} & !Collision  -U->
-                pl : (rigcol' = {max(0, j-1)} & (sched' = 0) +         // The first four probabilistic options
+                [rigr] (sched = 1) & (robrow = {i}) & (robrow = {j}) & !Collision  -U->
+                pl : (rigcol' = {max(0, j-1)}) & (sched' = 0) +         // The first four probabilistic options
                 pr : (rigcol' = {min(width-1, j+1)}) & (sched' = 0) +   // corresponds to environments setbacks
-                pf : (rigrow' = {min(length-1, length+1)} & (sched' = 0) +
-                pb : (rigrow' = {max(0, length-1)}) & (sched' = 0) +
-                pm : (rigcol' = {min(width-1, j+1)} & (sched' = 0)     // Command successful 
+                pf : (rigrow' = {min(length-1, i+1)}) & (sched' = 0) +
+                pb : (rigrow' = {max(0, i-1)}) & (sched' = 0) +
+                pm : (rigcol' = {min(width-1, j+1)}) & (sched' = 0)     // Command successful 
                 """)
             mFile.write("{\n")
             mFile.write(f""" 
                 // Success is affected by the quality and inclination of the terrain
-	            {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i]))) * (1-abs(fslope[j][i])) / 2)} >= pm,
+	            pm <= {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)},
 	            // The following are the conditions for the probabilities of sideways and frontal displacements
-	            {(1-max(0,-lslope[j][i]))} * pl - {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr >= 0,
-	            {(1-max(0,lslope[j][i]))} * pr - {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl >= 0,
-	            {(1-max(0,fslope[j][i]))} * pf - {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb >= 0,
-	            {(1-max(0,-fslope[j][i]))} * pb - {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf >= 0
+	            {(1-max(0,-lslope[j][i]))} * pl + (- {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr) >= 0,
+	            {(1-max(0,lslope[j][i]))} * pr + (- {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl) >= 0,
+	            {(1-max(0,fslope[j][i]))} * pf + (- {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb) >= 0,
+	            {(1-max(0,-fslope[j][i]))} * pb + (- {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf) >= 0
                 """)
             mFile.write("};\n")
 
             #action three
             mFile.write(f"""
-            [rigf] (sched = 0) & !Collision  -U->
-            pl : (rigcol' = {max(0, j-1)} & (sched' = 0) +         // The first four probabilistic options
-            pr : (rigcol' = {min(width-1, j+1)} & (sched' = 0) +   // corresponds to environments setbacks
-            pf : (rigrow' = {min(length-1, i+1)} & (sched' = 0) +
-            pb : (rigrow' = {max(0, i-1)} & (sched' = 0) +
-            pm : (rigrow' = {min(length-1, i+1)} & (sched' = 0)    // Command successful
+            [rigf] (sched = 1) & !Collision  -U->
+            pl : (rigcol' = {max(0, j-1)}) & (sched' = 0) +         // The first four probabilistic options
+            pr : (rigcol' = {min(width-1, j+1)}) & (sched' = 0) +   // corresponds to environments setbacks
+            pf : (rigrow' = {min(length-1, i+1)}) & (sched' = 0) +
+            pb : (rigrow' = {max(0, i-1)}) & (sched' = 0) +
+            pm : (rigrow' = {min(length-1, i+1)}) & (sched' = 0)    // Command successful
             """)
             mFile.write("{")
             mFile.write(f"""
             // Success is affected by the quality and inclination of the terrain
-	        {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)} >= pm,
+	        pm <= {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)},
 	        // The following are the conditions for the probabilities of sideways and frontal displacements
-	        {1-max(0,-lslope[j][i])} * pl - {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr >= 0,
-	        {(1-max(0,lslope[j][i]))} * pr - {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl >= 0,
-	        {(1-max(0,fslope[j][i]))} * pf - {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb >= 0,
-	        {(1-max(0,-fslope[j][i]))} * pb - {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf >= 0
+	        {1-max(0,-lslope[j][i])} * pl + (- {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr) >= 0,
+	        {(1-max(0,lslope[j][i]))} * pr + (- {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl) >= 0,
+	        {(1-max(0,fslope[j][i]))} * pf + (- {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb) >= 0,
+	        {(1-max(0,-fslope[j][i]))} * pb + (- {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf) >= 0
             """)
+            mFile.write("};\n")
 
             #action fourth
             mFile.write(f"""
-            [rigb] (sched = 0) & !Collision  -U->
-            pl : (rigcol' = {(max(0, j-1))} & (sched' = 0) +         // The first four probabilistic options
-            pr : (rigcol' = {(min(width-1, j+1))} & (sched' = 0) +   // corresponds to environments setbacks
-            pf : (rigrow' = {(min(length-1, i+1))} & (sched' = 0) +
-            pb : (rigrow' = {max(0, i-1)} & (sched' = 0) +
-            pm : (rigrow' = {max(0, i-1)} & (sched' = 0)           // Command successful
+            [rigb] (sched = 1) & !Collision  -U->
+            pl : (rigcol' = {(max(0, j-1))}) & (sched' = 0) +         // The first four probabilistic options
+            pr : (rigcol' = {(min(width-1, j+1))}) & (sched' = 0) +   // corresponds to environments setbacks
+            pf : (rigrow' = {(min(length-1, i+1))}) & (sched' = 0) +
+            pb : (rigrow' = {max(0, i-1)}) & (sched' = 0) +
+            pm : (rigrow' = {max(0, i-1)}) & (sched' = 0)           // Command successful
             """)
             mFile.write("{")
             mFile.write(f"""
 	        // Success is affected by the quality and inclination of the terrain
-	        {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)} >= pm,
+	        pm <= {1 - (qterrain[j][i] + (1 - (1-abs(lslope[j][i])) * (1-abs(fslope[j][i]))) / 2)},
 	        // The following are the conditions for the probabilities of sideways and frontal displacements
-	        {1-max(0,-lslope[j][i])} * pl - {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr >= 0,
-	        {1-max(0,lslope[j][i])} * pr - {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl >= 0,
-	        {1-max(0,fslope[j][i])} * pf - {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb >= 0,
-	        {1-max(0,-fslope[j][i])} * pb - {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf >= 0
+	        {1-max(0,-lslope[j][i])} * pl + (- {(1 - qterrain[j][i]) * (1-max(0,lslope[j][i]))} * pr) >= 0,
+	        {1-max(0,lslope[j][i])} * pr + (- {(1 - qterrain[j][i]) * (1-max(0,-lslope[j][i]))} * pl) >= 0,
+	        {1-max(0,fslope[j][i])} * pf + (- {(1 - qterrain[j][i]) * (1-max(0,-fslope[j][i]))} * pb) >= 0,
+	        {1-max(0,-fslope[j][i])} * pb + (- {(1 - qterrain[j][i]) * (1-max(0,fslope[j][i]))} * pf) >= 0
             """)
             mFile.write("};")
     mFile.write("endmodule\n")
@@ -295,8 +296,8 @@ def main(argv):
     global length
 
     # default value for the arguments
-    width = 2
-    length = 2
+    width = 4
+    length = 4
     seed = 0
     path = ""
 

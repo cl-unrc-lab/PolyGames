@@ -52,7 +52,7 @@ public  class ASTUncertainVisitor extends DeepCopy{
 		for (Command c : e.getCommands()) {
 			for (Command cc : this.visit(c)) {
 				result.addCommand(cc);
-				System.out.println(cc);
+				//System.out.println(cc);
 			}
 		}
 		//Invariant invariant = copier.copy(invariant);
