@@ -918,13 +918,15 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) :
 }
 {
     UncertainEquationTerm(updates, i)
-    (<PLUS> UncertainEquationTerm(updates, i)  )* 
+    (<PLUS> UncertainEquationTerm(updates, i)  )*
     (ineqs = <LE> | ineqs = <GE>)
-    (
-    (token = <REG_DOUBLE> | token = <REG_INT> ) { cte = Double.parseDouble(token.image); updates.addConstant(cte, i, ineqs.image); }
-  	|
-  	<MINUS> (token = <REG_DOUBLE> | token = <REG_INT> ) { cte = -1 * Double.parseDouble(token.image); updates.addConstant(cte, i, ineqs.image); }  
-  	)
+		UncertainEquationTerm(updates, i)
+    (<PLUS> UncertainEquationTerm(updates, i)  )* 
+    //(
+		//	(token = <REG_DOUBLE> | token = <REG_INT> ) { cte = Double.parseDouble(token.image); updates.addConstant(cte, i, ineqs.image); }
+		//	|
+		//	<MINUS> (token = <REG_DOUBLE> | token = <REG_INT> ) { cte = -1 * Double.parseDouble(token.image); updates.addConstant(cte, i, ineqs.image); }  
+  	//)
     { return updates; }
 }
 
@@ -937,9 +939,19 @@ void UncertainEquationTerm(UncertainUpdates updates, int i) :
     double cte;
 }
 {
-	(( coeff = Coefficient() ) <TIMES>)? ue = UncertainExpression() { updates.addCoefficient(coeff, i, ue); } // p <= 0
-	|
-	<LPARENTH> (coeff = Coefficient() <TIMES>)? ue = UncertainExpression() <RPARENTH> { updates.addCoefficient(coeff, i, ue); }
+	(
+		( Coefficient() ( <TIMES> UncertainExpression() )? ) // 0.33 or 0.33 * p
+		|
+		( UncertainExpression() (<TIMES> Coefficient())? )
+		|
+		(
+			<MINUS> ((Coefficient() ( <TIMES> UncertainExpression() )?) | (UncertainExpression() (<TIMES> Coefficient())?))
+		)
+	)
+
+	//(( coeff = Coefficient() ) <TIMES>)? ue = UncertainExpression() { updates.addCoefficient(coeff, i, ue); } // p <= 0
+	//|
+	//<LPARENTH> (coeff = Coefficient() <TIMES>)? ue = UncertainExpression() <RPARENTH> { updates.addCoefficient(coeff, i, ue); }
 }
 
 double Coefficient() :
@@ -951,12 +963,6 @@ double Coefficient() :
 	(
 		(token = <REG_DOUBLE> | token = <REG_INT>
 			{ coeff = Double.parseDouble(token.image); }
-		)
-
-		|
-
-		(<MINUS> (token = <REG_DOUBLE> | token = <REG_INT>)
-			{ coeff = -1 * Double.parseDouble(token.image); }
 		)
 	)
 

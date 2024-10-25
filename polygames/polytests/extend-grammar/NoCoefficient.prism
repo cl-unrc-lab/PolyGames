@@ -1,0 +1,18 @@
+smg
+
+player p1
+  example
+endplayer
+
+module example
+  value : [0..1] init 0;
+  [robl] true -U-> pr : (value'=value+1) + pl : (value'=value+1) +  pf : (value'=value+1)
+                  {
+										1.0 <=  0.33,
+                    1.0 <= -0.33,
+                    0.33 * pr <= pl,
+                    0.33 + pl <= -0.33 * pr + 1.0,
+                    pr * 0.33 <= 1.0,
+                    -pr * 0.33 <= 1.0
+                  };
+endmodule
