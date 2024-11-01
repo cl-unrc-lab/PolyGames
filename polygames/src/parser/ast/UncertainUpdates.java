@@ -117,7 +117,7 @@ public class UncertainUpdates extends Updates{
      * @param i			the row of the coefficient
      * @param uncertain	the uncertain to which the coefficient applies
      */
-    public void addCoefficient(double c, int i, UncertainExpression uncertain)
+    public void addCoefficient(double c, int i, UncertainExpression uncertain, boolean isInLeftSide)
     {	
     	// first, we determine the number of decimals in the coefficient
     	// and normalise the number
@@ -140,11 +140,18 @@ public class UncertainUpdates extends Updates{
     	if (this.coefficients.get(uncertainName) == null)
     		this.coefficients.put(uncertainName, new HashMap<Integer, Double>());
     	
-    	this.coefficients.get(uncertainName).put(i, c);
+    	if (!isInLeftSide) {
+				c = -c;
+			}
+
+			if (this.coefficients.get(uncertainName).get(i) == null) { // if the uncertain hasn't a mapped coefficient
+				this.coefficients.get(uncertainName).put(i, c);
+			} else { // if the uncertain has a mapped coefficient
+				this.coefficients.get(uncertainName).put(i, c + this.coefficients.get(uncertainName).get(i));
+			}
     }
 
-    public void addConstant(double c, int i, String rel) {
-    	
+    public void addConstant(double c, int i, boolean isInLeftSide) {
     	// first, we determine the number of decimals in the coefficient
     	// and normalise the number
     	//int dec = 0;
@@ -155,22 +162,33 @@ public class UncertainUpdates extends Updates{
     	//}
     	// we update the divisor
     	//div = Math.max(div, dec);
+
+			if (isInLeftSide) {
+				c = -c;
+			}
     	
     	// we add the constants
-        this.constants.add(i, c);
-        
-        switch (rel) {
-        	case "<=":
-        		this.ineqs.add(relOps.LE);
-        		break;
-        	case ">=":
-        		this.ineqs.add(relOps.GE);
-        		break;
-        	default:
-        		throw new IllegalArgumentException("Invalid inequality: " + rel);
-        }
-        
+			// this.constants.add(i, c);
+			double oldConstant = 0.0;
+			if ( i < this.constants.size() ) { // if there is already a constant for the i-th row then
+				oldConstant = this.constants.get(i);
+			}
+
+			this.constants.set(i, c + oldConstant);
     }
+
+		public void setInequalitySymbol(String inequalitySymbol) {
+			switch (inequalitySymbol) {
+				case "<=":
+					this.ineqs.add(relOps.LE);
+					break;
+				case ">=":
+					this.ineqs.add(relOps.GE);
+					break;
+				default:
+					throw new IllegalArgumentException("Invalid inequality symbol: " + inequalitySymbol);
+			}
+		}
     
     /**
 	 * Visitor method.

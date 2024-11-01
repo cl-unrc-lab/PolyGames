@@ -917,11 +917,12 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) :
     int j= 0 ;
 }
 {
-    UncertainEquationTerm(updates, i)
-    (<PLUS> UncertainEquationTerm(updates, i)  )*
+    UncertainEquationTerm(updates, i, true)
+    (<PLUS> UncertainEquationTerm(updates, i, true))*
     (ineqs = <LE> | ineqs = <GE>)
-		UncertainEquationTerm(updates, i)
-    (<PLUS> UncertainEquationTerm(updates, i)  )* 
+		{ updates.setInequalitySymbol(ineqs.image) }
+		UncertainEquationTerm(updates, i, false)
+    (<PLUS> UncertainEquationTerm(updates, i, false))* 
     //(
 		//	(token = <REG_DOUBLE> | token = <REG_INT> ) { cte = Double.parseDouble(token.image); updates.addConstant(cte, i, ineqs.image); }
 		//	|
@@ -931,21 +932,48 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) :
 }
 
 // A basic rule for the terms of an inequation in uncertains 
-void UncertainEquationTerm(UncertainUpdates updates, int i) :
+void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide) :
 {
-	UncertainExpression ue = null;
-    Token token;
-    double coeff = 1.0;
-    double cte;
+	UncertainExpression uncertainExpression = null;
+	Token token;
+	double coeff = 1.0;
+	double cte;
 }
 {
 	(
-		( Coefficient() ( <TIMES> UncertainExpression() )? ) // 0.33 or 0.33 * p
+		( coeff = Coefficient() ( <TIMES> uncertainExpression = UncertainExpression() )?
+			{
+				if (uncertainExpression == null) {
+					updates.addConstant(coeff, i, isInLeftSide);
+				} else {
+					updates.addCoefficient(coeff, i, uncertainExpression, isInLeftSide);
+				}
+			}
+		)
 		|
-		( UncertainExpression() (<TIMES> Coefficient())? )
+		( uncertainExpression = UncertainExpression() (<TIMES> coeff = Coefficient())?
+			{
+				updates.addCoefficient(coeff, i, uncertainExpression, isInLeftSide);
+			}
+		)
 		|
 		(
-			<MINUS> ((Coefficient() ( <TIMES> UncertainExpression() )?) | (UncertainExpression() (<TIMES> Coefficient())?))
+			<MINUS> (( coeff = -1 * Coefficient() ( <TIMES> uncertainExpression = UncertainExpression() )?
+								{
+									if (uncertainExpression == null) {
+										updates.addConstant(coeff, i, isInLeftSide);
+									} else {
+										updates.addCoefficient(coeff, i, uncertainExpression, isInLeftSide);
+									}
+								}
+							 )
+							 |
+							 ( uncertainExpression = UncertainExpression() (<TIMES> coeff = -1 * Coefficient())?
+							 	{
+									updates.addCoefficient(coeff, i, uncertainExpression, isInLeftSide);
+								}
+							 )
+							)
 		)
 	)
 
