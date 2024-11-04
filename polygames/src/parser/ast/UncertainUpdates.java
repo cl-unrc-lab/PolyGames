@@ -42,6 +42,7 @@ public class UncertainUpdates extends Updates{
     private ArrayList<relOps> ineqs;								 // the ineqs in the constraints: Relation_Symbol.LESS_OR_EQUAL, or Relation_Symbol.G
     int div = 1; 													 // the divisor allows us to move the decimal point, PPL only allows for integers.
     int precision = 6; 												 // this is the precision, after that we truncate the number	
+
     /**
      * Basic constructor, it initializes the object, all the coefficients and constants are initialized to zero,
      * we assume that, when a uncertain is added, the coefficient is set to a number different from 0
@@ -49,11 +50,9 @@ public class UncertainUpdates extends Updates{
     public UncertainUpdates() {
         super();
         this.uncertains   = new ArrayList<Expression>();
-        //this.coefficients = new double[10][10]; // we have to do a resize of arrays
-        //this.constants = new double[10];
         this.coefficients = new HashMap<String, HashMap<Integer, Double>>();
-        this.constants = new ArrayList<Double>();
-        this.ineqs = new ArrayList<relOps>();
+        this.constants    = new ArrayList<Double>();
+        this.ineqs        = new ArrayList<relOps>();
         
     }
 
@@ -163,18 +162,14 @@ public class UncertainUpdates extends Updates{
     	// we update the divisor
     	//div = Math.max(div, dec);
 
-			if (isInLeftSide) {
+			if (isInLeftSide)
 				c = -c;
-			}
     	
-    	// we add the constants
-			// this.constants.add(i, c);
-			double oldConstant = 0.0;
 			if ( i < this.constants.size() ) { // if there is already a constant for the i-th row then
-				oldConstant = this.constants.get(i);
+				this.constants.set(i, c + this.constants.get(i));
+			} else {
+				this.constants.add(i, c);
 			}
-
-			this.constants.set(i, c + oldConstant);
     }
 
 		public void setInequalitySymbol(String inequalitySymbol) {
