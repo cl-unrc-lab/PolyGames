@@ -845,6 +845,39 @@ DeclarationType DeclarationVarType() throws PrismLangException :
 	{ declType.setPosition(begin, getToken(0)); return declType; }
 }
 
+void ArrayDeclaration(parser.ast.Module module) throws PrismLangException :
+{
+	String identifier;
+	DeclarationType declarationType;
+	int bound;
+	Expression lowerLimit;
+	Expression upperLimit;
+	Token token;
+	List<Expression> values = new ArrayList<Expression>();
+	Expression value;
+	Declaration declaration;
+}
+{
+	// int array[5] : [0..5] = { 0, 1, 2, 3, 4 };
+	<INT> identifier = Identifier()
+	<LBRACKET> token = <REG_INT> { bound = Integer.parseInt(token.image); } <RBRACKET>
+		<COLON>
+	<LBRACKET> lowerLimit = Expression(false, false) <DOTS>  upperLimit = Expression(false, false) <RBRACKET> { declarationType = new DeclarationInt(lowerLimit, upperLimit); }
+	(<EQ> <LBRACE> value = Expression(false, false) { values.add(value); } (<COMMA> value = Expression(false, false) { values.add(value); })* <RBRACE>)?
+	{
+		for (int i = 0; i < bound; i++) {
+			declaration = new Declaration(identifier + i, declarationType);
+			
+			if ( !values.isEmpty() ) {
+				declaration.setStart(values.get(i));
+			}
+			
+			module.addDeclaration(declaration);
+		}
+	}
+	<SEMICOLON>
+}
+
 // Module
 
 parser.ast.Module Module() throws PrismLangException :
@@ -858,7 +891,7 @@ parser.ast.Module Module() throws PrismLangException :
 }
 {
 	begin = <MODULE> name = IdentifierExpression() { module = new parser.ast.Module(name.getName()); }
-	( var = Declaration() { module.addDeclaration(var); } )*
+	( (var = Declaration() { module.addDeclaration(var); }) | (ArrayDeclaration(module)) )*
 	( <INVARIANT> invar = Expression(false, false) <ENDINVARIANT> { module.setInvariant(invar); } )?
 	( comm = Command() { module.addCommand(comm); } )*
 	<ENDMODULE>
