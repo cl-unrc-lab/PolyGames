@@ -1649,7 +1649,7 @@ Expression ExpressionBasic(boolean prop, boolean pathprop) throws PrismLangExcep
 	(
 		ret = ExpressionLiteral(prop, pathprop)
 	|
-		ret = ExpressionFuncOrIdent(prop, pathprop)
+		ret = ExpressionFuncOrIdentOrArrayIndexing(prop, pathprop)
 	|
 		ret = ExpressionFuncMinMax(prop, pathprop)
 	|
@@ -1686,21 +1686,27 @@ Expression ExpressionBasic(boolean prop, boolean pathprop) throws PrismLangExcep
 // e.g. "a(b)" = "a" "(b)"
 // Ignoring the warning results in the largest match being taken.
 
-Expression ExpressionFuncOrIdent(boolean prop, boolean pathprop) throws PrismLangException :
+Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) throws PrismLangException :
 {
 	String s = null;
 	Expression ret = null;
 	Token begin = null;
 	ExpressionIdent p;
+	Expression indexExpression;
+	int index;
 }
 {
 	// If there is no "(...)", this is an identifier
 	(
-	  s = Identifier() { ret = new ExpressionIdent(s); begin = getToken(0); }
+		s = Identifier() 			{ ret = new ExpressionIdent(s); begin = getToken(0); }
 	| p = IdentifierPrime() { ret = p; ; begin = getToken(0); }
 	)
 	// If there is, it's a function
-	( <LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH> )?
+	(
+		(<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
+		|
+		(<LBRACKET> indexExpression = Expression(false, false) { index = (Integer) indexExpression.evaluate(); ret = new ExpressionIdent(s + index); } <RBRACKET>)
+	)?
 	{ ret.setPosition(begin, getToken(0)); return ret; }
 }
 
