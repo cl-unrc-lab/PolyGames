@@ -914,20 +914,14 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) :
     Token ineqs;
     double coeff;
     double cte;
-    int j= 0 ;
 }
 {
     UncertainEquationTerm(updates, i, true)
     (<PLUS> UncertainEquationTerm(updates, i, true))*
     (ineqs = <LE> | ineqs = <GE>)
-		{ updates.setInequalitySymbol(ineqs.image) }
+		{ updates.setInequalitySymbol(ineqs.image); }
 		UncertainEquationTerm(updates, i, false)
     (<PLUS> UncertainEquationTerm(updates, i, false))* 
-    //(
-		//	(token = <REG_DOUBLE> | token = <REG_INT> ) { cte = Double.parseDouble(token.image); updates.addConstant(cte, i, ineqs.image); }
-		//	|
-		//	<MINUS> (token = <REG_DOUBLE> | token = <REG_INT> ) { cte = -1 * Double.parseDouble(token.image); updates.addConstant(cte, i, ineqs.image); }  
-  	//)
     { return updates; }
 }
 
@@ -958,7 +952,7 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 		)
 		|
 		(
-			<MINUS> (( coeff = -1 * Coefficient() ( <TIMES> uncertainExpression = UncertainExpression() )?
+			<MINUS> (( coeff = Coefficient() { coeff = -1 * coeff; } ( <TIMES> uncertainExpression = UncertainExpression() )?
 								{
 									if (uncertainExpression == null) {
 										updates.addConstant(coeff, i, isInLeftSide);
@@ -968,7 +962,7 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 								}
 							 )
 							 |
-							 ( uncertainExpression = UncertainExpression() (<TIMES> coeff = -1 * Coefficient())?
+							 ( uncertainExpression = UncertainExpression() (<TIMES> coeff = Coefficient() { coeff = -1 * coeff; })?
 							 	{
 									updates.addCoefficient(coeff, i, uncertainExpression, isInLeftSide);
 								}
@@ -976,10 +970,6 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 							)
 		)
 	)
-
-	//(( coeff = Coefficient() ) <TIMES>)? ue = UncertainExpression() { updates.addCoefficient(coeff, i, ue); } // p <= 0
-	//|
-	//<LPARENTH> (coeff = Coefficient() <TIMES>)? ue = UncertainExpression() <RPARENTH> { updates.addCoefficient(coeff, i, ue); }
 }
 
 double Coefficient() :
