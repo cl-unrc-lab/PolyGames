@@ -902,7 +902,7 @@ UncertainUpdates UncertainUpdates() throws PrismLangException :
     uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); }
     ( <PLUS> uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); } )*
     <LBRACE>
-        updates = Equation(updates, i) ( { i++; } <COMMA> updates = Equation(updates, i) )*
+			updates = Equation(updates, i) ( { i++; } <COMMA> updates = Equation(updates, i) )*
     <RBRACE>
     { return updates; }
 }
@@ -921,7 +921,7 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) :
     (ineqs = <LE> | ineqs = <GE>)
 		{ updates.setInequalitySymbol(ineqs.image); }
 		UncertainEquationTerm(updates, i, false)
-    (<PLUS> UncertainEquationTerm(updates, i, false))* 
+    (<PLUS> UncertainEquationTerm(updates, i, false))*
     { return updates; }
 }
 
@@ -970,6 +970,7 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 							)
 		)
 	)
+	{ updates.addConstant(0.0, i, false); } // edge-case: pr <= pf, expected: pr + -1 * pf <= 0.0
 }
 
 double Coefficient() :
@@ -979,9 +980,8 @@ double Coefficient() :
 }
 {
 	(
-		(token = <REG_DOUBLE> | token = <REG_INT>
-			{ coeff = Double.parseDouble(token.image); }
-		)
+		(token = <REG_DOUBLE> | token = <REG_INT>)
+		{ coeff = Double.parseDouble(token.image); }
 	)
 
 	{ return coeff; }

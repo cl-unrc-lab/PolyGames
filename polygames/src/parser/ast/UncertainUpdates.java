@@ -1,7 +1,6 @@
 package parser.ast;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.HashMap;
 
 import parser.visitor.ASTVisitor;
@@ -11,22 +10,14 @@ import prism.PrismException;
 
 import parma_polyhedra_library.Coefficient;
 import parma_polyhedra_library.Linear_Expression_Variable;
-import parma_polyhedra_library.Parma_Polyhedra_Library;
 import parma_polyhedra_library.Variable;
-import parma_polyhedra_library.C_Polyhedron;
-import parma_polyhedra_library.NNC_Polyhedron;
-import parma_polyhedra_library.Generator_Type;
 import parma_polyhedra_library.Constraint;
 import parma_polyhedra_library.Linear_Expression;
 import parma_polyhedra_library.Linear_Expression_Sum;
 import parma_polyhedra_library.Linear_Expression_Times;
 import parma_polyhedra_library.Linear_Expression_Coefficient;
-import parma_polyhedra_library.Polyhedron;
 import parma_polyhedra_library.Constraint_System;
 
-
-import parma_polyhedra_library.Generator;
-import parma_polyhedra_library.Generator_System;
 import parma_polyhedra_library.Relation_Symbol;
 import explicit.PPLSupport;
 
@@ -131,7 +122,6 @@ public class UncertainUpdates extends Updates{
     	//}
     	// we update the divisor
     	//div = Math.max(div, dec);
-    	
     	
     	String uncertainName = uncertain.getName();
     	
