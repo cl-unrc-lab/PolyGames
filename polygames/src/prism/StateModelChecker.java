@@ -1035,7 +1035,12 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 		// so we ignore statesOfInterest
 		JDD.Deref(statesOfInterest);
 
-		s = expr.getName();
+		if (expr.isArrayIndexing()) {
+			s = expr.getName() + "0";
+		} else {
+			s = expr.getName();
+		}
+		
 		// get the variable's index
 		v = varList.getIndex(s);
 		if (v == -1) {

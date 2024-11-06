@@ -40,6 +40,9 @@ public class ExpressionVar extends Expression
 	private int index;
 	// Whether this reference is to name' rather than name
 	private boolean prime;
+
+	private Expression arrayIndex;
+	private boolean    isArrayIndexing;
 	
 	// Constructors
 	
@@ -49,6 +52,20 @@ public class ExpressionVar extends Expression
 		name = n;
 		index = -1;
 		prime = false;
+	}
+
+	public ExpressionVar(String n, Expression arrayIndex) throws PrismLangException
+	{
+		name  = n;
+		index = -1;
+		prime = false;
+		
+		this.arrayIndex      = arrayIndex;
+		this.isArrayIndexing = true;
+	}
+
+	public boolean isArrayIndexing() {
+		return isArrayIndexing;
 	}
 			
 	// Set method
@@ -102,6 +119,13 @@ public class ExpressionVar extends Expression
 	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
+		if ( isArrayIndexing ) {
+			int evaluatedIndex = (Integer) arrayIndex.evaluate(ec);											// We evaluate the index expression
+			Object res = ec.getVarValue(name + evaluatedIndex, index + evaluatedIndex); // With the index value we get the actual name and index from the var values
+
+			return getType().castValueTo(res, ec.getEvaluationMode());
+		}
+
 		// Extract variable value from the evaluation context
 		Object res = prime ? ec.getPrimedVarValue(name, index) : ec.getVarValue(name, index);
 		if (res == null) {

@@ -94,9 +94,16 @@ public class FindAllVars extends ASTTraverseModify
 	{
 		int i;
 		// See if identifier corresponds to a variable
-		i = varIdents.indexOf(e.getName());
+		if (e.isArrayIndexing()) {
+			i = varIdents.indexOf(e.getName() + "0");
+			e.setType(varTypes.get(i));
+		} else {
+			i = varIdents.indexOf(e.getName());
+		}
+
 		if (i != -1) {
 			// If so, set the index
+			
 			e.setIndex(i);
 			return e;
 		}

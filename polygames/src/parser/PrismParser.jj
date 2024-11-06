@@ -1692,8 +1692,7 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	Expression ret = null;
 	Token begin = null;
 	ExpressionIdent p;
-	Expression indexExpression;
-	int index;
+	Expression index;
 }
 {
 	// If there is no "(...)", this is an identifier
@@ -1705,7 +1704,12 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	(
 		(<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
 		|
-		(<LBRACKET> indexExpression = Expression(false, false) { index = (Integer) indexExpression.evaluate(); ret = new ExpressionIdent(s + index); } <RBRACKET>)
+		(
+		<LBRACKET>
+			index = Expression(false, false)
+		<RBRACKET>
+		{ ret = new ExpressionVar(s, index); }
+		)
 	)?
 	{ ret.setPosition(begin, getToken(0)); return ret; }
 }
