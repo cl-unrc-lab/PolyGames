@@ -46,8 +46,6 @@ public class UncertainExpression extends Expression{
 
     @Override
     public Object evaluate(EvaluateContext ec) throws PrismLangException {
-        // tenemos que convertir ExpressionUncertain a ExpressionVar como se con en ExpressionIdent?
-        // Por ahora lo dejo asi
         throw new PrismLangException("Could not evaluate uncertain", this);
     }
 
