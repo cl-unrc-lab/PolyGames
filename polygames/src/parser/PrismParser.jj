@@ -1157,7 +1157,7 @@ Expression Init() throws PrismLangException :
 
 // Observable variables list (for partially observable models)
 
-ObservableVars ObservableVars() :
+ObservableVars ObservableVars() throws PrismLangException :
 {
 	Token begin = null;
 	ObservableVars obsVars = null;
@@ -1697,18 +1697,18 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 {
 	// If there is no "(...)", this is an identifier
 	(
-		s = Identifier() 			{ ret = new ExpressionIdent(s); begin = getToken(0); }
-	| p = IdentifierPrime() { ret = p; ; begin = getToken(0); }
+			s = Identifier()      { ret = new ExpressionIdent(s); begin = getToken(0); }
+		| p = IdentifierPrime() { ret = p; ; begin = getToken(0); }
 	)
 	// If there is, it's a function
 	(
 		(<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
 		|
 		(
-		<LBRACKET>
-			index = Expression(false, false)
-		<RBRACKET>
-		{ ret = new ExpressionVar(s, index); }
+			<LBRACKET>
+				index = Expression(false, false)
+			<RBRACKET>
+			{ ret = new ExpressionVar(s, index); }
 		)
 	)?
 	{ ret.setPosition(begin, getToken(0)); return ret; }
@@ -2370,14 +2370,15 @@ UncertainExpression UncertainExpression() :
 
 // Identifier (returns ExpressionIdent, storing position info)
 
-ExpressionIdent IdentifierExpression() :
+ExpressionIdent IdentifierExpression() throws PrismLangException :
 {
 	String ident;
 	ExpressionIdent ret;
+
+	Expression arrayIndex = null;
 }
 {
-	ident = Identifier()
-	{ ret = new ExpressionIdent(ident); ret.setPosition(getToken(0)); return ret; }
+	ident = Identifier() { ret = new ExpressionIdent(ident); ret.setPosition(getToken(0)); return ret; }
 }
 
 // Identifier or min/max keyword (returns ExpressionIdent, storing position info)
@@ -2394,16 +2395,26 @@ ExpressionIdent IdentifierExpressionMinMax() :
 
 // Primed identifier
 
-ExpressionIdent IdentifierPrime() :
+ExpressionIdent IdentifierPrime() throws PrismLangException :
 {
+	Token token;
+	Expression index = null;
 }
 {
-	<REG_IDENTPRIME>
+	token = <REG_IDENTPRIME>
+	( <LBRACKET> index = Expression(false, false) <RBRACKET> )? // Expression identifier prime with the behavior of an array indexing expression
 	{
 		// Remove prime, create new ident and return
-		String s = getToken(0).image;
+		String s = token.image;
 		s = s.substring(0, s.length()-1);
-		ExpressionIdent expr = new ExpressionIdent(s);
+		ExpressionIdent expr;
+		
+		if (index == null) {
+			expr = new ExpressionIdent(s);
+		} else {
+			expr = new ExpressionIdent(s, index);
+		}
+
 		expr.setPosition(token);
 		expr.setEndColumn(expr.getEndColumn() - 1);
 		expr.setPrime(true);
