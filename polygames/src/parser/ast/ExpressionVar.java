@@ -40,8 +40,6 @@ public class ExpressionVar extends Expression
 	private int index;
 	// Whether this reference is to name' rather than name
 	private boolean prime;
-
-	private boolean isArrayIndexing;
 	
 	// Constructors
 	
@@ -51,28 +49,6 @@ public class ExpressionVar extends Expression
 		name = n;
 		index = -1;
 		prime = false;
-	}
-
-	public ExpressionVar(String n, Expression arrayIndex) {
-		name  = n;
-		index = -1;
-		prime = false;
-
-		this.isArrayIndexing = true;
-
-		try {
-			this.name = this.name + (Integer) arrayIndex.evaluate();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public boolean isArrayIndexing() {
-		return isArrayIndexing;
-	}
-
-	public void setArrayIndexingBehavior() {
-		this.isArrayIndexing = true;
 	}
 			
 	// Set method

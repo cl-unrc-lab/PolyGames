@@ -37,8 +37,6 @@ public class ExpressionIdent extends Expression
 	protected String name;
 	// Whether this reference is to name' rather than name
 	protected boolean prime;
-
-	protected boolean isArrayIndexing;
 	
 	// Constructors
 	
@@ -50,23 +48,6 @@ public class ExpressionIdent extends Expression
 	public ExpressionIdent(String n)
 	{
 		name = n;
-	}
-
-	public ExpressionIdent(String n, Expression arrayIndex) {
-		name  = n;
-		prime = false;
-		
-		this.isArrayIndexing = true;
-
-		try {
-			this.name = this.name + (Integer) arrayIndex.evaluate();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public boolean isArrayIndexing() {
-		return isArrayIndexing;
 	}
 	
 	// Set method
