@@ -101,7 +101,7 @@ public class ExpressionVar extends Expression
 	
 	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
-	{	
+	{
 		// Extract variable value from the evaluation context
 		Object res = prime ? ec.getPrimedVarValue(name, index) : ec.getVarValue(name, index);
 		if (res == null) {

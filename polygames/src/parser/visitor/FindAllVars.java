@@ -83,10 +83,6 @@ public class FindAllVars extends ASTTraverseModify
 			// If so, replace it with an ExpressionVar object
 			ExpressionVar expr = new ExpressionVar(e.getName(), varTypes.get(i));
 
-			if ( e.isArrayIndexing() ) {
-				expr.setArrayIndexingBehavior();
-			}
-
 			expr.setPosition(e);
 			// Store variable index
 			expr.setIndex(i);
@@ -106,10 +102,6 @@ public class FindAllVars extends ASTTraverseModify
 
 		if (i != -1) {
 			// If so, set the index
-
-			if ( e.isArrayIndexing() ) {
-				e.setType(varTypes.get(i));
-			}
 			
 			e.setIndex(i);
 			return e;
