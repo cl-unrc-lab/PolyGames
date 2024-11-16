@@ -746,5 +746,15 @@ public class ASTTraverseModify implements ASTVisitor
 	}
 	public void visitPost(Filter e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+
+	@Override
+	public Object visit(CommandWithArrays e) throws PrismLangException {
+		return e;
+	}
+
+	@Override
+	public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
+		return e;
+	}
 }
 

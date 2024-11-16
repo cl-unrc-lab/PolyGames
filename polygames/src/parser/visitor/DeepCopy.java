@@ -32,6 +32,7 @@ import java.util.ListIterator;
 
 import parser.ast.ASTElement;
 import parser.ast.Command;
+import parser.ast.CommandWithArrays;
 import parser.ast.ConstantList;
 import parser.ast.Declaration;
 import parser.ast.DeclarationArray;
@@ -39,6 +40,7 @@ import parser.ast.DeclarationBool;
 import parser.ast.DeclarationClock;
 import parser.ast.DeclarationInt;
 import parser.ast.DeclarationIntUnbounded;
+import parser.ast.ExpressionArrayIndexing;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConstant;
 import parser.ast.ExpressionExists;
@@ -487,5 +489,15 @@ public class DeepCopy implements ASTVisitor
 	public Object visit(ForLoop e) throws PrismLangException
 	{
 		return e.clone().deepCopy(this);
+	}
+
+	@Override
+	public Object visit(CommandWithArrays e) throws PrismLangException {
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+	}
+
+	@Override
+	public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
 	}
 }

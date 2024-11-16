@@ -733,5 +733,21 @@ public class ASTTraverse implements ASTVisitor
 	public void visitPost(ForLoop e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
 
+	@Override
+	public Object visit(CommandWithArrays e) throws PrismLangException {
+		System.out.println("--| Hello there");
 
+		Expression guard = e.getGuard();
+		guard.accept(this);
+
+		Updates updates = e.getUpdates();
+		updates.accept(this);
+
+		return null;
+	}
+	
+	@Override
+	public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
+		return null;
+	}
 }

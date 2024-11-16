@@ -885,7 +885,7 @@ parser.ast.Module Module() throws PrismLangException :
 	ExpressionIdent name = null;
 	Declaration var = null;
 	Expression invar;
-	Command comm = null;
+	CommandWithArrays comm = null;
 	parser.ast.Module module = null;
 	Token begin = null;
 }
@@ -900,12 +900,12 @@ parser.ast.Module Module() throws PrismLangException :
 
 // Command
 
-Command Command() throws PrismLangException :
+CommandWithArrays Command() throws PrismLangException :
 {
 	List<String> synchs = null;
 	Expression guard = null;
 	Updates updates = null;
-	Command comm = new Command();
+	CommandWithArrays comm = new CommandWithArrays();
 	Token begin = null;
 }
 {
@@ -1157,7 +1157,7 @@ Expression Init() throws PrismLangException :
 
 // Observable variables list (for partially observable models)
 
-ObservableVars ObservableVars() throws PrismLangException :
+ObservableVars ObservableVars() :
 {
 	Token begin = null;
 	ObservableVars obsVars = null;
@@ -1702,14 +1702,8 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	)
 	// If there is, it's a function
 	(
-		(<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
-		|
-		(
-			<LBRACKET>
-				index = Expression(false, false)
-			<RBRACKET>
-			{ ret = new ExpressionVar(s, index); }
-		)
+		  (<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
+		| (<LBRACKET> index = Expression(false, false) { ret = new ExpressionArrayIndexing(s, index); } <RBRACKET>)
 	)?
 	{ ret.setPosition(begin, getToken(0)); return ret; }
 }
@@ -2370,15 +2364,15 @@ UncertainExpression UncertainExpression() :
 
 // Identifier (returns ExpressionIdent, storing position info)
 
-ExpressionIdent IdentifierExpression() throws PrismLangException :
+ExpressionIdent IdentifierExpression() :
 {
 	String ident;
 	ExpressionIdent ret;
-
-	Expression arrayIndex = null;
 }
 {
-	ident = Identifier() { ret = new ExpressionIdent(ident); ret.setPosition(getToken(0)); return ret; }
+	ident = Identifier()
+	
+	{ ret = new ExpressionIdent(ident); ret.setPosition(getToken(0)); return ret; }
 }
 
 // Identifier or min/max keyword (returns ExpressionIdent, storing position info)
@@ -2402,17 +2396,18 @@ ExpressionIdent IdentifierPrime() throws PrismLangException :
 }
 {
 	token = <REG_IDENTPRIME>
-	( <LBRACKET> index = Expression(false, false) <RBRACKET> )? // Expression identifier prime with the behavior of an array indexing expression
+	( <LBRACKET> index = Expression(false, false) <RBRACKET> )?
 	{
 		// Remove prime, create new ident and return
 		String s = token.image;
 		s = s.substring(0, s.length()-1);
+
 		ExpressionIdent expr;
 		
 		if (index == null) {
 			expr = new ExpressionIdent(s);
 		} else {
-			expr = new ExpressionIdent(s, index);
+			expr = new ExpressionArrayIndexing(s, index, true);
 		}
 
 		expr.setPosition(token);

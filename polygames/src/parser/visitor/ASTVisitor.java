@@ -46,6 +46,7 @@ public interface ASTVisitor
 	public Object visit(DeclarationIntUnbounded e) throws PrismLangException;
 	public Object visit(parser.ast.Module e) throws PrismLangException;
 	public Object visit(Command e) throws PrismLangException;
+	public Object visit(CommandWithArrays e) throws PrismLangException;
 	public Object visit(Updates e) throws PrismLangException;
 	public Object visit(Update e) throws PrismLangException;
 	public Object visit(UncertainUpdates e) throws PrismLangException;
@@ -93,6 +94,7 @@ public interface ASTVisitor
 	public Object visit(ExpressionProp e) throws PrismLangException;
 	public Object visit(ExpressionFilter e) throws PrismLangException;
 	public Object visit(UncertainExpression e) throws PrismLangException;
+	public Object visit(ExpressionArrayIndexing e) throws PrismLangException;
 	// ASTElement classes (misc.)
 	public Object visit(Filter e) throws PrismLangException;
 	public Object visit(ForLoop e) throws PrismLangException;

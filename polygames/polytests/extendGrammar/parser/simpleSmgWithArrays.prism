@@ -1,0 +1,16 @@
+smg
+
+player player1
+  main
+endplayer
+
+module main
+  // local state
+  i : [0..2] init 0;
+
+  int array1[3] : [0..1]; // uninitialized array
+  int array2[3] : [0..1] = { 0, 0, 1 }; // initialized array
+
+  //[] i = 0 -> (i' = 1);
+  [] array2[i] = 0 -> (array1'[mod((i+1), 3)] = 1) & (i' = mod((i+1), 3));
+endmodule
