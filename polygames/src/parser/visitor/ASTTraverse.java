@@ -735,19 +735,15 @@ public class ASTTraverse implements ASTVisitor
 
 	@Override
 	public Object visit(CommandWithArrays e) throws PrismLangException {
-		System.out.println("--| Hello there");
-
-		Expression guard = e.getGuard();
-		guard.accept(this);
-
-		Updates updates = e.getUpdates();
-		updates.accept(this);
-
-		return null;
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
 	}
 	
 	@Override
 	public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
-		return null;
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+	}
+	@Override
+	public Object visit(RewardStructWithArrays e) throws PrismLangException {
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
 	}
 }

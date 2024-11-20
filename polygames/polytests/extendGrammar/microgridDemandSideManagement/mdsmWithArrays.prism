@@ -213,7 +213,7 @@ formula P_init = Exp_J *
 formula jobs_running = (job1>0?1:0)  + (job2>0?1:0) + (job3>0?1:0);
 
 // formula to identify say that only one agent is active
-formula active = job_arrived1[0] + job_arrived2[0]  + job_arrived3[0] ;
+formula active = job_arrived10 + job_arrived20 + job_arrived30;
 
 // formula to update job status
 formula new_j1 = job1=0?0:job1-1;
@@ -233,14 +233,14 @@ rewards "tasks_started"
 	sched!=0 & job3=1 : 1;
 endrewards
 
-
-
 rewards "value1"
 	sched!=0 & job1>0 : 1/jobs_running;
 endrewards
+
 rewards "value12"
 	sched!=0 & (job1>0|job2>0) : 1/jobs_running;
 endrewards
+
 rewards "value123"
 	sched!=0 & (job1>0|job2>0|job3>0) : 1/jobs_running;
 endrewards
@@ -250,26 +250,21 @@ rewards "common_value"
 endrewards
 
 rewards "upfront_cost1"
-
-	[start1] true : 1/(job_arrived1[0]*price);
-	[backoff1] true : P_start/(job_arrived1[0]*price);
+	[start1]    true : 1/(job_arrived1[0]*price);
+	[backoff1]  true : P_start/(job_arrived1[0]*price);
 	[nbackoff1] true : 1/(job_arrived1[0]*price);
-	
 endrewards
 
 rewards "upfront_tcost"
-
-
-	[start1] true : 1/(job_arrived1[0]*price);
-	[backoff1] true : P_start/(job_arrived1[0]*price);
+	[start1]    true : 1/(job_arrived1[0]*price);
+	[backoff1]  true : P_start/(job_arrived1[0]*price);
 	[nbackoff1] true : 1/(job_arrived1[0]*price);
 
-	[start2] true : 1/(job_arrived2[0]*price);
-	[backoff2] true : P_start/(job_arrived2[0]*price);
+	[start2]    true : 1/(job_arrived2[0]*price);
+	[backoff2]  true : P_start/(job_arrived2[0]*price);
 	[nbackoff2] true : 1/(job_arrived2[0]*price);
 
-	[start3] true : 1/(job_arrived3[0]*price);
-	[backoff3] true : P_start/(job_arrived3[0]*price);
+	[start3]    true : 1/(job_arrived3[0]*price);
+	[backoff3]  true : P_start/(job_arrived3[0]*price);
 	[nbackoff3] true : 1/(job_arrived3[0]*price);
-
 endrewards

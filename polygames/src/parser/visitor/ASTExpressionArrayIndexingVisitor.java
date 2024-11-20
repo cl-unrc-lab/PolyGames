@@ -7,6 +7,7 @@ import parser.ast.CommandWithArrays;
 import parser.ast.Expression;
 import parser.ast.ExpressionArrayIndexing;
 import parser.ast.ExpressionIdent;
+import parser.ast.RewardStructItem;
 import parser.ast.UpdateElement;
 import parser.ast.Updates;
 import prism.PrismLangException;
@@ -19,6 +20,15 @@ public class ASTExpressionArrayIndexingVisitor extends ASTTraverse {
     arrayIndexingExpressions = new ArrayList<ExpressionArrayIndexing>();
   }
 
+  @Override
+  public Object visit(RewardStructItem e) throws PrismLangException {
+		e.getStates().accept(this);
+		e.getReward().accept(this);
+
+		return arrayIndexingExpressions;
+	}
+
+  @Override
 	public Object visit(CommandWithArrays e) throws PrismLangException {
 		Expression guard = e.getGuard();
     
@@ -31,6 +41,7 @@ public class ASTExpressionArrayIndexingVisitor extends ASTTraverse {
 		return arrayIndexingExpressions;
 	}
 
+  @Override
   public Object visit(UpdateElement e) throws PrismLangException {
     if (e.getExpression() != null) {
       ExpressionIdent assigned = e.getVarIdent();
@@ -43,6 +54,7 @@ public class ASTExpressionArrayIndexingVisitor extends ASTTraverse {
     return null;
   }
 
+  @Override
   public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
     arrayIndexingExpressions.add(e);
     

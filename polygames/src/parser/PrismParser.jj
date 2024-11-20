@@ -577,7 +577,7 @@ ModulesFile ModulesFile() throws PrismLangException :
 	Declaration global;
 	parser.ast.Module m = null;
 	RenamedModule rm = null;
-	RewardStruct rs = null;
+	RewardStructWithArrays rs = null;
 	Expression init = null;
 	ObservableVars obsVars = null;
 	Observable obs = null;
@@ -1109,11 +1109,11 @@ void Rename(RenamedModule rm) :
 
 // Reward structure
 
-RewardStruct RewardStruct() throws PrismLangException :
+RewardStructWithArrays RewardStruct() throws PrismLangException :
 {
 	String name = null, s = null;
 	Expression guard = null, value = null;
-	RewardStruct rs = new RewardStruct();
+	RewardStructWithArrays rs = new RewardStructWithArrays();
 	RewardStructItem rsi;
 	Token begin = null, begin2 = null;
 	List<String> synchs = null;

@@ -214,7 +214,7 @@ formula P_init = Exp_J *
 formula jobs_running = (job1>0?1:0)  + (job2>0?1:0) + (job3>0?1:0);
 
 // formula to identify say that only one agent is active
-formula active = job_arrived1 + job_arrived2  + job_arrived3 ;
+formula active = job_arrived1 + job_arrived2 + job_arrived3;
 
 // formula to update job status
 formula new_j1 = job1=0?0:job1-1;

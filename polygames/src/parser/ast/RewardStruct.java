@@ -34,10 +34,10 @@ import prism.PrismLangException;
 
 public class RewardStruct extends ASTElement
 {
-	private String name;		// name (optional)
-	private ArrayList<RewardStructItem> items;		// list of items
-	private int numStateItems;	// how may of the items are state rewards
-	private int numTransItems;	// how may of the items are transition rewards
+	private String name; // name (optional)
+	protected ArrayList<RewardStructItem> items; // list of items
+	protected int numStateItems;	// how may of the items are state rewards
+	protected int numTransItems;	// how may of the items are transition rewards
 	
 	// Constructor
 	
@@ -64,6 +64,7 @@ public class RewardStruct extends ASTElement
 	public void addItem(RewardStructItem rsi)
 	{
 		items.add(rsi);
+		
 		if (rsi.isTransitionReward()) numTransItems++; else numStateItems++;
 	}
 

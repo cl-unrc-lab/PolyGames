@@ -46,6 +46,11 @@ public class ExpressionArrayIndexing extends ExpressionIdent {
   }
 
   @Override
+  public Object evaluate() throws PrismLangException {
+    return index.evaluateInt();
+  }
+
+  @Override
   public Object evaluate(EvaluateContext ec) throws PrismLangException {
     throw new PrismLangException("Could not evaluate identifier", this);
   }

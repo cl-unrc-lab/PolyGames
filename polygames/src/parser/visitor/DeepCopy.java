@@ -79,6 +79,7 @@ import parser.ast.Property;
 import parser.ast.RenamedModule;
 import parser.ast.RewardStruct;
 import parser.ast.RewardStructItem;
+import parser.ast.RewardStructWithArrays;
 import parser.ast.SystemBrackets;
 import parser.ast.SystemFullParallel;
 import parser.ast.SystemHide;
@@ -498,6 +499,11 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+	}
+
+	@Override
+	public Object visit(RewardStructWithArrays e) throws PrismLangException {
 		throw new UnsupportedOperationException("Unimplemented method 'visit'");
 	}
 }

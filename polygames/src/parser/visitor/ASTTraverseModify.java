@@ -749,12 +749,16 @@ public class ASTTraverseModify implements ASTVisitor
 
 	@Override
 	public Object visit(CommandWithArrays e) throws PrismLangException {
-		return e;
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
 	}
 
 	@Override
 	public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
-		return e;
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+	}
+	@Override
+	public Object visit(RewardStructWithArrays e) throws PrismLangException {
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
 	}
 }
 
