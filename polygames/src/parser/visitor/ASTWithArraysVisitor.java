@@ -108,7 +108,7 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
   public Object visit(RewardStructItem e) throws PrismLangException {
     this.rewardStruct.removeItem(e);
 
-    ASTExpressionArrayIndexingVisitor checker = new ASTExpressionArrayIndexingVisitor();
+    ASTExpressionArrayIndexingChecker checker = new ASTExpressionArrayIndexingChecker();
     List<ExpressionArrayIndexing> arrayIndexingExpressions = (List<ExpressionArrayIndexing>) checker.visit(e);
 
     if (!arrayIndexingExpressions.isEmpty()) {
@@ -188,7 +188,7 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
   public Object visit(CommandWithArrays e) throws PrismLangException {
     Module module = e.getParent();
 
-    ASTExpressionArrayIndexingVisitor checker = new ASTExpressionArrayIndexingVisitor();
+    ASTExpressionArrayIndexingChecker checker = new ASTExpressionArrayIndexingChecker();
 
     // A CommandWithArray may have many ExpressionArrayIndexing
     List<ExpressionArrayIndexing> arrayIndexingExpressions = (List<ExpressionArrayIndexing>) checker.visit(e);

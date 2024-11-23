@@ -14,11 +14,11 @@ import parser.ast.UpdateElement;
 import parser.ast.Updates;
 import prism.PrismLangException;
 
-public class ASTExpressionArrayIndexingVisitor extends ASTTraverse {
+public class ASTExpressionArrayIndexingChecker extends ASTTraverse {
 
   private List<ExpressionArrayIndexing> arrayIndexingExpressions;
 
-  public ASTExpressionArrayIndexingVisitor() {
+  public ASTExpressionArrayIndexingChecker() {
     arrayIndexingExpressions = new ArrayList<ExpressionArrayIndexing>();
   }
 
