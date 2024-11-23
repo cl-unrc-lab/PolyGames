@@ -849,7 +849,7 @@ void ArrayDeclaration(parser.ast.Module module) throws PrismLangException :
 {
 	String identifier;
 	DeclarationType declarationType;
-	int bound;
+	int size;
 	Expression lowerLimit;
 	Expression upperLimit;
 	Token token;
@@ -860,16 +860,24 @@ void ArrayDeclaration(parser.ast.Module module) throws PrismLangException :
 {
 	// int array[5] : [0..5] = { 0, 1, 2, 3, 4 };
 	<INT> identifier = Identifier()
-	<LBRACKET> token = <REG_INT> { bound = Integer.parseInt(token.image); } <RBRACKET>
+	<LBRACKET> token = <REG_INT> { size = Integer.parseInt(token.image); } <RBRACKET>
 		<COLON>
 	<LBRACKET> lowerLimit = Expression(false, false) <DOTS>  upperLimit = Expression(false, false) <RBRACKET> { declarationType = new DeclarationInt(lowerLimit, upperLimit); }
 	(<EQ> <LBRACE> value = Expression(false, false) { values.add(value); } (<COMMA> value = Expression(false, false) { values.add(value); })* <RBRACE>)?
 	{
-		for (int i = 0; i < bound; i++) {
+		if (!values.isEmpty() && values.size() != size) {
+			throw new PrismLangException(
+				String.format("Expected %d values for an array of size %d, but only %d values were provided", size, size, values.size())
+			);
+		}
+
+		for (int i = 0; i < size; i++) {
 			declaration = new Declaration(identifier + i, declarationType);
 			
 			if ( !values.isEmpty() ) {
 				declaration.setStart(values.get(i));
+			} else {
+				declaration.setStart(new ExpressionLiteral(TypeInt.getInstance(), 0));
 			}
 			
 			module.addDeclaration(declaration);
