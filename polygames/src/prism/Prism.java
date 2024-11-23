@@ -67,6 +67,7 @@ import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
+import parser.visitor.ASTVisitor;
 import parser.visitor.ASTWithArraysVisitor;
 import prism.Accuracy.AccuracyLevel;
 import pta.DigitalClocks;
@@ -1290,11 +1291,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			throw new PrismLangException("Concurrency error in parser");
 		}
 		
-		// Before doing the 'tidyUp' we need to expand the CommandWithArrays to a set of Command
-		ASTWithArraysVisitor visitor = new ASTWithArraysVisitor();
-		// modulesFile where all the references to CommandWithArray were replaced by Command
-		modulesFile = (ModulesFile) visitor.visit(modulesFile);
-
+		ASTVisitor astWithArraysVisitor = new ASTWithArraysVisitor();
+		modulesFile = (ModulesFile) astWithArraysVisitor.visit(modulesFile);
 		modulesFile.tidyUp();
 
 		return modulesFile;
