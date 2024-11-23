@@ -26,156 +26,157 @@ public class UncertainUpdates extends Updates{
 		GE,
 		LE
 	}
-    private ArrayList<Expression> uncertains; // the list of uncertains
-    private HashMap<String, HashMap<Integer, Double>> coefficients;  // coefficients contains for each uncertain the corresponding column of coefficients
-    																 // for instance, coefficients.get(uncertain).get(i) returns the coefficiente corresponding to row i, null if none
-    private ArrayList<Double> constants;							 // constains the columns of constants in the equations
-    private ArrayList<relOps> ineqs;								 // the ineqs in the constraints: Relation_Symbol.LESS_OR_EQUAL, or Relation_Symbol.G
-    int div = 1; 													 // the divisor allows us to move the decimal point, PPL only allows for integers.
-    int precision = 6; 												 // this is the precision, after that we truncate the number	
 
-    /**
-     * Basic constructor, it initializes the object, all the coefficients and constants are initialized to zero,
-     * we assume that, when a uncertain is added, the coefficient is set to a number different from 0
-     */
-    public UncertainUpdates() {
-        super();
-        this.uncertains   = new ArrayList<Expression>();
-        this.coefficients = new HashMap<String, HashMap<Integer, Double>>();
-        this.constants    = new ArrayList<Double>();
-        this.ineqs        = new ArrayList<relOps>();
-        
-    }
+	private ArrayList<Expression> uncertains; // the list of uncertains
+	private HashMap<String, HashMap<Integer, Double>> coefficients; // coefficients contains for each uncertain the corresponding column of coefficients
+																																	// for instance, coefficients.get(uncertain).get(i) returns the coefficiente corresponding to row i, null if none
+	private ArrayList<Double> constants;	// constains the columns of constants in the equations
+	private ArrayList<relOps> ineqs;			// the ineqs in the constraints: Relation_Symbol.LESS_OR_EQUAL, or Relation_Symbol.G
+	int div = 1; 													// the divisor allows us to move the decimal point, PPL only allows for integers.
+	int precision = 6; 										// this is the precision, after that we truncate the number	
 
-   /**
-    * @param Expression
-    * @param Up
-    */
-    public void addUpdate(Expression un, Update up) {
-        if (un == null) { throw new IllegalArgumentException(); }
-        if (up == null) { throw new IllegalArgumentException(); }
-        
-        this.uncertains.add(un);
-        //this.updates.add(up);
-        super.addUpdate(un, up); // we call the super version
-        //up.setParent(this);
-    }
+	/**
+	 * Basic constructor, it initializes the object, all the coefficients and constants are initialized to zero,
+	 * we assume that, when a uncertain is added, the coefficient is set to a number different from 0
+	 */
+	public UncertainUpdates() {
+		super();
+		this.uncertains   = new ArrayList<Expression>();
+		this.coefficients = new HashMap<String, HashMap<Integer, Double>>();
+		this.constants    = new ArrayList<Double>();
+		this.ineqs        = new ArrayList<relOps>();
+			
+	}
 
-    /**
-     * 
-     * @param i
-     * @param un
-     */
-    public void setUncertain(int i, Expression un) {
-        if (un == null) { throw new IllegalArgumentException(); }
-        this.uncertains.set(i, un);
-    }
+	/**
+	* @param Expression
+	* @param Up
+	*/
+	public void addUpdate(Expression un, Update up) {
+	if (un == null) { throw new IllegalArgumentException(); }
+	if (up == null) { throw new IllegalArgumentException(); }
+	
+	this.uncertains.add(un);
+	//this.updates.add(up);
+	super.addUpdate(un, up); // we call the super version
+	//up.setParent(this);
+	}
 
-    /**
-     * 
-     * @param i
-     * @return
-     */
-    public Expression getUncertain(int i) { return this.uncertains.get(i); }
-    
+	/**
+	 * 
+	 * @param i
+	 * @param un
+	 */
+	public void setUncertain(int i, Expression un) {
+		if (un == null) { throw new IllegalArgumentException(); }
+		this.uncertains.set(i, un);
+	}
 
-    /**
-     * 
-     * @return
-     */
-    public int getNumberUncertains() {
-    	return this.uncertains.size();
-    }
+	/**
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public Expression getUncertain(int i) { return this.uncertains.get(i); }
+	
 
-    /**
-     * 
-     * @return	The divisor indicating the number of decimals that one needs to shift the numbers
-     */
-    public int getDivisor() {
-    	return div;
-    }
-    
-    /**
-     * 
-     * @return the precision of the constants and coefficients
-     */
-    public int getPrecision() {
-    	return precision;
-    }
-    /**
-     * @param c
-     * @param i			the row of the coefficient
-     * @param uncertain	the uncertain to which the coefficient applies
-     */
-    public void addCoefficient(double c, int i, UncertainExpression uncertain, boolean isInLeftSide)
-    {	
-    	// first, we determine the number of decimals in the coefficient
-    	// and normalise the number
-    	//int dec = 0;
-    	//double newc = c;
-    	//while ((newc - (int) newc) != 0 && dec <= precision){
-    	//	System.out.println("double:"+newc);
-    	//	System.out.println("int part:"+(int) newc);
-    		
-    	//	newc = newc * 10;
-    	//	dec++;
-    	//}
-    	// we update the divisor
-    	//div = Math.max(div, dec);
-    	
-    	String uncertainName = uncertain.getName();
-    	
-    	// we check if the row for the uncertain was initialised
-    	if (this.coefficients.get(uncertainName) == null)
-    		this.coefficients.put(uncertainName, new HashMap<Integer, Double>());
-    	
-    	if (!isInLeftSide) {
-				c = -c;
-			}
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumberUncertains() {
+		return this.uncertains.size();
+	}
 
-			if (this.coefficients.get(uncertainName).get(i) == null) { // if the uncertain hasn't a mapped coefficient
-				this.coefficients.get(uncertainName).put(i, c);
-			} else { // if the uncertain has a mapped coefficient
-				this.coefficients.get(uncertainName).put(i, c + this.coefficients.get(uncertainName).get(i));
-			}
-    }
-
-    public void addConstant(double c, int i, boolean isInLeftSide) {
-    	// first, we determine the number of decimals in the coefficient
-    	// and normalise the number
-    	//int dec = 0;
-    	//double newc = c;
-    	//while ((newc - (int) newc) != 0){
-    	//	newc = newc * 10;
-    	//	dec++;
-    	//}
-    	// we update the divisor
-    	//div = Math.max(div, dec);
-
-			if (isInLeftSide)
-				c = -c;
-    	
-			if ( i < this.constants.size() ) { // if there is already a constant for the i-th row then
-				this.constants.set(i, c + this.constants.get(i));
-			} else {
-				this.constants.add(i, c);
-			}
-    }
-
-		public void setInequalitySymbol(String inequalitySymbol) {
-			switch (inequalitySymbol) {
-				case "<=":
-					this.ineqs.add(relOps.LE);
-					break;
-				case ">=":
-					this.ineqs.add(relOps.GE);
-					break;
-				default:
-					throw new IllegalArgumentException("Invalid inequality symbol: " + inequalitySymbol);
-			}
+	/**
+	 * 
+	 * @return	The divisor indicating the number of decimals that one needs to shift the numbers
+	 */
+	public int getDivisor() {
+		return div;
+	}
+	
+	/**
+	 * 
+	 * @return the precision of the constants and coefficients
+	 */
+	public int getPrecision() {
+		return precision;
+	}
+	/**
+	 * @param c
+	 * @param i			the row of the coefficient
+	 * @param uncertain	the uncertain to which the coefficient applies
+	 */
+	public void addCoefficient(double c, int i, UncertainExpression uncertain, boolean isInLeftSide)
+	{	
+		// first, we determine the number of decimals in the coefficient
+		// and normalise the number
+		//int dec = 0;
+		//double newc = c;
+		//while ((newc - (int) newc) != 0 && dec <= precision){
+		//	System.out.println("double:"+newc);
+		//	System.out.println("int part:"+(int) newc);
+			
+		//	newc = newc * 10;
+		//	dec++;
+		//}
+		// we update the divisor
+		//div = Math.max(div, dec);
+		
+		String uncertainName = uncertain.getName();
+		
+		// we check if the row for the uncertain was initialised
+		if (this.coefficients.get(uncertainName) == null)
+			this.coefficients.put(uncertainName, new HashMap<Integer, Double>());
+		
+		if (!isInLeftSide) {
+			c = -c;
 		}
+
+		if (this.coefficients.get(uncertainName).get(i) == null) { // if the uncertain hasn't a mapped coefficient
+			this.coefficients.get(uncertainName).put(i, c);
+		} else { // if the uncertain has a mapped coefficient
+			this.coefficients.get(uncertainName).put(i, c + this.coefficients.get(uncertainName).get(i));
+		}
+	}
+
+	public void addConstant(double c, int i, boolean isInLeftSide) {
+		// first, we determine the number of decimals in the coefficient
+		// and normalise the number
+		//int dec = 0;
+		//double newc = c;
+		//while ((newc - (int) newc) != 0){
+		//	newc = newc * 10;
+		//	dec++;
+		//}
+		// we update the divisor
+		//div = Math.max(div, dec);
+
+		if (isInLeftSide)
+			c = -c;
+		
+		if ( i < this.constants.size() ) { // if there is already a constant for the i-th row then
+			this.constants.set(i, c + this.constants.get(i));
+		} else {
+			this.constants.add(i, c);
+		}
+	}
+
+	public void setInequalitySymbol(String inequalitySymbol) {
+		switch (inequalitySymbol) {
+			case "<=":
+				this.ineqs.add(relOps.LE);
+				break;
+			case ">=":
+				this.ineqs.add(relOps.GE);
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid inequality symbol: " + inequalitySymbol);
+		}
+	}
     
-    /**
+	/**
 	 * Visitor method.
 	 */
 	public Object accept(ASTVisitor v) throws PrismLangException
@@ -287,7 +288,6 @@ public class UncertainUpdates extends Updates{
 	 * It converts all the coefficients to int, this is needed for PPL
 	 */
 	public void convertToInt(){
-		
 		for (int i = 0; i < this.uncertains.size(); i++) {
 			String uncertainName = ((UncertainExpression) this.uncertains.get(i)).getName();
 			for (int j = 0; j < this.constants.size(); j++) {
@@ -301,6 +301,4 @@ public class UncertainUpdates extends Updates{
 			this.constants.set(i, Math.floor(this.constants.get(i) * Math.pow(10, precision)));
 		}
 	}
-	
-	
 }
