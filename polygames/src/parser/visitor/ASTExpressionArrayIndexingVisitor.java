@@ -8,6 +8,8 @@ import parser.ast.Expression;
 import parser.ast.ExpressionArrayIndexing;
 import parser.ast.ExpressionIdent;
 import parser.ast.RewardStructItem;
+import parser.ast.UncertainUpdates;
+import parser.ast.Update;
 import parser.ast.UpdateElement;
 import parser.ast.Updates;
 import prism.PrismLangException;
@@ -39,6 +41,29 @@ public class ASTExpressionArrayIndexingVisitor extends ASTTraverse {
     updates.accept(this);
 
 		return arrayIndexingExpressions;
+	}
+
+  @Override
+  public Object visit(UncertainUpdates e) throws PrismLangException {
+		int i, n;
+		n = e.getNumUpdates();
+
+    Update update = null;
+    Expression probability = null;
+
+		for (i = 0; i < n; i++) {
+      probability = e.getProbability(i);
+      if (probability != null) {
+        probability.accept(this);
+      }
+
+      update = e.getUpdate(i);
+			if (update != null) {
+        update.accept(this);
+      }
+		}
+
+		return null;
 	}
 
   @Override

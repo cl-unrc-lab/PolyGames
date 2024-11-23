@@ -25,6 +25,8 @@ import parser.ast.RewardStruct;
 import parser.ast.RewardStructItem;
 import parser.ast.RewardStructWithArrays;
 import parser.ast.SystemDefn;
+import parser.ast.UncertainUpdates;
+import parser.ast.Update;
 import parser.ast.UpdateElement;
 import parser.ast.Updates;
 import prism.PrismLangException;
@@ -207,7 +209,9 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
           iterator.remove();
           iterator.add(
             replaceArrayIndexingExpressions(
-              matchingDeclarations.stream().filter(declaration -> declaration.getName().equals(expression.name() + index)).findFirst().orElse(null), expression, index, command
+              matchingDeclarations.stream().filter(declaration -> declaration.getName().equals(expression.name() + index))
+                                           .findFirst()
+                                           .orElse(null), expression, index, command
             )
           );
         } catch (PrismLangException exception) {
@@ -227,8 +231,9 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
         }
       }
 
-      for (Command command : commands)
+      for (Command command : commands) {
         module.addCommand(command);
+      }
 
     } else {
       // Otherwise, we need to replace this CommandWithArray with Command
@@ -243,6 +248,29 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
 
     return null;
   }
+
+  @Override
+  public Object visit(UncertainUpdates e) throws PrismLangException {
+		int i, n;
+		n = e.getNumUpdates();
+
+    Expression probability = null;
+    Update update = null;
+
+		for (i = 0; i < n; i++) {
+      probability = e.getProbability(i);
+			if (probability != null) {
+        e.setProbability(i, (Expression) (probability.accept(this)));
+      }
+
+      update = e.getUpdate(i);
+			if (update != null) {
+        e.setUpdate(i, (Update) (update.accept(this)));
+      }
+		}
+
+		return e;
+	}
 
   @Override
   public Object visit(UpdateElement e) throws PrismLangException {
