@@ -1,7 +1,9 @@
 package parser.visitor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import parser.ast.CommandWithArrays;
 import parser.ast.Expression;
@@ -46,6 +48,8 @@ public class ASTExpressionArrayIndexingChecker extends ASTTraverse {
   @Override
   public Object visit(UncertainUpdates e) throws PrismLangException {
 		int i, n;
+    Expression coefficient;
+
 		n = e.getNumUpdates();
 
     Update update = null;
@@ -62,6 +66,18 @@ public class ASTExpressionArrayIndexingChecker extends ASTTraverse {
         update.accept(this);
       }
 		}
+
+    for (Map.Entry<String, HashMap<Integer, Expression>> entry : e.coefficients().entrySet()) {
+      for (Map.Entry<Integer, Expression> row : entry.getValue().entrySet()) {
+        coefficient = row.getValue();
+
+        coefficient.accept(this);
+      }
+    }
+
+    for (Expression constant : e.constants()) {
+      constant.accept(this);
+    }
 
 		return null;
 	}

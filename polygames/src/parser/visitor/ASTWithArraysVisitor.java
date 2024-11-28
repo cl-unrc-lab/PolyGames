@@ -1,10 +1,14 @@
 package parser.visitor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+import parser.ast.Constant;
 import parser.ast.Command;
 import parser.ast.CommandWithArrays;
 import parser.ast.ConstantList;
@@ -29,13 +33,17 @@ import parser.ast.UncertainUpdates;
 import parser.ast.Update;
 import parser.ast.UpdateElement;
 import parser.ast.Updates;
+import parser.type.TypeInt;
 import prism.PrismLangException;
 
 public class ASTWithArraysVisitor extends ASTTraverseModify {
   private ModulesFile modulesFile;
   private RewardStructWithArrays rewardStruct;
   private ExpressionArrayIndexing replaced;
-  private ExpressionIdent replacer;
+  private Expression replacement;
+
+  private enum MatchingType   { EXACTLY, STARTS_WITH };
+  private enum EvaluationType { EXACTLY, COMBINATION };
 
   @Override
   public Object visit(ModulesFile e) throws PrismLangException {
@@ -112,41 +120,23 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
     List<ExpressionArrayIndexing> arrayIndexingExpressions = (List<ExpressionArrayIndexing>) checker.visit(e);
 
     if (!arrayIndexingExpressions.isEmpty()) {
-      List<RewardStructItem> rewardStructItems = new ArrayList<>();
+      List<Object> rewardStructItems = new ArrayList<>();
       rewardStructItems.add(e);
 
       for (ExpressionArrayIndexing expression : arrayIndexingExpressions) {
-        List<Declaration> matchingDeclarations  = matchingDeclarations(expression);
-        ListIterator<RewardStructItem> iterator = rewardStructItems.listIterator();
-
+        // Try to evaluate the ExpressionArrayIndexing
         try {
-          // try to evaluate the Expression array indexing
-          int index = (int) expression.evaluate();
-          RewardStructItem rewardStructItem = iterator.next();
-          iterator.remove();
-          iterator.add(
-            replaceArrayIndexingExpressions(
-              matchingDeclarations.stream().filter(declaration -> declaration.getName().equals(expression.name() + index)).findFirst().orElse(null), expression, index, rewardStructItem
-            )
-          );
-        } catch (PrismLangException exception) {
-          while(iterator.hasNext()) {
-            RewardStructItem rewardStructItem = iterator.next();
-            iterator.remove();
-  
-            int position = 0;
-            for (Declaration declaration : matchingDeclarations) {
-              RewardStructItem rsi = replaceArrayIndexingExpressions(declaration, expression, position, rewardStructItem);
-              iterator.add(rsi);
-  
-              position++;
-            }
-          }
+          int index = expression.index().evaluateInt();
+          rewardStructItems =
+            createASTElementsWithoutExpressionArrayIndexing(rewardStructItems, expression, matchingIdentifiers(expression.name() + index, MatchingType.EXACTLY), EvaluationType.EXACTLY);
+        } catch (Exception exception) {
+          rewardStructItems =
+            createASTElementsWithoutExpressionArrayIndexing(rewardStructItems, expression, matchingIdentifiers(expression.name(), MatchingType.STARTS_WITH), EvaluationType.COMBINATION);
         }
       }
 
-      for (RewardStructItem rewardStructItem : rewardStructItems)
-        rewardStruct.addItem(rewardStructItem);
+      for (Object rewardStructItem : rewardStructItems)
+        rewardStruct.addItem((RewardStructItem) rewardStructItem);
 
     } else {
       e.setStates((Expression)(e.getStates().accept(this)));
@@ -154,7 +144,6 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
       rewardStruct.addItem(e);
     }
 
-    // TODO: remove the RewardStructItem from the RewardStruct and replace it with the new RewardStructItems
     return null;
 	}
 
@@ -182,7 +171,7 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
 
 		return e;
 	}
-        
+
   @SuppressWarnings("unchecked")
   @Override
   public Object visit(CommandWithArrays e) throws PrismLangException {
@@ -192,48 +181,28 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
 
     // A CommandWithArray may have many ExpressionArrayIndexing
     List<ExpressionArrayIndexing> arrayIndexingExpressions = (List<ExpressionArrayIndexing>) checker.visit(e);
+
     if ( !arrayIndexingExpressions.isEmpty() ) { // Does it contain array indexing expressions?
       // If so, we need to replace this CommandWithArray with a set of Commands.
 
-      List<Command> commands = new ArrayList<>();
+      List<Object> commands = new ArrayList<>();
       commands.add(e);
 
       for (ExpressionArrayIndexing expression : arrayIndexingExpressions) {
-        List<Declaration> matchingDeclarations = matchingDeclarations(expression);
-        ListIterator<Command> iterator         = commands.listIterator();
-
+        // Try to evaluate the ExpressionArrayIndexing
         try {
-          // try to evaluate the Expression array indexing
-          int index = (int) expression.evaluate();
-          Command command = iterator.next();
-          iterator.remove();
-          iterator.add(
-            replaceArrayIndexingExpressions(
-              matchingDeclarations.stream().filter(declaration -> declaration.getName().equals(expression.name() + index))
-                                           .findFirst()
-                                           .orElse(null), expression, index, command
-            )
-          );
-        } catch (PrismLangException exception) {
-          while(iterator.hasNext()) {
-            Command command = iterator.next();
-            iterator.remove();
-  
-            int position = 0;
-            for (Declaration declaration : matchingDeclarations) {
-              iterator.add(
-                replaceArrayIndexingExpressions(declaration, expression, position, command)
-              );
-  
-              position++;
-            }
-          }
+          int index = expression.index().evaluateInt();
+          commands  =
+            createASTElementsWithoutExpressionArrayIndexing(commands, expression, matchingIdentifiers(expression.name() + index, MatchingType.EXACTLY), EvaluationType.EXACTLY);
+        } catch (Exception exception) {
+          // First we replace the ExpressionArrayIndexing using the declarations
+          commands =
+            createASTElementsWithoutExpressionArrayIndexing(commands, expression, matchingIdentifiers(expression.name(), MatchingType.STARTS_WITH), EvaluationType.COMBINATION);
         }
       }
 
-      for (Command command : commands) {
-        module.addCommand(command);
-      }
+      for (Object command : commands)
+        module.addCommand((Command) command);
 
     } else {
       // Otherwise, we need to replace this CommandWithArray with Command
@@ -249,9 +218,104 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
     return null;
   }
 
+  private List<Object> createASTElementsWithoutExpressionArrayIndexing(List<Object> elements, ExpressionArrayIndexing expression, List<Object> identifiers, EvaluationType evaluationType) throws PrismLangException {
+    ListIterator<Object> iterator = elements.listIterator();
+
+    while(iterator.hasNext()) {
+      Object element = iterator.next();
+
+      if ( !identifiers.isEmpty() )
+        iterator.remove();
+
+      int position = 0;
+      if (evaluationType.equals(EvaluationType.EXACTLY) && identifiers.size() == 1)
+        position = expression.index().evaluateInt();
+
+      for (Object identifier : identifiers) {
+        iterator.add(createASTElement(element, expression, identifier, position));
+
+        position++;
+      }
+    }
+
+    return elements;
+  }
+
+  private Object createASTElement(Object element, ExpressionArrayIndexing expression, Object identifier, int position) throws PrismLangException {
+    if (element.getClass() == Command.class)
+      return createASTElement((Command) element, expression, identifier, position);
+    
+    if (element.getClass() == CommandWithArrays.class)
+      return createASTElement((CommandWithArrays) element, expression, identifier, position);
+
+    if (element.getClass() == RewardStructItem.class)
+      return createASTElement((RewardStructItem) element, expression, identifier, position);
+
+    return null;
+  }
+
+  private Object createASTElement(Command command, ExpressionArrayIndexing expression, Object identifier, int position) throws PrismLangException {
+    this.replaced    = expression;
+    this.replacement = createReplacement(identifier, expression);
+
+    Command c = new Command();
+    c.setGuard(
+      // guard & index = position
+      ExpressionBinaryOp.And(
+        (Expression) command.getGuard().clone().accept(this), // this replaces the expression array indexing in the guard
+        new ExpressionBinaryOp(5, expression.index(), createExpressionLiteral(identifier, position))
+      )
+    );
+    c.setUpdates((Updates) command.getUpdates().clone().accept(this)); // this replaces the expression array indexing in the updates
+    c.setSynchs(command.getSynchs());
+    
+    return c;
+  }
+
+  private Object createASTElement(RewardStructItem rewardStructItem, ExpressionArrayIndexing expression, Object identifier, int position) throws PrismLangException {
+    this.replaced    = expression;
+    this.replacement = createReplacement(identifier, expression);
+
+    Expression guard =
+      ExpressionBinaryOp.And(
+        (Expression) rewardStructItem.getStates().clone().accept(this), new ExpressionBinaryOp(5, expression.index(), createExpressionLiteral(identifier, position))
+      );
+
+    RewardStructItem rsi = new RewardStructItem(rewardStructItem.getSynchs(), guard, (Expression) rewardStructItem.getReward().accept(this));
+    
+    return rsi;
+  }
+
+  private Expression createReplacement(Object object, ExpressionArrayIndexing expression) throws PrismLangException {
+    if (object.getClass() == Declaration.class) {
+      Declaration declaration = (Declaration) object;
+
+      ExpressionIdent result = new ExpressionIdent(declaration.getName());
+      result.setPrime(expression.prime());
+
+      return result;
+    }
+
+    if (object.getClass() == Constant.class) {
+      Constant constant = (Constant) object;
+
+      return new ExpressionLiteral(constant.type(), constant.evaluate());
+    }
+
+    return null;
+  }
+
+  private ExpressionLiteral createExpressionLiteral(Object object, int position) {
+    return new ExpressionLiteral(TypeInt.getInstance(), position);
+  }
+
   @Override
   public Object visit(UncertainUpdates e) throws PrismLangException {
-		int i, n;
+    int i, n;
+    String uncertain;
+    Expression coefficient;
+    int index;
+
 		n = e.getNumUpdates();
 
     Expression probability = null;
@@ -268,6 +332,24 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
         e.setUpdate(i, (Update) (update.accept(this)));
       }
 		}
+
+    for (Map.Entry<String, HashMap<Integer, Expression>> entry : e.coefficients().entrySet()) {
+      uncertain = entry.getKey();
+
+      for (Map.Entry<Integer, Expression> row : entry.getValue().entrySet()) {
+        index       = row.getKey();
+        coefficient = row.getValue();
+
+        e.setCoefficient(uncertain, index, (Expression) coefficient.accept(this));
+      }
+    }
+
+    index = 0;
+    for (Expression constant : e.constants()) {
+      e.setConstant(index, (Expression) constant.accept(this));
+
+      index++;
+    }
 
 		return e;
 	}
@@ -290,65 +372,62 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
   @Override
   public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
     if (e == replaced) {
-      return replacer;
+      return replacement;
     } else {
       return e;
     }
   }
 
-  private Command replaceArrayIndexingExpressions(Declaration declaration, ExpressionArrayIndexing expr, int position, Command command) throws PrismLangException {
-    this.replaced = expr;
-    this.replacer = new ExpressionIdent(declaration.getName());
-
-    Command c = new Command();
-
-    c.setGuard(
-      // guard & index = position
-      ExpressionBinaryOp.And(
-        (Expression) command.getGuard().clone().accept(this), // this replaces the expression array indexing in the guard
-        new ExpressionBinaryOp(5, expr.index(), new ExpressionLiteral(declaration.getType(), position))
-      )
-    );
-
-    c.setUpdates((Updates) command.getUpdates().clone().accept(this)); // this replaces the expression array indexing in the updates
-
-    c.setSynchs(command.getSynchs());
-
-    // return a command without the expression array indexing
-    return c;
+  private boolean matchStrings(String s1, String s2, MatchingType matchingType) {
+    switch (matchingType) {
+      case EXACTLY:
+        return s1.equals(s2);
+      default:
+        return s1.startsWith(s2);
+    }
   }
 
-  private RewardStructItem replaceArrayIndexingExpressions(Declaration declaration, ExpressionArrayIndexing expr, int position, RewardStructItem rewardStructItem) throws PrismLangException {
-    this.replaced = expr;
-    this.replacer = new ExpressionIdent(declaration.getName());
-
-    Expression guard =
-      ExpressionBinaryOp.And(
-        (Expression) rewardStructItem.getStates().clone().accept(this), new ExpressionBinaryOp(5, expr.index(), new ExpressionLiteral(declaration.getType(), position))
-      );
-
-    RewardStructItem rsi =
-      new RewardStructItem(
-        rewardStructItem.getSynchs(), guard, (Expression) rewardStructItem.getReward().accept(this)
-      );
-
-    return rsi;
-  }
-
-  private List<Declaration> matchingDeclarations(ExpressionArrayIndexing expr) {
-    List<Declaration> matchingDeclarations = new ArrayList<>();
+  private List<Object> matchingDeclarations(String prefix, MatchingType matchingType) {
+    List<Object> matchingDeclarations = new ArrayList<>();
 
     int n = this.modulesFile.getNumModules();
     for (int i = 0; i < n; i++) {
       Module module = this.modulesFile.getModule(i);
       matchingDeclarations.addAll(
         module.getDeclarations().stream()
-                                .filter(declaration -> declaration.getName()
-                                .startsWith(expr.name()))
+                                .filter(declaration -> matchStrings(declaration.getName(), prefix, matchingType))
                                 .collect(Collectors.toList())
       );
     }
 
     return matchingDeclarations;
+  }
+
+  private List<Object> matchingConstants(String prefix, MatchingType matchingType) {
+    List<Object> matchingConstants = new ArrayList<>();
+
+    ConstantList constantList = this.modulesFile.getConstantList();
+
+    int n = constantList.size();
+    for (int i = 0; i < n; i++) {
+      if (Objects.nonNull(constantList.getConstantName(i)) && !matchStrings(constantList.getConstantName(i), prefix, matchingType))
+        continue;
+
+      Constant constant =
+        new Constant(constantList.getConstantName(i), constantList.getConstant(i), constantList.getConstantType(i));
+
+      matchingConstants.add(constant);
+    }
+
+    return matchingConstants;
+  }
+
+  private List<Object> matchingIdentifiers(String prefix, MatchingType matchingType) {
+    List<Object> identifiers = new ArrayList<>();
+
+    identifiers.addAll(matchingDeclarations(prefix, matchingType));
+    identifiers.addAll(matchingConstants(prefix, matchingType));
+
+    return identifiers;
   }
 }
