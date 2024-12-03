@@ -16,6 +16,7 @@ import parser.ast.Declaration;
 import parser.ast.Expression;
 import parser.ast.ExpressionArrayIndexing;
 import parser.ast.ExpressionBinaryOp;
+import parser.ast.ExpressionFormula;
 import parser.ast.ExpressionIdent;
 import parser.ast.ExpressionLiteral;
 import parser.ast.FormulaList;
@@ -218,6 +219,53 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
     return null;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public Object visit(FormulaList e) throws PrismLangException {
+    // For the moment we only allow ExpressionArrayIndexing that can be evaluated without context.
+
+    Expression formula     = null;
+    List<Object> formulaes = new ArrayList<>();
+
+    ASTVisitor checker = new ASTExpressionArrayIndexingChecker();
+    List<ExpressionArrayIndexing> arrayIndexingExpressions = (List<ExpressionArrayIndexing>) checker.visit(e);
+
+    if ( !arrayIndexingExpressions.isEmpty() ) {
+
+      for (ExpressionArrayIndexing expressionArrayIndexing : arrayIndexingExpressions) {
+        int i, n;
+        n = e.size();
+        for (i = 0; i < n; i++) {
+          formula = e.getFormula(i);
+  
+          if (formula != null) {
+            formulaes.clear();
+            formulaes.add(formula);
+
+            try {
+              int index = expressionArrayIndexing.index().evaluateInt();
+              formulaes =
+                createASTElementsWithoutExpressionArrayIndexing(formulaes, expressionArrayIndexing, matchingIdentifiers(expressionArrayIndexing.name() + index, MatchingType.EXACTLY), EvaluationType.EXACTLY);
+              
+              e.setFormula(i, (Expression) formulaes.get(0));
+            } catch (Exception exception) {
+              exception.printStackTrace();
+            }
+          }
+        }
+      }
+    } else {
+
+      int i, n;
+      n = e.size();
+      for (i = 0; i < n; i++) {
+        if (e.getFormula(i) != null) e.setFormula(i, (Expression)(e.getFormula(i).accept(this)));
+      }
+    }
+
+    return e;
+	}
+
   private List<Object> createASTElementsWithoutExpressionArrayIndexing(List<Object> elements, ExpressionArrayIndexing expression, List<Object> identifiers, EvaluationType evaluationType) throws PrismLangException {
     ListIterator<Object> iterator = elements.listIterator();
 
@@ -250,6 +298,9 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
 
     if (element.getClass() == RewardStructItem.class)
       return createASTElement((RewardStructItem) element, expression, identifier, position);
+
+    if (element instanceof Expression)
+      return createASTElement((Expression) element, expression, identifier, position);
 
     return null;
   }
@@ -284,6 +335,15 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
     RewardStructItem rsi = new RewardStructItem(rewardStructItem.getSynchs(), guard, (Expression) rewardStructItem.getReward().accept(this));
     
     return rsi;
+  }
+
+  private Object createASTElement(Expression expressionASTElement, ExpressionArrayIndexing expression, Object identifier, int position) throws PrismLangException {
+    this.replaced    = expression;
+    this.replacement = createReplacement(identifier, expression);
+
+    expressionASTElement.accept(this);
+
+    return expressionASTElement;
   }
 
   private Expression createReplacement(Object object, ExpressionArrayIndexing expression) throws PrismLangException {
@@ -344,11 +404,10 @@ public class ASTWithArraysVisitor extends ASTTraverseModify {
       }
     }
 
-    index = 0;
-    for (Expression constant : e.constants()) {
-      e.setConstant(index, (Expression) constant.accept(this));
+    for (i = 0; i < e.constants().size(); i++) {
+      Expression constant = e.constant(i);
 
-      index++;
+      e.setConstant(i, (Expression) constant.accept(this));
     }
 
 		return e;

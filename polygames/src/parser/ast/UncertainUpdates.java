@@ -65,6 +65,10 @@ public class UncertainUpdates extends Updates{
 		this.constants.set(row, constant);
 	}
 
+	public Expression constant(int row) {
+		return this.constants.get(row);
+	}
+
 	/**
 	* @param Expression
 	* @param Up

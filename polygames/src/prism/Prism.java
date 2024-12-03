@@ -1291,8 +1291,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			throw new PrismLangException("Concurrency error in parser");
 		}
 		
-		ASTVisitor astWithArraysVisitor = new ASTWithArraysVisitor();
-		modulesFile = (ModulesFile) astWithArraysVisitor.visit(modulesFile);
+		ASTVisitor visitor = new ASTWithArraysVisitor();
+		modulesFile = (ModulesFile) visitor.visit(modulesFile);
 		modulesFile.tidyUp();
 
 		return modulesFile;

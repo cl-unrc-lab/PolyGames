@@ -9,6 +9,7 @@ import parser.ast.CommandWithArrays;
 import parser.ast.Expression;
 import parser.ast.ExpressionArrayIndexing;
 import parser.ast.ExpressionIdent;
+import parser.ast.FormulaList;
 import parser.ast.RewardStructItem;
 import parser.ast.UncertainUpdates;
 import parser.ast.Update;
@@ -94,6 +95,20 @@ public class ASTExpressionArrayIndexingChecker extends ASTTraverse {
 
     return null;
   }
+
+  @Override
+  public Object visit(FormulaList e) throws PrismLangException {
+		int i, n;
+		n = e.size();
+		for (i = 0; i < n; i++) {
+      Expression formula = e.getFormula(i);
+
+			if (formula != null)
+        formula.accept(this);
+		}
+
+		return arrayIndexingExpressions;
+	}
 
   @Override
   public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
