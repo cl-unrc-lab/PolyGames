@@ -58,8 +58,10 @@ public class FindAllVars extends ASTTraverseModify
 		// For each element of update
 		n = e.getNumElements();
 		for (i = 0; i < n; i++) {
+
 			// Check variable exists
 			j = varIdents.indexOf(e.getVar(i));
+
 			if (j == -1) {
 				s = "Unknown variable \"" + e.getVar(i) + "\" in update";
 				throw new PrismLangException(s, e.getVarIdent(i));
@@ -76,9 +78,11 @@ public class FindAllVars extends ASTTraverseModify
 		int i;
 		// See if identifier corresponds to a variable
 		i = varIdents.indexOf(e.getName());
+
 		if (i != -1) {
 			// If so, replace it with an ExpressionVar object
 			ExpressionVar expr = new ExpressionVar(e.getName(), varTypes.get(i));
+
 			expr.setPosition(e);
 			// Store variable index
 			expr.setIndex(i);
@@ -95,8 +99,10 @@ public class FindAllVars extends ASTTraverseModify
 		int i;
 		// See if identifier corresponds to a variable
 		i = varIdents.indexOf(e.getName());
+
 		if (i != -1) {
 			// If so, set the index
+			
 			e.setIndex(i);
 			return e;
 		}
