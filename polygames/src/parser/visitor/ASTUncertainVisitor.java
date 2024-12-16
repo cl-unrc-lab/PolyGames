@@ -13,7 +13,7 @@ import explicit.PPLSupport;
 import java.util.ArrayList;
 import java.util.List;
 
-public  class ASTUncertainVisitor extends DeepCopy{
+public class ASTUncertainVisitor extends DeepCopy{
 	@Override
 	public Object visit(Module e) throws PrismLangException {
 		Module result = new Module(e.getName());

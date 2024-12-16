@@ -40,7 +40,7 @@ import parser.ast.DeclarationBool;
 import parser.ast.DeclarationClock;
 import parser.ast.DeclarationInt;
 import parser.ast.DeclarationIntUnbounded;
-import parser.ast.ExpressionArrayIndexing;
+import parser.ast.ExpressionArrayIndex;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConstant;
 import parser.ast.ExpressionExists;
@@ -498,7 +498,7 @@ public class DeepCopy implements ASTVisitor
 	}
 
 	@Override
-	public Object visit(ExpressionArrayIndexing e) throws PrismLangException {
+	public Object visit(ExpressionArrayIndex e) throws PrismLangException {
 		throw new UnsupportedOperationException("Unimplemented method 'visit'");
 	}
 

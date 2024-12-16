@@ -1045,7 +1045,7 @@ Expression Coefficient() throws PrismLangException :
 	(
 			token = <REG_DOUBLE> { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
 		| token = <REG_INT>    { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
-		| identifier = Identifier() <LBRACKET> index = Expression(false, false) <RBRACKET> { expression = new ExpressionArrayIndexing(identifier, index); }
+		| identifier = Identifier() <LBRACKET> index = Expression(false, false) <RBRACKET> { expression = new ExpressionArrayIndex(identifier, index); }
 	)
 
 	{ return expression; }
@@ -1733,7 +1733,7 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	// If there is, it's a function
 	(
 		  (<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
-		| (<LBRACKET> index = Expression(false, false) { ret = new ExpressionArrayIndexing(s, index); } <RBRACKET>)
+		| (<LBRACKET> index = Expression(false, false) { ret = new ExpressionArrayIndex(s, index); } <RBRACKET>)
 	)?
 	{ ret.setPosition(begin, getToken(0)); return ret; }
 }
@@ -2437,7 +2437,7 @@ ExpressionIdent IdentifierPrime() throws PrismLangException :
 		if (index == null) {
 			expr = new ExpressionIdent(s);
 		} else {
-			expr = new ExpressionArrayIndexing(s, index, true);
+			expr = new ExpressionArrayIndex(s, index, true);
 		}
 
 		expr.setPosition(token);

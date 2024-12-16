@@ -23,7 +23,7 @@ import parma_polyhedra_library.Constraint_System;
 import parma_polyhedra_library.Relation_Symbol;
 import explicit.PPLSupport;
 
-public class UncertainUpdates extends Updates{
+public class UncertainUpdates extends Updates {
 	enum relOps{
 		GE,
 		LE

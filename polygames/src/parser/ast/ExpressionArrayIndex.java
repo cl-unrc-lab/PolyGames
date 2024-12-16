@@ -4,20 +4,19 @@ import parser.EvaluateContext;
 import parser.visitor.ASTVisitor;
 import prism.PrismLangException;
 
-public class ExpressionArrayIndexing extends ExpressionIdent {
-
+public class ExpressionArrayIndex extends ExpressionIdent {
   private String  name;     // name of the array
   private boolean prime;    // whether this reference is to name' rather than name
   private Expression index; // index expression
 
 
-  public ExpressionArrayIndexing(String name, Expression index) {
+  public ExpressionArrayIndex(String name, Expression index) {
     this.name  = name;
     this.prime = false;
     this.index = index;
   }
 
-  public ExpressionArrayIndexing(String name, Expression index, boolean prime) {
+  public ExpressionArrayIndex(String name, Expression index, boolean prime) {
     this.name  = name;
     this.prime = prime;
     this.index = index;

@@ -67,8 +67,8 @@ import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
+import parser.visitor.ASTElementsWithArraysReplacerVisitor;
 import parser.visitor.ASTVisitor;
-import parser.visitor.ASTWithArraysVisitor;
 import prism.Accuracy.AccuracyLevel;
 import pta.DigitalClocks;
 import pta.PTAModelChecker;
@@ -1291,7 +1291,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			throw new PrismLangException("Concurrency error in parser");
 		}
 		
-		ASTVisitor visitor = new ASTWithArraysVisitor();
+		ASTElementsWithArraysReplacerVisitor visitor = new ASTElementsWithArraysReplacerVisitor(modulesFile);
 		modulesFile = (ModulesFile) visitor.visit(modulesFile);
 		modulesFile.tidyUp();
 
