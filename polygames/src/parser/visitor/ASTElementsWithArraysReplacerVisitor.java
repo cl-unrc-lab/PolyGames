@@ -244,14 +244,4 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
     
     throw new PrismLangException("Error: Invalid identifier type: " + identifier.getClass().getSimpleName());
   }
-
-  //private ExpressionIdent replacement(Declaration declaration, ExpressionArrayIndex expression) {
-  //  ExpressionIdent result = new ExpressionIdent(declaration.getName());
-  //  result.setPrime(expression.prime());
-  //  return result;
-  //}
-  
-  //private ExpressionLiteral replacement(Constant constant) throws PrismLangException {
-  //  return new ExpressionLiteral(constant.type(), constant.evaluate());
-  //}
 }

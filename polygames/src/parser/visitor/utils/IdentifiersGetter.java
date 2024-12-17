@@ -18,10 +18,15 @@ public class IdentifiersGetter {
     for (int i = 0; i < n; i++) {
       module = modulesFile.getModule(i);
 
+      if (module == null)
+        continue ;
+
       for (Declaration declaration : module.getDeclarations()) {
-        if (matches(declaration.getName(), name, comparisonType)) {
+        if (declaration == null)
+          continue ;
+
+        if (matches(declaration.getName(), name, comparisonType))
           declarations.add(declaration);
-        }
       }
     }
 
