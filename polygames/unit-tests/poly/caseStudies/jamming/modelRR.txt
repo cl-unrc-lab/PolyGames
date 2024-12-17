@@ -1,0 +1,96 @@
+csg
+
+player user
+	user
+endplayer
+
+player jammer
+	jammer
+endplayer
+
+const int slots;
+const double p01 = 0.75;
+const double p10 = 0.75;
+const double p00 = 1-p01;
+const double p11 = 1-p10;
+
+module time_slots
+
+	t : [0..slots+1];
+
+	[] t<=slots -> (t'=t+1);
+
+endmodule
+
+module channel1
+
+	s1 : [0..1] init 1;
+
+	[] t<slots&s1=0 -> p00 : (s1'=0) + p01 : (s1'=1);
+	[] t<slots&s1=1 -> p10 : (s1'=0) + p11 : (s1'=1);
+
+endmodule
+
+module channel2
+
+	s2 : [0..1] init 1;
+
+	[] t<slots&s2=0 -> p00 : (s2'=0) + p01 : (s2'=1);
+	[] t<slots&s2=1 -> p10 : (s2'=0) + p11 : (s2'=1);
+
+endmodule
+
+module channel3
+
+	s3 : [0..1] init 1;
+
+	[] t<slots&s3=0 -> p00 : (s3'=0) + p01 : (s3'=1);
+	[] t<slots&s3=1 -> p10 : (s3'=0) + p11 : (s3'=1);
+
+endmodule
+
+module channel4
+
+	s4 : [0..1] init 1;
+
+	[] t<slots&s4=0 -> p00 : (s4'=0) + p01 : (s4'=1);
+	[] t<slots&s4=1 -> p10 : (s4'=0) + p11 : (s4'=1);
+
+endmodule
+
+module counter
+
+	sent : [0..slots];
+
+	[send1,jam2] t<slots -> (sent'=min(slots, (s1'=0) ? sent+1 : sent));
+	[send1,jam3] t<slots -> (sent'=min(slots, (s1'=0) ? sent+1 : sent));
+	[send1,jam4] t<slots -> (sent'=min(slots, (s1'=0) ? sent+1 : sent));
+	[send2,jam3] t<slots -> (sent'=min(slots, (s2'=0) ? sent+1 : sent));
+	[send2,jam4] t<slots -> (sent'=min(slots, (s2'=0) ? sent+1 : sent));
+	[send3,jam2] t<slots -> (sent'=min(slots, (s3'=0) ? sent+1 : sent));
+	[send3,jam4] t<slots -> (sent'=min(slots, (s3'=0) ? sent+1 : sent));
+
+endmodule
+
+module user
+
+	[send1] t<slots -> true;
+	[send2] t<slots -> true;
+	[send3] t<slots -> true;
+
+endmodule
+
+module jammer
+
+	[jam2] t<slots -> true;
+	[jam3] t<slots -> true;
+	[jam4] t<slots -> true;
+
+endmodule
+
+rewards "rew" 
+
+	t=slots : sent;
+
+endrewards
+

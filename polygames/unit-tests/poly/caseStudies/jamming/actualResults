@@ -1,0 +1,7 @@
+<<user>>Pmax=? [ F sent>=slots/2 ]:
+Result
+0.9375
+
+<<user>>R{"rew"}max=? [ F t=slots+1 ]:
+Result
+1.130859375

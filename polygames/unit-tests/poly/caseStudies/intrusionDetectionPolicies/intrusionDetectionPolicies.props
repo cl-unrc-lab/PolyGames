@@ -1,0 +1,5 @@
+// minimum cumulative expected damage the IDS policy can enforce
+<<policy>> R{"damage"}min=? [F r=rounds ]
+
+// minimum expected damage the IDS policy can enforce in round K
+<<policy>> R{"i_damage"}min=? [ F r=K ]

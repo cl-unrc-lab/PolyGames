@@ -1,0 +1,7 @@
+<<policy>>R{"damage"}min=? [ F r=rounds ]:
+Result
+3.37282655227
+
+<<policy>>R{"i_damage"}min=? [ F r=K ]:
+Result
+0.333333333333
