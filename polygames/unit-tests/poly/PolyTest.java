@@ -16,6 +16,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class PolyTest {
   @BeforeAll
@@ -32,7 +38,7 @@ public class PolyTest {
     Path base = Paths.get(System.getProperty("user.dir"), "unit-tests", "poly", "caseStudies");
     ProcessBuilder processBuilder =
       new ProcessBuilder(
-        "/bin/bash", "-c", "find . -name 'modelRR.*' -delete && find . -name 'actualResults' -delete"
+        "/bin/bash", "-c", "find . -name 'modelRR.*' -delete && find . -name 'actualResults' -delete && find . -name 'actualStatistics' -delete"
       );
     processBuilder.directory(base.toFile());
     Process process = processBuilder.start();
@@ -108,6 +114,43 @@ public class PolyTest {
         Arguments.of("mdsm", "mdsmWithArrays", "mdsm", ""),
         Arguments.of("taskGraph", "taskGraphWithArrays", "taskGraph", ""),
         Arguments.of("jamming", "jammingWithArrays", "jamming", "--const slots=2")
+      );
+    }
+  }
+
+  @Nested
+  class MeasurementsAnalysis {
+    @ParameterizedTest
+    @MethodSource("measurementsAnalysisArguments")
+    public void
+    the_measurements_are_equal(String directory, String prismFileName, String propsFileName, String flags) throws Exception {
+      Path base = Paths.get(System.getProperty("user.dir"), "unit-tests", "poly", "caseStudies", directory);
+      ProcessBuilder processBuilder = new ProcessBuilder("/bin/bash", "-c", "../../../../bin/polygames " + prismFileName + ".prism " + propsFileName + ".props --exportresults actualResults " + flags + " | grep -e 'States:' -e 'Transitions:' -e 'Choices:' -e 'Max/avg:' | awk '/States:/ {print \"States=\" $2} /Transitions:/ {print \"Transitions=\" $2} /Choices:/ {print \"Choices=\" $2} /Max\\/avg:/ {print \"Max/avg=\" $2}' > actualMeasurements");
+        
+      processBuilder.directory(base.toFile());
+      Process process = processBuilder.start();
+      process.waitFor();
+      
+      String[] measurements = { "States", "Transitions", "Choices", "Max/avg" };
+
+      for (String measurement : measurements) {
+        assertEquals(
+          getMeasurementByName(base, "expectedMeasurements", measurement), getMeasurementByName(base, "actualMeasurements", measurement)
+        );
+      }
+    }
+
+    private String getMeasurementByName(Path base, String propertiesFile, String key) throws Exception {
+      InputStream input     = new FileInputStream(base.resolve(propertiesFile).toString());
+      Properties properties = new Properties();
+      properties.load(input);
+      return properties.getProperty(key);
+    }
+
+    private static Stream<Arguments> measurementsAnalysisArguments() {
+      return Stream.of(
+        // directory, prism, props, flags
+        Arguments.of("mdsm", "mdsm", "mdsm", "")
       );
     }
   }
