@@ -8,6 +8,18 @@ import java.util.Map;
 import parser.ast.*;
 import prism.PrismLangException;
 
+/**
+ * This visitor is used to list all the ASTElement occurrences with a given class `classType`
+ * from a specific ASTElement. For example:
+ *
+ * <pre>
+ * ASTElementSearcherVisitor searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
+ * List&lt;ASTElement&gt; elements = searcher.visit(command);
+ * </pre>
+ *
+ * will return the list of all the ASTElements with the class ExpressionArrayIndex in the Command command.
+ * This visitor is used in `ASTElementsWithArraysReplacerVisitor` to replace all the ExpressionArrayIndex in an ASTElement.
+ */
 public class ASTElementSearcherVisitor implements ASTVisitor {
   private Class<? extends ASTElement> classType;
   private List<ASTElement> elements;

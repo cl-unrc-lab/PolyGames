@@ -8,6 +8,28 @@ import parser.ast.*;
 import parser.visitor.utils.*;
 import prism.PrismLangException;
 
+/**
+ * This visitor class is responsible for replacing all occurrences of {@link ExpressionArrayIndex} in the Abstract Syntax Tree (AST).
+ * For example, a command like:
+ * 
+ * <code>[] guard -> array'[i] = 1;</code>
+ * 
+ * will be replaced by:
+ * <pre>
+ * {@code 
+ * [] guard & i=0 -> array0' = 1;
+ * [] guard & i=1 -> array1' = 1;
+ * [] guard & i=2 -> array2' = 1;
+ * ...
+ * [] guard & i=N-1 -> arrayN-1' = 1;
+ * }
+ * </pre>
+ * 
+ * assuming the array is defined as <code>int array[N];</code>.
+ * 
+ * This is achieved by visiting various AST nodes and transforming {@link ExpressionArrayIndex} into their equivalent expressions
+ * based on the provided array and index expressions.
+ */
 public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
   private ModulesFile modulesFile;
 
