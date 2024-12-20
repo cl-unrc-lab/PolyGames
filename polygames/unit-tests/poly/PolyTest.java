@@ -20,15 +20,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class PolyTest {
   @BeforeAll
   public void setUp() throws Exception {
-    clean();
+    cleanUp();
   }
 
   @AfterAll
   public void tearDown() throws Exception {
-    clean();
+    cleanUp();
   }
 
-  public void clean() throws Exception {
+  public void cleanUp() throws Exception {
     Path caseStudiesDirectory = Paths.get(System.getProperty("user.dir"), "unit-tests", "poly", "caseStudies");
     ProcessBuilder command =
       new ProcessBuilder(
@@ -45,18 +45,19 @@ public class PolyTest {
     @ParameterizedTest
     @MethodSource("rrFilesAnalysisArguments")
     public void
-    it_builds_the_correct_RR_files(String directory, String prism, String props, String flags) throws Exception {
+    itBuildsTheCorrectRRFiles(String directory, String prism, String props, String flags) throws Exception {
       Path caseStudyDirectory = Paths.get(System.getProperty("user.dir"), "unit-tests", "poly", "caseStudies", directory);
 
-      ProcessBuilder command = new ProcessBuilder("/bin/bash", "-c", "../../bin/polygames " + prism + " " + props + " --exportresults actualResults " + flags);
+      ProcessBuilder command =
+        new ProcessBuilder("/bin/bash", "-c", "../../bin/polygames " + prism + " " + props + " --exportresults actualResults " + flags);
       
       command.directory(caseStudyDirectory.toFile());
       Process process = command.start();
       process.waitFor();
 
-      String actual   = new String(Files.readAllBytes(caseStudyDirectory.resolve("modelRR.txt")),         StandardCharsets.UTF_8);
+      String actual   = new String(Files.readAllBytes(caseStudyDirectory.resolve("modelRR.txt")), StandardCharsets.UTF_8);
       String expected = new String(Files.readAllBytes(caseStudyDirectory.resolve("expectedModelRR.txt")), StandardCharsets.UTF_8);
-      assertEquals(expected, actual, "The RR files differ");
+      assertEquals(expected, actual, "The RR files differ.");
     }
 
     private static Stream<Arguments> rrFilesAnalysisArguments() {
@@ -78,18 +79,19 @@ public class PolyTest {
     @ParameterizedTest
     @MethodSource("numericalAnalysisArguments")
     public void
-    the_numerical_results_are_equal(String directory, String prism, String props, String flags) throws Exception {
+    numericalResultsShouldBeEqual(String directory, String prism, String props, String flags) throws Exception {
       Path caseStudyDirectory = Paths.get(System.getProperty("user.dir"), "unit-tests", "poly", "caseStudies", directory);
 
-      ProcessBuilder command = new ProcessBuilder("/bin/bash", "-c", "../../bin/polygames " + prism + " " + props + " --exportresults actualResults " + flags);
+      ProcessBuilder command =
+        new ProcessBuilder("/bin/bash", "-c", "../../bin/polygames " + prism + " " + props + " --exportresults actualResults " + flags);
       
       command.directory(caseStudyDirectory.toFile());
       Process process = command.start();
       process.waitFor();
 
-      String actual   = new String(Files.readAllBytes(caseStudyDirectory.resolve("actualResults")),   StandardCharsets.UTF_8);
+      String actual   = new String(Files.readAllBytes(caseStudyDirectory.resolve("actualResults")), StandardCharsets.UTF_8);
       String expected = new String(Files.readAllBytes(caseStudyDirectory.resolve("expectedResults")), StandardCharsets.UTF_8);
-      assertEquals(expected, actual, "The result files differ");
+      assertEquals(expected, actual, "The result files differ.");
     }
 
     private static Stream<Arguments> numericalAnalysisArguments() {
