@@ -1,0 +1,2 @@
+<<p1,p3>> R{"AttackerPayoff_1"}max=? [ F time=maxTime ]
+<<p1,p3>> R{"AttackerCost_1"}min=? [ F time=maxTime ]

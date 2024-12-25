@@ -4,18 +4,17 @@ import parser.ast.*;
 import prism.PrismLangException;
 
 public class FormulaWithArraysReplacer extends ASTElementReplacer {
-  public FormulaWithArraysReplacer() { }
+  public FormulaWithArraysReplacer() {}
 
   @Override
   public ASTElement replace(ASTElement astElement, ExpressionArrayIndex expressionArrayIndex, Expression expression, int index)
       throws PrismLangException {
-
+    
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
 
-    Expression formula = (Expression) astElement;
-    
-    formula.accept(this);
+    Expression formula = (Expression) astElement.clone();
+    formula = (Expression) formula.accept(this);
 
     return formula;
   }

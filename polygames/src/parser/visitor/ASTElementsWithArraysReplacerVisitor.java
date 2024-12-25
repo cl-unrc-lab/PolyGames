@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import parser.ast.*;
+import parser.type.TypeInt;
 import parser.visitor.utils.*;
 import prism.PrismLangException;
 
@@ -117,44 +118,37 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
   @Override
   public Object visit(FormulaList e) throws PrismLangException {
     // For the moment we only allow ExpressionArrayIndex that can be evaluated without context.
-    List<ASTElement> formulaes = new ArrayList<>();
+    ASTVisitor searcher;
 
-    ASTVisitor searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
-    List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) searcher.visit(e);
+    int i, n;
+    n = e.size();
+    for (i = 0; i < n; i++) {
+      Expression formula = e.getFormula(i);
 
-    if (!expressionArrayIndexList.isEmpty()) {
-      for (ExpressionArrayIndex expressionArrayIndex : expressionArrayIndexList) {
-        int i, n;
-        n = e.size();
-        for (i = 0; i < n; i++) {
-          Expression formula = e.getFormula(i);
-  
-          if (formula != null) {
-            formulaes.clear();
-            formulaes.add(formula);
+      if (formula != null) {
+        searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
+        List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) formula.accept(searcher);
 
-            try {
-              formulaes =
-                createASTElementsWithoutExpressionArrayIndex(
-                  formulaes, expressionArrayIndex, IdentifiersGetter.identifiers(
-                    this.modulesFile, expressionArrayIndex.name() + expressionArrayIndex.index().evaluateInt(), ComparisonType.EQUALS
-                  ), EvaluationType.EXACTLY, new FormulaWithArraysReplacer()
-                );
-              
-              e.setFormula(i, (Expression) formulaes.get(0));
-            } catch (Exception exception) {
-              exception.printStackTrace();
+        if (!expressionArrayIndexList.isEmpty()) {
+          ExpressionArrayIndex expressionArrayIndex = expressionArrayIndexList.get(0);
+          Expression result = null;
+          List<ASTElement> identifiers = IdentifiersGetter.identifiers(this.modulesFile, expressionArrayIndex.name(), ComparisonType.STARTS_WITH);
+
+          int index = 0;
+          for (ASTElement identifier : identifiers) {
+            ASTElementReplacer replacer = new FormulaWithArraysReplacer();
+            if (result == null) {
+              result = (Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index);
+            } else {
+              result = new ExpressionITE(
+                new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index)), (Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index), result.clone()
+              );
             }
+            index++;
           }
-        }
-      }
-    } else {
-
-      int i, n;
-      n = e.size();
-      for (i = 0; i < n; i++) {
-        if (e.getFormula(i) != null) {
-          e.setFormula(i, (Expression)(e.getFormula(i).accept(this)));
+          e.setFormula(i, result);
+        } else {
+          e.setFormula(i, (Expression)(formula.accept(this)));
         }
       }
     }

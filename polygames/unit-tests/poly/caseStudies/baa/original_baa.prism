@@ -1,0 +1,210 @@
+smg
+
+player p1
+  attacker
+endplayer
+
+player p2
+  defender
+endplayer
+
+player p3
+  vs, ftr, rnd, agr, rdr, agf
+endplayer
+
+const int maxTime;
+
+global turn : [0..2] init 0;
+global time : [0..maxTime] init 0;
+global parameters_selection : bool init false;
+
+global retries : [2..6] init 2;
+
+global df_index  : [0..2] init 0;
+global fpf_index : [0..2] init 0;
+global rdf_index : [0..2] init 0;
+
+module attacker
+  zombies : [0..100] init 0;
+
+  [] turn = 0 & time < maxTime -> (zombies'=0)   & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=20)  & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=40)  & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=60)  & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=80)  & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=100) & (turn'=1);
+endmodule
+
+module defender
+  countermeasure : [0..5] init 0;
+  [] turn = 1 & time < maxTime -> (countermeasure'= 0) & (turn'= 2);
+  [] turn = 1 & time < maxTime -> (countermeasure'= 1) & (parameters_selection'= true) & (turn'= 2);
+  [] turn = 1 & time < maxTime -> (countermeasure'= 2) & (parameters_selection'= true) & (turn'= 2);
+  [] turn = 1 & time < maxTime -> (countermeasure'= 3) & (parameters_selection'= true) & (turn'= 2);
+  [] turn = 1 & time < maxTime -> (countermeasure'= 4) & (parameters_selection'= true) & (turn'= 2);
+  [] turn = 1 & time < maxTime -> (countermeasure'= 5) & (parameters_selection'= true) & (turn'= 2);
+endmodule
+
+module vs
+  vs_step : [0..1] init 0;
+  packet_status : [0..4] init 0; // packet_status = { 0: "default", 1: "bogus_packet_received", 2: "bogus_packet_dropped", 3: "legit_packet_received", 4: "legit_packet_dropped" }
+
+  [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 0 -> p_b_receive : (packet_status'=1) & (vs_step'=1) + p_b_drop : (packet_status'=2) & (vs_step'=1);
+  [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 0 -> p_l_receive : (packet_status'=3) & (vs_step'=1) + p_l_drop : (packet_status'=4) & (vs_step'=1);
+  [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+endmodule
+
+module ftr
+  ftr_step : [0..1] init 0;
+  
+  [] ftr_selected & parameters_selection & ftr_step= 0 -> (df_index'= 0) & (ftr_step'= 1);
+  [] ftr_selected & parameters_selection & ftr_step= 0 -> (df_index'= 1) & (ftr_step'= 1);
+  [] ftr_selected & parameters_selection & ftr_step= 0 -> (df_index'= 2) & (ftr_step'= 1);
+
+  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 0) & (parameters_selection'= false) & (ftr_step'= 0);
+  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 1) & (parameters_selection'= false) & (ftr_step'= 0);
+  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 2) & (parameters_selection'= false) & (ftr_step'= 0);
+endmodule
+
+module rnd
+  [] rnd_selected & parameters_selection -> (rdf_index' = 0) & (parameters_selection' = false);
+  [] rnd_selected & parameters_selection -> (rdf_index' = 1) & (parameters_selection' = false);
+  [] rnd_selected & parameters_selection -> (rdf_index' = 2) & (parameters_selection' = false);
+endmodule
+
+module agr
+  [] agr_selected & parameters_selection -> (retries' = 2) & (parameters_selection' = false);
+  [] agr_selected & parameters_selection -> (retries' = 4) & (parameters_selection' = false);
+  [] agr_selected & parameters_selection -> (retries' = 6) & (parameters_selection' = false);
+endmodule
+
+module rdr
+  rdr_step : [0..1] init 0;
+
+  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 0) & (rdr_step' = 1);
+  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 1) & (rdr_step' = 1);
+  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 2) & (rdr_step' = 1);
+
+  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 2) & (parameters_selection' = false) & (rdr_step' = 0);
+  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 4) & (parameters_selection' = false) & (rdr_step' = 0);
+  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 6) & (parameters_selection' = false) & (rdr_step' = 0);
+endmodule
+
+module agf
+  agf_step : [0..2] init 0;
+
+  [] agf_selected & parameters_selection & agf_step = 0 -> (df_index' = 0) & (agf_step' = 1);
+  [] agf_selected & parameters_selection & agf_step = 0 -> (df_index' = 1) & (agf_step' = 1);
+  [] agf_selected & parameters_selection & agf_step = 0 -> (df_index' = 2) & (agf_step' = 1);
+
+  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 0) & (agf_step' = 2);
+  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 1) & (agf_step' = 2);
+  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 2) & (agf_step' = 2);
+
+  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 2) & (parameters_selection' = false) & (agf_step' = 0);
+  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 4) & (parameters_selection' = false) & (agf_step' = 0);
+  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 6) & (parameters_selection' = false) & (agf_step' = 0);
+endmodule
+
+formula AF = 15.31;
+formula bogus_rate = 10 * AF;
+
+// The net arrival rate for the bogus DNS packets
+formula R_b = bogus_rate * zombies;
+
+// The rate at which the legitimate DNS packets arrive at and flow out of VS 
+formula R_l = 100.0;
+
+formula BW = 458.0;
+
+// R_b_in, R_l_in: Rates at which bogus and legit packets, respectively, pass through the DF.
+formula R_b_in = (
+  (no_fix_selected | agr_selected) ? (R_b) : (
+    (ftr_selected | agf_selected) ? (R_b * (1 - df)) : (R_b * (1 - rdf))
+  )
+);
+formula R_l_in = (
+  (no_fix_selected) ? (R_l) : (
+    (ftr_selected) ? (R_l * (1 - fpf)) : (
+      (rnd_selected) ? (R_l * (1 - rdf)) : (
+        (agr_selected) ? (R_l * pow(2, retries)) : (
+          (rdr_selected) ? (R_l * pow(2, retries) * (1 - rdf)) : (R_l * pow(2, retries) * (1 - fpf))
+        )
+      )
+    )
+  )
+);
+
+// R_b_out, R_l_out: Rates at which bogus and legit packets, respectively, are dropped at the DF.
+formula R_b_out = (
+  (no_fix_selected | agr_selected) ? (0) : (
+    (ftr_selected | agf_selected) ? (R_b * df) : (R_b * rdf)
+  )
+);
+formula R_l_out = (
+  (no_fix_selected | agr_selected) ? (0) : (
+    (ftr_selected) ? (R_l * fpf) : (
+      (rnd_selected) ? (R_l * rdf) : (
+        (rdr_selected) ? (R_l * pow(2, retries) * rdf) : (R_l * pow(2, retries) * fpf)
+      )
+    )
+  )
+);
+
+// These formulaes are used for readability purposes
+formula no_fix_selected = (countermeasure = 0);
+formula ftr_selected    = (countermeasure = 1);
+formula rnd_selected    = (countermeasure = 2);
+formula agr_selected    = (countermeasure = 3);
+formula rdr_selected    = (countermeasure = 4);
+formula agf_selected    = (countermeasure = 5);
+
+// p_b_in: Probability with which a bogus packet passes through the DF.
+// If the number of zombies is zero (i.e., the attack has stopped), then the probability with which a bogus packet passes through the DF is zero.
+formula p_b_in  = (zombies > 0) ? R_b_in / (R_b_in + R_b_out) : 0 ;
+
+// p_l_in: Probability with which a legit packet passes through the DF.
+formula p_l_in  = R_l_in / (R_l_in + R_l_out);
+
+// p_b_out: Probability with which a bogus packet is dropped at the DF.
+// If the number of zombies is zero (i.e., the attack has stopped), then the probability with which a bogus packet is dropped at the DF is one.
+formula p_b_out = (zombies > 0) ? R_b_out / (R_b_in + R_b_out) : 1 ;
+
+// p_l_out: Probability with which a legitimate packet is dropped at the DF/
+formula p_l_out = R_l_out / (R_l_in + R_l_out);
+
+// R_in: Rate at which packets, both legit and bogus, pass through the DF.
+formula R_in = R_b_in + R_l_in;
+
+// p_drop: Probability that a packet, whether bogus or legit, is dropped.
+formula p_drop = (BW >= R_in ? 0 : ((R_in - BW) / R_in));
+
+// p_receive: Probability that a packet, whether bogus or legit, is received.
+formula p_receive = (1 - p_drop);
+
+// p_b_receive: Probability that a bogus packet is received.
+formula p_b_receive = p_b_in * p_receive;
+
+// p_l_receive: Probability that a legit packet is received.
+formula p_l_receive = p_l_in * p_receive;
+
+// p_b_drop: Probability that a bogus packet is dropped.
+formula p_b_drop = p_b_in * p_drop + p_b_out;
+
+// p_l_drop: Probability that a legit packet is dropped.
+formula p_l_drop = p_l_in * p_drop + p_l_out;
+
+formula df  = ((df_index  = 0) ? 0.85 : ((df_index  = 1) ? 0.90 : 0.95));
+formula fpf = ((fpf_index = 0) ? 0.05 : ((fpf_index = 1) ? 0.10 : 0.15));
+formula rdf = ((rdf_index = 0) ? 0.81 : ((rdf_index = 1) ? 0.90 : 0.99));
+
+rewards "AttackerPayoff_1"
+  turn = 2 & bogus_packet_received : 1;
+endrewards
+
+rewards "AttackerCost_1"
+  turn = 2 & bogus_packet_dropped : 1;
+endrewards
+
+formula bogus_packet_received = (packet_status = 1);
+formula bogus_packet_dropped  = (packet_status = 2);
