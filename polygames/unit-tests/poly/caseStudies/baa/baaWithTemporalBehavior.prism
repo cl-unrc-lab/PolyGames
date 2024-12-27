@@ -75,18 +75,6 @@ module ftr
   [] ftr_selected & parameters_selection -> (df_index'=2) & (fpf_index'=2) & (parameters_selection'=false);
 endmodule
 
-//module ftr
-//  ftr_step : [0..1] init 0;
-//  
-//  [] ftr_selected & parameters_selection & ftr_step= 0 -> (df_index'= 0) & (ftr_step'= 1);
-//  [] ftr_selected & parameters_selection & ftr_step= 0 -> (df_index'= 1) & (ftr_step'= 1);
-//  [] ftr_selected & parameters_selection & ftr_step= 0 -> (df_index'= 2) & (ftr_step'= 1);
-//
-//  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 0) & (parameters_selection'= false) & (ftr_step'= 0);
-//  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 1) & (parameters_selection'= false) & (ftr_step'= 0);
-//  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 2) & (parameters_selection'= false) & (ftr_step'= 0);
-//endmodule
-
 module rnd
   [] rnd_selected & parameters_selection -> (rdf_index' = 0) & (parameters_selection' = false);
   [] rnd_selected & parameters_selection -> (rdf_index' = 1) & (parameters_selection' = false);
@@ -112,18 +100,6 @@ module rdr
   [] rdr_selected & parameters_selection -> (rdf_index' = 2) & (retries' = 4) & (parameters_selection' = false);
   [] rdr_selected & parameters_selection -> (rdf_index' = 2) & (retries' = 6) & (parameters_selection' = false);
 endmodule
-
-//module rdr
-//  rdr_step : [0..1] init 0;
-//
-//  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 0) & (rdr_step' = 1);
-//  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 1) & (rdr_step' = 1);
-//  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 2) & (rdr_step' = 1);
-//
-//  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 2) & (parameters_selection' = false) & (rdr_step' = 0);
-//  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 4) & (parameters_selection' = false) & (rdr_step' = 0);
-//  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 6) & (parameters_selection' = false) & (rdr_step' = 0);
-//endmodule
 
 module agf
   [] agf_selected & parameters_selection -> (df_index' = 0) & (fpf_index' = 0) & (retries' = 2) & (parameters_selection' = false);
@@ -162,22 +138,6 @@ module agf
   [] agf_selected & parameters_selection -> (df_index' = 2) & (fpf_index' = 2) & (retries' = 4) & (parameters_selection' = false);
   [] agf_selected & parameters_selection -> (df_index' = 2) & (fpf_index' = 2) & (retries' = 6) & (parameters_selection' = false);
 endmodule
-
-//module agf
-//  agf_step : [0..2] init 0;
-//
-//  [] agf_selected & parameters_selection & agf_step = 0 -> (df_index' = 0) & (agf_step' = 1);
-//  [] agf_selected & parameters_selection & agf_step = 0 -> (df_index' = 1) & (agf_step' = 1);
-//  [] agf_selected & parameters_selection & agf_step = 0 -> (df_index' = 2) & (agf_step' = 1);
-//
-//  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 0) & (agf_step' = 2);
-//  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 1) & (agf_step' = 2);
-//  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 2) & (agf_step' = 2);
-//
-//  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 2) & (parameters_selection' = false) & (agf_step' = 0);
-//  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 4) & (parameters_selection' = false) & (agf_step' = 0);
-//  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 6) & (parameters_selection' = false) & (agf_step' = 0);
-//endmodule
 
 formula AF = 15.31;
 formula bogus_rate = 10 * AF;
