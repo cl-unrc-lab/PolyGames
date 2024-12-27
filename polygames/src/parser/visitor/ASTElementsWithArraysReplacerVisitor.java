@@ -117,38 +117,41 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
   @SuppressWarnings("unchecked")
   @Override
   public Object visit(FormulaList e) throws PrismLangException {
-    // For the moment we only allow ExpressionArrayIndex that can be evaluated without context.
     ASTVisitor searcher;
+    ASTElementReplacer replacer = new FormulaWithArraysReplacer();
 
     int i, n;
     n = e.size();
     for (i = 0; i < n; i++) {
-      Expression formula = e.getFormula(i);
+      Expression formula = (Expression) e.getFormula(i);
 
       if (formula != null) {
+        Expression result = new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, formula);
+
         searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
         List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) formula.accept(searcher);
 
-        if (!expressionArrayIndexList.isEmpty()) {
-          ExpressionArrayIndex expressionArrayIndex = expressionArrayIndexList.get(0);
-          Expression result = null;
+        for (ExpressionArrayIndex expressionArrayIndex : expressionArrayIndexList) {
           List<ASTElement> identifiers = IdentifiersGetter.identifiers(this.modulesFile, expressionArrayIndex.name(), ComparisonType.STARTS_WITH);
-
           int index = 0;
           for (ASTElement identifier : identifiers) {
-            ASTElementReplacer replacer = new FormulaWithArraysReplacer();
-            if (result == null) {
-              result = (Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index);
-            } else {
-              result = new ExpressionITE(
-                new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index)), (Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index), result.clone()
+
+            if (index < identifiers.size() - 1) {
+              result = new ExpressionUnaryOp(
+                ExpressionUnaryOp.PARENTH, new ExpressionITE(new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index)), (Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index), result.clone())
               );
+            } else {
+              result = (Expression) replacer.replace(result, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index);
             }
+
             index++;
           }
+
+          formula = result;
+        }
+
+        if ( !expressionArrayIndexList.isEmpty() ) {
           e.setFormula(i, result);
-        } else {
-          e.setFormula(i, (Expression)(formula.accept(this)));
         }
       }
     }

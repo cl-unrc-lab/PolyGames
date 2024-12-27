@@ -1,6 +1,7 @@
 package parser.visitor.utils;
 
 import parser.ast.*;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 public class FormulaWithArraysReplacer extends ASTElementReplacer {
@@ -13,7 +14,7 @@ public class FormulaWithArraysReplacer extends ASTElementReplacer {
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
 
-    Expression formula = (Expression) astElement.clone();
+    Expression formula = (Expression) astElement.accept(new DeepCopy());
     formula = (Expression) formula.accept(this);
 
     return formula;

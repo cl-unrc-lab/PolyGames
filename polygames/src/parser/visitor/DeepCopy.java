@@ -499,7 +499,7 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(ExpressionArrayIndex e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		return e;
 	}
 
 	@Override
