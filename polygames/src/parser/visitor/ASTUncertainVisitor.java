@@ -13,7 +13,7 @@ import explicit.PPLSupport;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ASTUncertainVisitor extends DeepCopy{
+public class ASTUncertainVisitor extends DeepCopy {
 	@Override
 	public Object visit(Module e) throws PrismLangException {
 		Module result = new Module(e.getName());
@@ -84,15 +84,15 @@ public class ASTUncertainVisitor extends DeepCopy{
 		
 		for (Generator g : gs) {
 			try {
-				Updates ups = new Updates();
+				Updates updates = new Updates();
 				List<Double> vertices = PPLSupport.getGeneratorAsVector(g, e.getNumberUncertains());
 				for (int i = 0; i < vertices.size(); i++) {
 					if (vertices.get(i) != 0 ) {
-						ups.addUpdate(new ExpressionLiteral(TypeDouble.getInstance(), vertices.get(i), vertices.get(i).toString()), e.getUpdate(i));
-						ups.setParent(e.getParent());
+						updates.addUpdate(new ExpressionLiteral(TypeDouble.getInstance(), vertices.get(i), vertices.get(i).toString()), e.getUpdate(i));
+						updates.setParent(e.getParent());
 					}
 				}
-				result.add(ups);
+				result.add(updates);
 			}
 			catch(Exception exp) {
 				throw new PrismLangException("Error computing the vertices of the equations");

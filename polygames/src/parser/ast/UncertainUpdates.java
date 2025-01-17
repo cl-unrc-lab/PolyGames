@@ -108,7 +108,7 @@ public class UncertainUpdates extends Updates {
 
 	/**
 	 * 
-	 * @return	The divisor indicating the number of decimals that one needs to shift the numbers
+	 * @return The divisor indicating the number of decimals that one needs to shift the numbers
 	 */
 	public int getDivisor() {
 		return div;
@@ -250,11 +250,12 @@ public class UncertainUpdates extends Updates {
 		}
 		
 		// TO DO: Add other relations:  Equality for example
-		// we build the constrain system
+		// we build the constraint system
 		for (int i = 0; i < this.constants.size(); i++) {
 			Constraint c = new Constraint(exprs[i], this.ineqs.get(i) == relOps.LE ? Relation_Symbol.LESS_OR_EQUAL : Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(((Double) constants.get(i).evaluate()).intValue())));
 			result.add(c);
 		}
+
 		// we add restrictions for the variables, every var is between 0 and 1
 		for (int i = 0; i < vars.size(); i++) {
 			Constraint c1 = new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.LESS_OR_EQUAL,    new Linear_Expression_Coefficient(new Coefficient(1)));
@@ -268,6 +269,7 @@ public class UncertainUpdates extends Updates {
 		for (int i = 0; i < vars.size(); i++) {
 			lexp = new Linear_Expression_Sum(new Linear_Expression_Variable(vars.get(i)), lexp);
 		}
+		
 		Constraint c = new Constraint(lexp, Relation_Symbol.EQUAL, new Linear_Expression_Coefficient(new Coefficient(1)));
 		result.add(c);
 		
@@ -282,13 +284,17 @@ public class UncertainUpdates extends Updates {
 			String uncertainName = ((UncertainExpression) this.uncertains.get(i)).getName();
 			for (int j = 0; j < this.constants.size(); j++) {
 				if (this.coefficients.get(uncertainName).get(j) != null) {
-					this.coefficients.get(uncertainName).put(j, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.coefficients.get(uncertainName).get(j).evaluateDouble() * Math.pow(10, precision))));
+					this.coefficients.get(uncertainName).put(
+						j, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.coefficients.get(uncertainName).get(j).evaluateDouble() * Math.pow(10, precision)))
+					);
 				}
 			}
 		}
 		
 		for (int i = 0; i < this.constants.size(); i++) {
-			this.constants.set(i, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.constants.get(i).evaluateDouble() * Math.pow(10, precision))));
+			this.constants.set(
+				i, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.constants.get(i).evaluateDouble() * Math.pow(10, precision)))
+			);
 		}
 	}
 }

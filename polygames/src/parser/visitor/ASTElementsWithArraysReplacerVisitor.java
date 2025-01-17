@@ -132,19 +132,25 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
         List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) formula.accept(searcher);
 
         for (ExpressionArrayIndex expressionArrayIndex : expressionArrayIndexList) {
-          List<ASTElement> identifiers = IdentifiersGetter.identifiers(this.modulesFile, expressionArrayIndex.name(), ComparisonType.STARTS_WITH);
-          int index = 0;
-          for (ASTElement identifier : identifiers) {
+          try {
+            int index             = expressionArrayIndex.index().evaluateInt();
+            ASTElement identifier = IdentifiersGetter.identifiers(this.modulesFile, expressionArrayIndex.name() + index, ComparisonType.EQUALS).get(0);
+            result                = (Expression) replacer.replace(result, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index);
+          } catch (Exception exception) {
+            List<ASTElement> identifiers = IdentifiersGetter.identifiers(this.modulesFile, expressionArrayIndex.name(), ComparisonType.STARTS_WITH);
 
-            if (index < identifiers.size() - 1) {
-              result = new ExpressionUnaryOp(
-                ExpressionUnaryOp.PARENTH, new ExpressionITE(new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index)), (Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index), result.clone())
-              );
-            } else {
-              result = (Expression) replacer.replace(result, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index);
+            int index = 0;
+            for (ASTElement identifier : identifiers) {
+              if (index < identifiers.size() - 1) {
+                result = new ExpressionUnaryOp(
+                  ExpressionUnaryOp.PARENTH, new ExpressionITE(new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index)), (Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index), result.clone())
+                );
+              } else {
+                result = (Expression) replacer.replace(result, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index);
+              }
+
+              index++;
             }
-
-            index++;
           }
 
           formula = result;

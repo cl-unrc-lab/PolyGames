@@ -10,7 +10,6 @@ public class FormulaWithArraysReplacer extends ASTElementReplacer {
   @Override
   public ASTElement replace(ASTElement astElement, ExpressionArrayIndex expressionArrayIndex, Expression expression, int index)
       throws PrismLangException {
-    
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
 
