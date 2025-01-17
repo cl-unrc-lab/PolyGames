@@ -2,6 +2,7 @@ package parser.visitor.utils;
 
 import parser.ast.*;
 import parser.type.TypeInt;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 public class RewardStructItemWithArraysReplacer extends ASTElementReplacer {
@@ -14,10 +15,10 @@ public class RewardStructItemWithArraysReplacer extends ASTElementReplacer {
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
 
-    RewardStructItem rewardStructItem = (RewardStructItem) astElement;
+    RewardStructItem rewardStructItem = (RewardStructItem) astElement.accept(new DeepCopy());
     Expression guard =
       ExpressionBinaryOp.And(
-        (Expression) rewardStructItem.getStates().clone().accept(this), new ExpressionBinaryOp(
+        (Expression) rewardStructItem.getStates().accept(this), new ExpressionBinaryOp(
           5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index)
         )
       );

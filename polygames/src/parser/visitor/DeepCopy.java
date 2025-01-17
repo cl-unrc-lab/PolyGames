@@ -494,7 +494,7 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(CommandWithArrays e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		return e.clone().deepCopy(this);
 	}
 
 	@Override
@@ -504,6 +504,6 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(RewardStructWithArrays e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		return e.clone().deepCopy(this);
 	}
 }

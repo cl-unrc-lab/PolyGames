@@ -242,7 +242,7 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
         iterator.remove();
 
       int index = 0;
-      if (evaluationType.equals(EvaluationType.EXACTLY) && identifiers.size() == 1) {
+      if (evaluationType.equals(EvaluationType.EXACTLY)) {
         index = expressionArrayIndex.index().evaluateInt();
       }
 

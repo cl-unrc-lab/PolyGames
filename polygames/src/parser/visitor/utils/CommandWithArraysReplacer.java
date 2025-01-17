@@ -5,6 +5,7 @@ import java.util.Map;
 
 import parser.ast.*;
 import parser.type.TypeInt;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 public class CommandWithArraysReplacer extends ASTElementReplacer {
@@ -14,22 +15,35 @@ public class CommandWithArraysReplacer extends ASTElementReplacer {
   public ASTElement replace(ASTElement astElement, ExpressionArrayIndex expressionArrayIndex, Expression expression, int index)
       throws PrismLangException {
 
+    System.out.println(expression);
+
+    System.out.println(expressionArrayIndex);
+
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
 
-    Command command = (Command) astElement;
-    Command result  = new Command();
-    result.setGuard(
-      // guard & index = position
+    Command command = (Command) astElement.accept(new DeepCopy());
+    // Command result  = new Command();
+    // result.setGuard(
+    //   // guard & index = position
+    //   ExpressionBinaryOp.And(
+    //     (Expression) command.getGuard().clone().accept(this), // this replaces the ExpressionArrayIndex in the guard
+    //     new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index))
+    //   )
+    // );
+    // result.setUpdates((Updates) command.getUpdates().clone().accept(this)); // this replaces the ExpressionArrayIndex in the updates
+    // result.setSynchs(command.getSynchs());
+
+    command.setGuard(
       ExpressionBinaryOp.And(
-        (Expression) command.getGuard().clone().accept(this), // this replaces the ExpressionArrayIndex in the guard
+        (Expression) command.getGuard().accept(this), // this replaces the ExpressionArrayIndex in the guard
         new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index))
       )
     );
-    result.setUpdates((Updates) command.getUpdates().clone().accept(this)); // this replaces the ExpressionArrayIndex in the updates
-    result.setSynchs(command.getSynchs());
+
+    command.setUpdates((Updates) command.getUpdates().accept(this)); // this replaces the ExpressionArrayIndex in the updates
     
-    return result;
+    return command;
   }
 
   @Override
