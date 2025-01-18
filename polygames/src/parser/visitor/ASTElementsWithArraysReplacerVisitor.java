@@ -77,8 +77,8 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
   @Override
   public Object visit(CommandWithArrays e) throws PrismLangException {
     ASTElementReplacer replacer = new CommandWithArraysReplacer();
-    List<ASTElement> commands   = new ArrayList<>();
-    ASTVisitor searcher         = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
+    List<ASTElement> commands = new ArrayList<>();
+    ASTVisitor searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
     List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) e.accept(searcher);
 
     commands.add(e.clone().deepCopy(new DeepCopy()));
@@ -112,7 +112,7 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
     n = e.size();
     for (i = 0; i < n; i++) {
       Expression formula = (Expression) e.getFormula(i);
-      Expression result  = formula.clone().deepCopy(new DeepCopy()); //new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, formula.clone().deepCopy(new DeepCopy()));
+      Expression result = formula.clone().deepCopy(new DeepCopy()); //new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, formula.clone().deepCopy(new DeepCopy()));
 
       searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
       List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) formula.accept(searcher);
@@ -191,9 +191,9 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
   @SuppressWarnings("unchecked")
   @Override
   public Object visit(RewardStructItem e) throws PrismLangException {
-    ASTElementReplacer replacer        = new RewardStructItemWithArraysReplacer();
+    ASTElementReplacer replacer = new RewardStructItemWithArraysReplacer();
     List<ASTElement> rewardStructItems = new ArrayList<>();
-    ASTVisitor searcher                = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
+    ASTVisitor searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
     List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) e.accept(searcher);
 
     rewardStructItems.add(e.clone().deepCopy(new DeepCopy()));
@@ -230,7 +230,7 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
 
       for (Pair<ASTElement, Integer> pair : pairs) {
         ASTElement identifier = pair.fst();
-        Integer index        = pair.snd();
+        Integer index = pair.snd();
 
         iterator.add(replacer.replace(astElement, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index));
       }

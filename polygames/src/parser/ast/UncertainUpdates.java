@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import parser.ast.utils.relOps;
 import parser.type.TypeDouble;
 import parser.visitor.ASTVisitor;
 import parser.visitor.DeepCopy;
@@ -24,10 +25,6 @@ import parma_polyhedra_library.Relation_Symbol;
 import explicit.PPLSupport;
 
 public class UncertainUpdates extends Updates {
-	enum relOps{
-		GE,
-		LE
-	}
 
 	private ArrayList<Expression> uncertains; // the list of uncertains
 	private HashMap<String, HashMap<Integer, Expression>> coefficients; // coefficients contains for each uncertain the corresponding column of coefficients
@@ -67,6 +64,14 @@ public class UncertainUpdates extends Updates {
 
 	public Expression constant(int row) {
 		return this.constants.get(row);
+	}
+
+	public List<Expression> uncertains() {
+		return uncertains;
+	}
+
+	public List<relOps> ineqs() {
+		return ineqs;
 	}
 
 	/**
@@ -185,7 +190,8 @@ public class UncertainUpdates extends Updates {
 				String uncertain = ((UncertainExpression) this.uncertains.get(i)).getName();
 				result += this.coefficients.get(uncertain).get(j) + uncertain;
 			}
-			result += " <=" + constants.get(j); 
+
+			result += (ineqs.get(j) == relOps.LE) ? "<=" + constants.get(j) : ">=" + constants.get(j) ;
 		}
 		
 		return result;
@@ -214,70 +220,72 @@ public class UncertainUpdates extends Updates {
 	 * @throws PrismLangException 
 	 */
 	public Constraint_System getPPLConstraintSystem() throws PrismLangException{
-		Constraint_System result = new Constraint_System(); // the result
+		Constraint_System constraint_System = new Constraint_System();
 		
-		// We init PPL
+		// Initialize PPL (Parma Polyhedra Library)
 		try {
 			PPLSupport.initPPL();
-		}
-		catch(PrismException e) {
-			System.out.println("Error Loading PPL Library");
+		} catch (PrismException e) {
+			System.err.println("Error loading Parma Polyhedra Library:");
 		}
 		
-		// we define an array of variables for the uncertains
-		// the uncertains are mapped using their index in {@code uncertains}
+		// Each variable corresponds to an uncertain. The uncertains are mapped using their index in {@code uncertains}.
 		ArrayList<Variable> vars = new ArrayList<Variable>();
 		for (int i = 0; i < this.uncertains.size() ; i++) {
 			vars.add(new Variable(i));
 		}
-		
-		// An array of expressions, exprs[i] corresponds to the left expression in the ith row  of the equation system
-		Linear_Expression[] exprs = new Linear_Expression[this.constants.size()];
-		
-		// We build the equation system, one equation for each constant: expr <> constants[i]
+
+		// linear_Expressions[i] represents the left linear expression in the i-th row of the constraint system
+		Linear_Expression[] linear_Expressions = new Linear_Expression[this.constants.size()];
+
 		for (int i = 0; i < this.constants.size(); i++) {
-			Linear_Expression lexp = new Linear_Expression_Coefficient(new Coefficient(0)); // we start with 0
-			for (int j = 0; j < this.uncertains.size(); j++){ // for each uncertain we construct the rows
-				String uncertainName = ((UncertainExpression) this.uncertains.get(j)).getName();
-				if (this.coefficients.get(((UncertainExpression) this.uncertains.get(j)).getName()).get(i) != null) { // we get the corresponding coefficient to the uncertain
-					// At this point, 'this.coefficients.get(uncertainName).get(i)' must be an ExpressionLiteral. All instances of ExpressionArrayIndexing should have been replaced with ExpressionLiteral.
-					Integer coef = ((Double) this.coefficients.get(uncertainName).get(i).evaluate()).intValue();
-					Linear_Expression times = new Linear_Expression_Times(new Coefficient(coef), vars.get(j));
-					lexp = new Linear_Expression_Sum(times, lexp); // we sum the expression to create the corresponding expression for the row
-				}
+			Linear_Expression linear_Expression = new Linear_Expression_Coefficient(new Coefficient(0));
+
+			for (int j = 0; j < this.uncertains.size(); j++) {
+				String uncertain = ((UncertainExpression) this.uncertains.get(j)).getName();
+
+				if (this.coefficients.get(uncertain).get(i) == null)
+					continue ;
+
+				Integer coefficient = ((Double) this.coefficients.get(uncertain).get(i).evaluate()).intValue();
+				Linear_Expression times = new Linear_Expression_Times(new Coefficient(coefficient), vars.get(j));
+				linear_Expression = new Linear_Expression_Sum(linear_Expression, times);
 			}
-			exprs[i] = lexp;
-		}
-		
-		// TO DO: Add other relations:  Equality for example
-		// we build the constraint system
-		for (int i = 0; i < this.constants.size(); i++) {
-			Constraint c = new Constraint(exprs[i], this.ineqs.get(i) == relOps.LE ? Relation_Symbol.LESS_OR_EQUAL : Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(((Double) constants.get(i).evaluate()).intValue())));
-			result.add(c);
+
+			linear_Expressions[i] = linear_Expression;
 		}
 
-		// we add restrictions for the variables, every var is between 0 and 1
-		for (int i = 0; i < vars.size(); i++) {
-			Constraint c1 = new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.LESS_OR_EQUAL,    new Linear_Expression_Coefficient(new Coefficient(1)));
-			Constraint c2 = new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(0)));
-			result.add(c1);
-			result.add(c2);
+		for (int i = 0; i < this.constants.size(); i++) {
+			constraint_System.add(
+				new Constraint(linear_Expressions[i], this.ineqs.get(i) == relOps.LE ? Relation_Symbol.LESS_OR_EQUAL : Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(((Double) constants.get(i).evaluate()).intValue())))
+			);
 		}
-		
-		// Furthermore, the sum of all the vertices has to be 1
-		Linear_Expression lexp = new Linear_Expression_Coefficient(new Coefficient(0));
+
+		// Structural constraints
+		// Each p_i must lie within the interval [0, 1].
 		for (int i = 0; i < vars.size(); i++) {
-			lexp = new Linear_Expression_Sum(new Linear_Expression_Variable(vars.get(i)), lexp);
+			constraint_System.add(
+				new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.LESS_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(1)))
+			);
+
+			constraint_System.add(
+				new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(0)))
+			);
 		}
-		
-		Constraint c = new Constraint(lexp, Relation_Symbol.EQUAL, new Linear_Expression_Coefficient(new Coefficient(1)));
-		result.add(c);
-		
-		return result;
+
+		// The sum of all the p_i must equal 1.
+		Linear_Expression sum = new Linear_Expression_Coefficient(new Coefficient(0));
+		for (int i = 0; i < vars.size(); i++) {
+			sum = new Linear_Expression_Sum(sum, new Linear_Expression_Variable(vars.get(i)));
+		}
+
+		constraint_System.add(new Constraint(sum, Relation_Symbol.EQUAL, new Linear_Expression_Coefficient(new Coefficient(1))));
+
+		return constraint_System;
 	}
 	
 	/**
-	 * It converts all the coefficients to int, this is needed for PPL
+	 * Converts all the coefficients to integers. This conversion is required for PPL (Parma Polyhedra Library) operations.
 	 */
 	public void convertToInt() throws PrismLangException{
 		for (int i = 0; i < this.uncertains.size(); i++) {

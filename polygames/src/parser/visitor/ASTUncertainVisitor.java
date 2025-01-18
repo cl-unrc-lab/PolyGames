@@ -4,7 +4,6 @@ import parser.ast.*;
 import parser.ast.Module;
 import parser.type.TypeDouble;
 import prism.PrismLangException;
-import parma_polyhedra_library.Parma_Polyhedra_Library;
 import parma_polyhedra_library.NNC_Polyhedron;
 
 import parma_polyhedra_library.Generator;
@@ -33,8 +32,7 @@ public class ASTUncertainVisitor extends DeepCopy {
 	}
 
 	@Override
-	public ArrayList<Command> visit(Command e) throws PrismLangException
-	{
+	public ArrayList<Command> visit(Command e) throws PrismLangException {
 		ArrayList<Command> result = new ArrayList<Command>();
 		
 		// in the case that the update is normal
@@ -58,30 +56,24 @@ public class ASTUncertainVisitor extends DeepCopy {
 	}
 	
 	@Override
-	public ArrayList<Updates> visit(UncertainUpdates e) throws PrismLangException {	
-		if (e.getNumberUncertains() == 0)
+	public List<Updates> visit(UncertainUpdates e) throws PrismLangException {	
+		if (e.getNumberUncertains() == 0) {
 			throw new PrismLangException("Error computing the vertices of the equations");
+		}
 	
-		ArrayList<Updates> result = new ArrayList<Updates>();
+		List<Updates> result = new ArrayList<Updates>();
 		
-		// We init PPL
 		try {
-			System.loadLibrary("ppl_java");
-			Parma_Polyhedra_Library.initialize_library();
-		} catch (UnsatisfiedLinkError e1) {
-			System.err.println("\nError loading Parma Polyhedra Library:");
-			System.err.println(e1);
-			throw new PrismLangException("Parma Polyhedra Library could not be loaded/initialised");
-		} catch (Exception e2) {
-			System.err.println("\nError loading Parma Polyhedra Library:");
-			System.err.println(e2);
-			throw new PrismLangException("Parma Polyhedra Library could not be loaded/initialised");
+			PPLSupport.initPPL();
+		} catch (Exception exception) {
+			System.err.println("Error loading Parma Polyhedra Library:");
 		}
 		
-		e.convertToInt(); // all have to be Int, this function converts all the constants to Int
-		NNC_Polyhedron ph = new NNC_Polyhedron(e.getPPLConstraintSystem());
+		e.convertToInt();
+
+		NNC_Polyhedron ph   = new NNC_Polyhedron(e.getPPLConstraintSystem());
 		Generator_System gs = ph.generators();
-		
+
 		for (Generator g : gs) {
 			try {
 				Updates updates = new Updates();
@@ -93,12 +85,11 @@ public class ASTUncertainVisitor extends DeepCopy {
 					}
 				}
 				result.add(updates);
-			}
-			catch(Exception exp) {
+			} catch(Exception exp) {
 				throw new PrismLangException("Error computing the vertices of the equations");
 			}
 		}
-
+		
 		return result;
 	}
 }
