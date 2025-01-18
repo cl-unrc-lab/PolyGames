@@ -15,7 +15,7 @@ public class RewardStructItemWithArraysReplacer extends ASTElementReplacer {
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
 
-    RewardStructItem rewardStructItem = (RewardStructItem) astElement.accept(new DeepCopy());
+    RewardStructItem rewardStructItem = (RewardStructItem) astElement.clone().deepCopy(new DeepCopy()); // astElement.accept(new DeepCopy());
     Expression guard =
       ExpressionBinaryOp.And(
         (Expression) rewardStructItem.getStates().accept(this), new ExpressionBinaryOp(

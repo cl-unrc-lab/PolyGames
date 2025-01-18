@@ -13,7 +13,7 @@ public class FormulaWithArraysReplacer extends ASTElementReplacer {
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
 
-    Expression formula = (Expression) astElement.accept(new DeepCopy());
+    Expression formula = (Expression) astElement.clone().deepCopy(new DeepCopy()); // astElement.accept(new DeepCopy());
     formula = (Expression) formula.accept(this);
 
     return formula;

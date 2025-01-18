@@ -14,25 +14,10 @@ public class CommandWithArraysReplacer extends ASTElementReplacer {
   @Override
   public ASTElement replace(ASTElement astElement, ExpressionArrayIndex expressionArrayIndex, Expression expression, int index)
       throws PrismLangException {
-
-    System.out.println(expression);
-
-    System.out.println(expressionArrayIndex);
-
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
 
-    Command command = (Command) astElement.accept(new DeepCopy());
-    // Command result  = new Command();
-    // result.setGuard(
-    //   // guard & index = position
-    //   ExpressionBinaryOp.And(
-    //     (Expression) command.getGuard().clone().accept(this), // this replaces the ExpressionArrayIndex in the guard
-    //     new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index))
-    //   )
-    // );
-    // result.setUpdates((Updates) command.getUpdates().clone().accept(this)); // this replaces the ExpressionArrayIndex in the updates
-    // result.setSynchs(command.getSynchs());
+    Command command = (Command) astElement.clone().deepCopy(new DeepCopy()); // astElement.accept(new DeepCopy());
 
     command.setGuard(
       ExpressionBinaryOp.And(
