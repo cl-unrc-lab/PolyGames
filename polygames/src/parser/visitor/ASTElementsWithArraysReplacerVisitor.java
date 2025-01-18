@@ -112,7 +112,7 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
     n = e.size();
     for (i = 0; i < n; i++) {
       Expression formula = (Expression) e.getFormula(i);
-      Expression result  = new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, formula.clone().deepCopy(new DeepCopy()));
+      Expression result  = formula.clone().deepCopy(new DeepCopy()); //new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, formula.clone().deepCopy(new DeepCopy()));
 
       searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
       List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) formula.accept(searcher);
@@ -125,17 +125,23 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
           ).collect(Collectors.toList()); // [(p0, 0), (p1, 1), ..., (pn, n)]
 
         try {
-          pairs = List.of(pairs.get(expressionArrayIndex.evaluateInt()));
+          pairs = List.of(pairs.get(expressionArrayIndex.index().evaluateInt()));
         } catch (Exception exception) {
+          // Nothing to do
+        } finally {
           for (Pair<ASTElement, Integer> pair : pairs) {
+            System.out.println("identifier :: " + pair.fst());
             ASTElement identifier = pair.fst();
             Integer indexValue    = pair.snd();
 
-            if (indexValue < identifiers.size() - 1) {
+            if (indexValue < pairs.size() - 1) {
               Expression guard = new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), indexValue)); // index =? value
               result = new ExpressionUnaryOp(
                 ExpressionUnaryOp.PARENTH, new ExpressionITE(
-                    guard, (Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), indexValue), result.clone().deepCopy(new DeepCopy())
+                    guard,
+                    (Expression) replacer.replace(
+                        formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), indexValue), result.clone().deepCopy(new DeepCopy()
+                      )
                   )
               );
             } else {
