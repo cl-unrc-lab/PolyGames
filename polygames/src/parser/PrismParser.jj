@@ -982,15 +982,15 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) throws PrismLangExcep
 {
   	UncertainExpression ue;
     Token token;
-    Token ineqs;
+    Token relationSymbol;
     double coeff;
     double cte;
 }
 {
     UncertainEquationTerm(updates, i, true)
     (<PLUS> UncertainEquationTerm(updates, i, true))*
-    (ineqs = <LE> | ineqs = <GE>)
-		{ updates.setInequalitySymbol(ineqs.image); }
+    (relationSymbol = <LE> | relationSymbol = <GE> | relationSymbol = <EQ>)
+		{ updates.setRelationSymbol(relationSymbol.image); }
 		UncertainEquationTerm(updates, i, false)
     (<PLUS> UncertainEquationTerm(updates, i, false))*
     { return updates; }

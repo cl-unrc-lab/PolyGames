@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import parser.ast.utils.relOps;
 import parser.type.TypeDouble;
 import parser.visitor.ASTVisitor;
 import parser.visitor.DeepCopy;
@@ -30,7 +29,7 @@ public class UncertainUpdates extends Updates {
 	private HashMap<String, HashMap<Integer, Expression>> coefficients; // coefficients contains for each uncertain the corresponding column of coefficients
 																																	    // for instance, coefficients.get(uncertain).get(i) returns the coefficiente corresponding to row i, null if none
 	private ArrayList<Expression> constants; // constains the columns of constants in the equations
-	private ArrayList<relOps> ineqs; // the ineqs in the constraints: Relation_Symbol.LESS_OR_EQUAL, or Relation_Symbol.G
+	private List<Relation_Symbol> relationSymbols;
 	int div = 1; 	     // the divisor allows us to move the decimal point, PPL only allows for integers.
 	int precision = 6; // this is the precision, after that we truncate the number	
 
@@ -40,10 +39,10 @@ public class UncertainUpdates extends Updates {
 	 */
 	public UncertainUpdates() {
 		super();
-		this.uncertains   = new ArrayList<Expression>();
+		this.uncertains = new ArrayList<Expression>();
 		this.coefficients = new HashMap<String, HashMap<Integer, Expression>>();
-		this.constants    = new ArrayList<Expression>();
-		this.ineqs        = new ArrayList<relOps>();
+		this.constants = new ArrayList<Expression>();
+		this.relationSymbols = new ArrayList<Relation_Symbol>();
 	}
 
 	public HashMap<String, HashMap<Integer, Expression>> coefficients() {
@@ -64,14 +63,6 @@ public class UncertainUpdates extends Updates {
 
 	public Expression constant(int row) {
 		return this.constants.get(row);
-	}
-
-	public List<Expression> uncertains() {
-		return uncertains;
-	}
-
-	public List<relOps> ineqs() {
-		return ineqs;
 	}
 
 	/**
@@ -160,16 +151,21 @@ public class UncertainUpdates extends Updates {
 		}
 	}
 
-	public void setInequalitySymbol(String inequalitySymbol) {
-		switch (inequalitySymbol) {
+	public void setRelationSymbol(String relationSymbol) {
+		load_PPL();
+
+		switch (relationSymbol) {
+			case "=":
+				this.relationSymbols.add(Relation_Symbol.EQUAL);
+				break;
 			case "<=":
-				this.ineqs.add(relOps.LE);
+				this.relationSymbols.add(Relation_Symbol.LESS_OR_EQUAL);
 				break;
 			case ">=":
-				this.ineqs.add(relOps.GE);
+				this.relationSymbols.add(Relation_Symbol.GREATER_OR_EQUAL);
 				break;
 			default:
-				throw new IllegalArgumentException("Invalid inequality symbol: " + inequalitySymbol);
+				throw new IllegalArgumentException("Invalid relation symbol: " + relationSymbol);
 		}
 	}
     
@@ -183,6 +179,8 @@ public class UncertainUpdates extends Updates {
 	
 	@Override
 	public String toString() {
+		load_PPL();
+
 		String result = "";
 		
 		for (int j = 0; j < this.constants.size(); j++) {
@@ -191,7 +189,7 @@ public class UncertainUpdates extends Updates {
 				result += this.coefficients.get(uncertain).get(j) + uncertain;
 			}
 
-			result += (ineqs.get(j) == relOps.LE) ? "<=" + constants.get(j) : ">=" + constants.get(j) ;
+			result += " " + relationSymbols.get(j) + " " + constants.get(j) ;
 		}
 		
 		return result;
@@ -220,14 +218,9 @@ public class UncertainUpdates extends Updates {
 	 * @throws PrismLangException 
 	 */
 	public Constraint_System getPPLConstraintSystem() throws PrismLangException{
+		load_PPL();
+
 		Constraint_System constraint_System = new Constraint_System();
-		
-		// Initialize PPL (Parma Polyhedra Library)
-		try {
-			PPLSupport.initPPL();
-		} catch (PrismException e) {
-			System.err.println("Error loading Parma Polyhedra Library:");
-		}
 		
 		// Each variable corresponds to an uncertain. The uncertains are mapped using their index in {@code uncertains}.
 		ArrayList<Variable> vars = new ArrayList<Variable>();
@@ -257,7 +250,7 @@ public class UncertainUpdates extends Updates {
 
 		for (int i = 0; i < this.constants.size(); i++) {
 			constraint_System.add(
-				new Constraint(linear_Expressions[i], this.ineqs.get(i) == relOps.LE ? Relation_Symbol.LESS_OR_EQUAL : Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(((Double) constants.get(i).evaluate()).intValue())))
+				new Constraint(linear_Expressions[i], this.relationSymbols.get(i), new Linear_Expression_Coefficient(new Coefficient(((Double) constants.get(i).evaluate()).intValue())))
 			);
 		}
 
@@ -303,6 +296,15 @@ public class UncertainUpdates extends Updates {
 			this.constants.set(
 				i, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.constants.get(i).evaluateDouble() * Math.pow(10, precision)))
 			);
+		}
+	}
+
+	private void load_PPL() {
+		// Initialize PPL (Parma Polyhedra Library)
+		try {
+			PPLSupport.initPPL();
+		} catch (PrismException e) {
+			System.err.println("Error loading Parma Polyhedra Library:");
 		}
 	}
 }
