@@ -52,8 +52,9 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
       }
 		}
 
-		if (e.getInvariant() != null)
-			e.setInvariant((Expression) (e.getInvariant().accept(this)));
+		if (e.getInvariant() != null) {
+      e.setInvariant((Expression) (e.getInvariant().accept(this)));
+    }
 
     n = e.getNumCommands();
 		for (i = 0; i < n; i++) {
@@ -112,7 +113,7 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
     n = e.size();
     for (i = 0; i < n; i++) {
       Expression formula = (Expression) e.getFormula(i);
-      Expression result = formula.clone().deepCopy(new DeepCopy()); //new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, formula.clone().deepCopy(new DeepCopy()));
+      Expression result = formula.clone().deepCopy(new DeepCopy());
 
       searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
       List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) formula.accept(searcher);
@@ -130,7 +131,6 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
           // Nothing to do
         } finally {
           for (Pair<ASTElement, Integer> pair : pairs) {
-            System.out.println("identifier :: " + pair.fst());
             ASTElement identifier = pair.fst();
             Integer indexValue    = pair.snd();
 
@@ -241,12 +241,10 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
 
   private Expression replacement(ASTElement identifier, ExpressionArrayIndex expression) throws PrismLangException {
     if (identifier instanceof Declaration declaration) {
-      ExpressionIdent result = new ExpressionIdent(declaration.getName());
-      result.setPrime(expression.prime());
-      return result;
-    }
-    
-    if (identifier instanceof Constant constant) {
+      ExpressionIdent replacement = new ExpressionIdent(declaration.getName());
+      replacement.setPrime(expression.prime());
+      return replacement;
+    } else if (identifier instanceof Constant constant) {
       return new ExpressionLiteral(constant.type(), constant.evaluate());
     }
     
