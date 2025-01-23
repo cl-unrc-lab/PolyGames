@@ -87,16 +87,17 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
     for (ExpressionArrayIndex expressionArrayIndex : expressionArrayIndexList) {
       String prefix = expressionArrayIndex.name();
       List<ASTElement> identifiers = IdentifiersGetter.identifiers(modulesFile, prefix, ComparisonType.STARTS_WITH);
-      List<Pair<ASTElement, Integer>> pairs = IntStream.range(
+      List<Pair<ASTElement, Integer>> indexedIdentifiers = IntStream.range(
           0, identifiers.size()).mapToObj(i -> new Pair<>(identifiers.get(i), i)
         ).collect(Collectors.toList()); // [(p0, 0), (p1, 1), ..., (pn, n)]
 
       try {
-        pairs = List.of(pairs.get(expressionArrayIndex.index().evaluateInt()));
+        int i = expressionArrayIndex.index().evaluateInt();
+        indexedIdentifiers = List.of(indexedIdentifiers.get(i));
       } catch (Exception exception) {
         // Nothing to do
       } finally {
-        commands = createASTElementsWithoutExpressionArrayIndex(commands, expressionArrayIndex, pairs, replacer);
+        commands = createASTElementsWithoutExpressionArrayIndex(commands, expressionArrayIndex, indexedIdentifiers, replacer);
       }
     }
 
@@ -121,20 +122,21 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
       for (ExpressionArrayIndex expressionArrayIndex : expressionArrayIndexList) {
         String prefix = expressionArrayIndex.name();
         List<ASTElement> identifiers = IdentifiersGetter.identifiers(modulesFile, prefix, ComparisonType.STARTS_WITH);
-        List<Pair<ASTElement, Integer>> pairs = IntStream.range(
+        List<Pair<ASTElement, Integer>> indexedIdentifiers = IntStream.range(
             0, identifiers.size()).mapToObj(j -> new Pair<>(identifiers.get(j), j)
           ).collect(Collectors.toList()); // [(p0, 0), (p1, 1), ..., (pn, n)]
 
         try {
-          pairs = List.of(pairs.get(expressionArrayIndex.index().evaluateInt()));
+          int index = expressionArrayIndex.index().evaluateInt();
+          indexedIdentifiers = List.of(indexedIdentifiers.get(index));
         } catch (Exception exception) {
           // Nothing to do
         } finally {
-          for (Pair<ASTElement, Integer> pair : pairs) {
-            ASTElement identifier = pair.fst();
-            Integer indexValue    = pair.snd();
+          for (Pair<ASTElement, Integer> indexedIdentifier : indexedIdentifiers) {
+            ASTElement identifier = indexedIdentifier.fst();
+            Integer indexValue    = indexedIdentifier.snd();
 
-            if (indexValue < pairs.size() - 1) {
+            if (indexValue < indexedIdentifiers.size() - 1) {
               Expression guard = new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), indexValue)); // index =? value
               result = new ExpressionUnaryOp(
                 ExpressionUnaryOp.PARENTH, new ExpressionITE(
@@ -201,16 +203,17 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
     for (ExpressionArrayIndex expressionArrayIndex : expressionArrayIndexList) {
       String prefix = expressionArrayIndex.name();
       List<ASTElement> identifiers = IdentifiersGetter.identifiers(modulesFile, prefix, ComparisonType.STARTS_WITH);
-      List<Pair<ASTElement, Integer>> pairs = IntStream.range(
+      List<Pair<ASTElement, Integer>> indexedIdentifiers = IntStream.range(
           0, identifiers.size()).mapToObj(i -> new Pair<>(identifiers.get(i), i)
         ).collect(Collectors.toList()); // [(p0, 0), (p1, 1), ..., (pn, n)]
 
       try {
-        pairs = List.of(pairs.get(expressionArrayIndex.index().evaluateInt()));
+        int index = expressionArrayIndex.index().evaluateInt();
+        indexedIdentifiers = List.of(indexedIdentifiers.get(index));
       } catch (Exception exception) {
         // Nothing to do
       } finally {
-        rewardStructItems = createASTElementsWithoutExpressionArrayIndex(rewardStructItems, expressionArrayIndex, pairs, replacer);
+        rewardStructItems = createASTElementsWithoutExpressionArrayIndex(rewardStructItems, expressionArrayIndex, indexedIdentifiers, replacer);
       }
     }
 
@@ -218,7 +221,7 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
 	}
 
   private List<ASTElement> createASTElementsWithoutExpressionArrayIndex(
-      List<ASTElement> astElements, ExpressionArrayIndex expressionArrayIndex, List<Pair<ASTElement, Integer>> pairs, ASTElementReplacer replacer 
+      List<ASTElement> astElements, ExpressionArrayIndex expressionArrayIndex, List<Pair<ASTElement, Integer>> indexedIdentifiers, ASTElementReplacer replacer 
     ) throws PrismLangException {
 
     ListIterator<ASTElement> iterator = astElements.listIterator();
@@ -228,9 +231,9 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
 
       iterator.remove();
 
-      for (Pair<ASTElement, Integer> pair : pairs) {
-        ASTElement identifier = pair.fst();
-        Integer index = pair.snd();
+      for (Pair<ASTElement, Integer> indexedIdentifier : indexedIdentifiers) {
+        ASTElement identifier = indexedIdentifier.fst();
+        Integer index         = indexedIdentifier.snd();
 
         iterator.add(replacer.replace(astElement, expressionArrayIndex, replacement(identifier, expressionArrayIndex), index));
       }

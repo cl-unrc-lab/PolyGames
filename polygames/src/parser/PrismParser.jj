@@ -459,14 +459,15 @@ TOKEN :
 |	< FORMULA:			"formula" >
 |	< FILTER:			"filter" >
 |	< FUNC:				"func" >
-|	< F:				"F" >
-|	< Fc:				"Fc" >
-|	< F0:				"F0" >
+|	< F:				  "F" >
+|	< Fc:				  "Fc" >
+|	< F0:				  "F0" >
 |	< GLOBAL:			"global" >
-|	< G:				"G" >
+|	< G:				  "G" >
+| < IF:         "if" >
 |	< INIT:				"init" >
-|	< INVARIANT:		"invariant" >
-|	< I:				"I" >
+|	< INVARIANT:	"invariant" >
+|	< I:				  "I" >
 |	< INT:				"int" >
 |	< LABEL:			"label" >
 |	< MAXMAX:			"maxmax" >
@@ -481,6 +482,7 @@ TOKEN :
 |	< NONDETERMINISTIC:	"nondeterministic" >
 |	< OBSERVABLE:		"observable" >
 |	< OBSERVABLES:		"observables" >
+| < OTHERWISE : "otherwise" >
 |   < UNCERTAIN:        "uncertain" >
 //|	< OF:				"of" >
 |	< PMAXMAX:			"Pmaxmax" >
@@ -748,8 +750,39 @@ void FormulaDef(FormulaList formulaList) throws PrismLangException :
 	Expression expr = null;
 }
 {
-	( <FORMULA> name = IdentifierExpression() <EQ> expr = Expression(false, false) <SEMICOLON> )
+	( <FORMULA> name = IdentifierExpression() <EQ> ((expr = Expression(false, false)) | (expr = EFormulaExpression())) <SEMICOLON> )
 	{ formulaList.addFormula(name, expr); }
+}
+
+Expression EFormulaExpression() throws PrismLangException :
+{
+	ExpressionITE expressionITE = new ExpressionITE(null, null, null);
+	Expression result = expressionITE;
+	Expression c = null;
+	Expression t = null;
+}
+{
+	<LBRACE>
+		(
+			<IF> c = Expression(false, false) <COLON> t = Expression(false, false) <COMMA>
+			{
+				expressionITE.setOperand1(c); expressionITE.setOperand2(t);
+			}
+			(
+				<IF> c = Expression(false, false) <COLON> t = Expression(false, false) <COMMA>
+				{
+					// ExpressionITE e = new ExpressionITE(c, t, null);
+					expressionITE.setOperand3(new ExpressionITE(c, t, null)); // expressionITE.setOperand3(e);
+					expressionITE = (ExpressionITE) expressionITE.getOperand3();
+				}
+			)*
+			<OTHERWISE> <COLON> t = Expression(false, false)
+			{
+				expressionITE.setOperand3(t);
+			}
+		)
+	<RBRACE>
+	{ return result; }
 }
 
 // Label definition
