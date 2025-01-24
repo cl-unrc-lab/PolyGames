@@ -114,7 +114,7 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
     n = e.size();
     for (i = 0; i < n; i++) {
       Expression formula = (Expression) e.getFormula(i);
-      Expression result = formula.clone().deepCopy(new DeepCopy());
+      Expression result  = formula.clone().deepCopy(new DeepCopy());
 
       searcher = new ASTElementSearcherVisitor(ExpressionArrayIndex.class);
       List<ExpressionArrayIndex> expressionArrayIndexList = (List<ExpressionArrayIndex>) formula.accept(searcher);

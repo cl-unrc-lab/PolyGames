@@ -42,23 +42,6 @@ const double p_js[4] = { 1/4, 1/4, 1/4, 1/4 };
 const double P_start = 0.8;
 
 // distribution of the expected demand across intervals
-// const double D_K1  = 0.0614;
-// const double D_K2  = 0.0392;
-// const double D_K3  = 0.0304;
-// const double D_K4  = 0.0304;
-// const double D_K5  = 0.0355;
-// const double D_K6  = 0.0518;
-// const double D_K7  = 0.0651;
-// const double D_K8  = 0.0643;
-// const double D_K9  = 0.0625;
-// const double D_K10 = 0.0618;
-// const double D_K11 = 0.0614;
-// const double D_K12 = 0.0695;
-// const double D_K13 = 0.0887;
-// const double D_K14 = 0.1013;
-// const double D_K15 = 0.1005;
-// const double D_K16 = 0.0762;
-
 const double d_ks[16] = { 0.0614, 0.0392, 0.0304, 0.0304, 0.0355, 0.0518, 0.0651, 0.0643, 0.0625, 0.0618, 0.0614, 0.0695, 0.0887, 0.1013, 0.1005, 0.0762 };
 
 // time limit

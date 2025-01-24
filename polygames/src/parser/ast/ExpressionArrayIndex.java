@@ -2,6 +2,7 @@ package parser.ast;
 
 import parser.EvaluateContext;
 import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 public class ExpressionArrayIndex extends ExpressionIdent {
@@ -71,5 +72,17 @@ public class ExpressionArrayIndex extends ExpressionIdent {
   @Override
 	public Object accept(ASTVisitor v) throws PrismLangException {
 		return v.visit(this);
+	}
+
+  @Override
+	public ExpressionIdent deepCopy(DeepCopy copier)
+	{
+		return this;
+	}
+
+	@Override
+	public ExpressionIdent clone()
+	{
+		return this;
 	}
 }
