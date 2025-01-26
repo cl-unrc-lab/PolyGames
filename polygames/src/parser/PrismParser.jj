@@ -771,7 +771,7 @@ Expression EFormulaExpression() throws PrismLangException :
 		(
 			{
 				if (otherwise) {
-					throw new PrismLangException("Otherwise clause must be the final guard");
+					throw new PrismLangException("The 'otherwise' clause must be the final guard");
 				}
 			}
 			<COMMA> <LBRACKET> <RBRACKET> (c = Expression(false, false) | <OTHERWISE> { otherwise = true; }) <COLON> t = Expression(false, false)
@@ -784,27 +784,9 @@ Expression EFormulaExpression() throws PrismLangException :
 				}
 			}
 		)*
-		// (
-		// 	<IF> c = Expression(false, false) <COLON> t = Expression(false, false) <COMMA>
-		// 	{
-		// 		expressionITE.setOperand1(c); expressionITE.setOperand2(t);
-		// 	}
-		// 	(
-		// 		<IF> c = Expression(false, false) <COLON> t = Expression(false, false) <COMMA>
-		// 		{
-		// 			// ExpressionITE e = new ExpressionITE(c, t, null);
-		// 			expressionITE.setOperand3(new ExpressionITE(c, t, null)); // expressionITE.setOperand3(e);
-		// 			expressionITE = (ExpressionITE) expressionITE.getOperand3();
-		// 		}
-		// 	)*
-		// 	<OTHERWISE> <COLON> t = Expression(false, false)
-		// 	{
-		// 		expressionITE.setOperand3(t);
-		// 	}
-		// )
 	{
 		if (!otherwise) {
-			throw new PrismLangException("Missing otherwise clause");
+			throw new PrismLangException("The 'otherwise' clause is missing");
 		}
 	}
 	<RBRACE>
