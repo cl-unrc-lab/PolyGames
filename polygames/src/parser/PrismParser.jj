@@ -760,27 +760,53 @@ Expression EFormulaExpression() throws PrismLangException :
 	Expression result = expressionITE;
 	Expression c = null;
 	Expression t = null;
+	boolean otherwise = false;
 }
 {
 	<LBRACE>
+		<LBRACKET> <RBRACKET> c = Expression(false, false) <COLON> t = Expression(false, false)
+		{
+			expressionITE.setOperand1(c); expressionITE.setOperand2(t);
+		}
 		(
-			<IF> c = Expression(false, false) <COLON> t = Expression(false, false) <COMMA>
 			{
-				expressionITE.setOperand1(c); expressionITE.setOperand2(t);
+				if (otherwise) {
+					throw new PrismLangException("Otherwise clause must be the final guard");
+				}
 			}
-			(
-				<IF> c = Expression(false, false) <COLON> t = Expression(false, false) <COMMA>
-				{
-					// ExpressionITE e = new ExpressionITE(c, t, null);
-					expressionITE.setOperand3(new ExpressionITE(c, t, null)); // expressionITE.setOperand3(e);
+			<COMMA> <LBRACKET> <RBRACKET> (c = Expression(false, false) | <OTHERWISE> { otherwise = true; }) <COLON> t = Expression(false, false)
+			{
+				if (otherwise) {
+					expressionITE.setOperand3(t);
+				} else {
+					expressionITE.setOperand3(new ExpressionITE(c, t, null));
 					expressionITE = (ExpressionITE) expressionITE.getOperand3();
 				}
-			)*
-			<OTHERWISE> <COLON> t = Expression(false, false)
-			{
-				expressionITE.setOperand3(t);
 			}
-		)
+		)*
+		// (
+		// 	<IF> c = Expression(false, false) <COLON> t = Expression(false, false) <COMMA>
+		// 	{
+		// 		expressionITE.setOperand1(c); expressionITE.setOperand2(t);
+		// 	}
+		// 	(
+		// 		<IF> c = Expression(false, false) <COLON> t = Expression(false, false) <COMMA>
+		// 		{
+		// 			// ExpressionITE e = new ExpressionITE(c, t, null);
+		// 			expressionITE.setOperand3(new ExpressionITE(c, t, null)); // expressionITE.setOperand3(e);
+		// 			expressionITE = (ExpressionITE) expressionITE.getOperand3();
+		// 		}
+		// 	)*
+		// 	<OTHERWISE> <COLON> t = Expression(false, false)
+		// 	{
+		// 		expressionITE.setOperand3(t);
+		// 	}
+		// )
+	{
+		if (!otherwise) {
+			throw new PrismLangException("Missing otherwise clause");
+		}
+	}
 	<RBRACE>
 	{ return result; }
 }

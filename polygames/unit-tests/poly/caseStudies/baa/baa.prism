@@ -202,33 +202,33 @@ formula BW = 458.0;
 
 // R_b_in, R_l_in: Rates at which bogus and legit packets, respectively, pass through the Defender.
 formula R_b_in = {
-  if no_fix_selected | agr_selected : R_b,
-  if ftr_selected | agf_selected    : R_b * (1 - dfr),
-  otherwise                         : R_b * (1 - rdf)
+  [] no_fix_selected | agr_selected : R_b,
+  [] ftr_selected | agf_selected    : R_b * (1 - dfr),
+  [] otherwise                      : R_b * (1 - rdf)
 };
 
 formula R_l_in = {
-  if no_fix_selected : R_l,
-  if ftr_selected    : R_l * (1 - fpf),
-  if rnd_selected    : R_l * (1 - rdf),
-  if agr_selected    : R_l * pow(2, retries),
-  if rdr_selected    : R_l * pow(2, retries) * (1 - rdf),
-  otherwise          : R_l * pow(2, retries) * (1 - fpf)
+  [] no_fix_selected : R_l,
+  [] ftr_selected    : R_l * (1 - fpf),
+  [] rnd_selected    : R_l * (1 - rdf),
+  [] agr_selected    : R_l * pow(2, retries),
+  [] rdr_selected    : R_l * pow(2, retries) * (1 - rdf),
+  [] otherwise       : R_l * pow(2, retries) * (1 - fpf)
 };
 
 // R_b_out, R_l_out: Rates at which bogus and legit packets, respectively, are dropped at the Defender.
 formula R_b_out = {
-  if no_fix_selected | agr_selected : 0,
-  if ftr_selected | agf_selected    : R_b * dfr,
-  otherwise                         : R_b * rdf
+  [] no_fix_selected | agr_selected : 0,
+  [] ftr_selected | agf_selected    : R_b * dfr,
+  [] otherwise                      : R_b * rdf
 };
 
 formula R_l_out = {
-  if no_fix_selected | agr_selected : 0,
-  if ftr_selected                   : R_l * fpf,
-  if rnd_selected                   : R_l * rdf,
-  if rdr_selected                   : R_l * pow(2, retries) * rdf,
-  otherwise                         : R_l * pow(2, retries) * fpf
+  [] no_fix_selected | agr_selected : 0,
+  [] ftr_selected                   : R_l * fpf,
+  [] rnd_selected                   : R_l * rdf,
+  [] rdr_selected                   : R_l * pow(2, retries) * rdf,
+  [] otherwise                      : R_l * pow(2, retries) * fpf
 };
 
 // These formulaes are used for readability purposes
@@ -290,5 +290,5 @@ rewards "AttackerCost_1"
   turn = 2 & bogus_packet_dropped : 1;
 endrewards
 
-formula bogus_packet_received = (packet_status = 1);
-formula bogus_packet_dropped  = (packet_status = 2);
+formula bogus_packet_received = packet_status = 1;
+formula bogus_packet_dropped  = packet_status = 2;

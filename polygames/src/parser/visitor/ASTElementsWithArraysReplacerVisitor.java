@@ -138,18 +138,13 @@ public class ASTElementsWithArraysReplacerVisitor extends ASTTraverseModify {
 
             if (indexValue < indexedIdentifiers.size() - 1) {
               Expression guard = new ExpressionBinaryOp(5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), indexValue)); // index =? value
-              result = new ExpressionUnaryOp(
-                ExpressionUnaryOp.PARENTH, new ExpressionITE(
-                    guard,
-                    (Expression) replacer.replace(
-                        formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), indexValue), result.clone().deepCopy(new DeepCopy()
-                      )
-                  )
+              result = new ExpressionITE(
+                guard, ((Expression) replacer.replace(formula, expressionArrayIndex, replacement(identifier, expressionArrayIndex), indexValue)), result.clone().deepCopy(new DeepCopy())
               );
             } else {
               result = (Expression) replacer.replace(
-                  result, expressionArrayIndex, replacement(identifier, expressionArrayIndex), indexValue
-                );
+                result, expressionArrayIndex, replacement(identifier, expressionArrayIndex), indexValue
+              );
             }
           }
         }
