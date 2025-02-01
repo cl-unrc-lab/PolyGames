@@ -1,18 +1,38 @@
-r_b_in zombies countermeasure df rdf = if ((countermeasure == 0) || (countermeasure == 3)) then ( r_b zombies ) else ( if ((countermeasure == 1) || (countermeasure == 5)) then ((r_b zombies) * (1 - df)) else ((r_b zombies) * (1 - rdf)) )
+-- countermeasure = 0 : no_fix
+-- countermeasure = 1 : ftr
+-- countermeasure = 2 : rnd
+-- countermeasure = 3 : agr
+-- countermeasure = 4 : rdr
+-- countermeasure = 5 : agf
+
+r_b_in zombies countermeasure df rdf | countermeasure == 0 || countermeasure == 3 = (r_b zombies)
+                                     | countermeasure == 1 || countermeasure == 5 = (r_b zombies) * (1 - df)
+                                     | countermeasure == 2 || countermeasure == 4 = (r_b zombies) * (1 - rdf)
 
 r_b zombies = 10 * 15.31 * zombies
 
-r_l_in zombies countermeasure fpf rdf retries = if (countermeasure == 0) then (0) else (if (countermeasure == 1) then (r_l * (1 - fpf)) else (if (countermeasure == 2) then (r_l * (1 - rdf)) else (if (countermeasure == 3) then (r_l * 2**retries) else (if (countermeasure == 4) then (r_l * 2**retries * (1 - rdf)) else (r_l * 2**retries * (1 - fpf))))))
+r_l_in zombies countermeasure fpf rdf retries | countermeasure == 0 = r_l
+                                              | countermeasure == 1 = r_l * (1 - fpf)
+                                              | countermeasure == 2 = r_l * (1 - rdf)
+                                              | countermeasure == 3 = r_l * 2**retries
+                                              | countermeasure == 4 = r_l * 2**retries * (1 - rdf)
+                                              | countermeasure == 5 = r_l * 2**retries * (1 - fpf)
 
 r_l = 100
 
-r_b_out zombies countermeasure df rdf = if (countermeasure == 0 || countermeasure == 3) then (0) else (if (countermeasure == 1 || countermeasure == 5) then ((r_b zombies) * df) else ((r_b zombies) * rdf))
+r_b_out zombies countermeasure df rdf | countermeasure == 0 || countermeasure == 3 = 0
+                                      | countermeasure == 1 || countermeasure == 5 = (r_b zombies) * df
+                                      | countermeasure == 2 || countermeasure == 4 = (r_b zombies) * rdf
 
-r_l_out zombies countermeasure fpf rdf retries = if (countermeasure == 0 || countermeasure == 3) then (0) else (if (countermeasure == 1) then (r_l * fpf) else (if (countermeasure == 2) then (r_l * rdf) else (if (countermeasure == 4) then (r_l * 2**retries * rdf) else (r_l * 2**retries * fpf))))
+r_l_out zombies countermeasure fpf rdf retries | countermeasure == 0 || countermeasure == 3 = 0
+                                               | countermeasure == 1                        = r_l * fpf
+                                               | countermeasure == 2                        = r_l * rdf
+                                               | countermeasure == 4                        = r_l * 2**retries * rdf
+                                               | countermeasure == 5                        = r_l * 2**retries * fpf
 
-p_b_in zombies countermeasure df rdf  = (r_b_in zombies countermeasure df rdf) / ((r_b_in zombies countermeasure df rdf) + (r_b_out zombies countermeasure df rdf))
+p_b_in zombies countermeasure df rdf  = if zombies == 0 then 0 else (r_b_in zombies countermeasure df rdf) / ((r_b_in zombies countermeasure df rdf) + (r_b_out zombies countermeasure df rdf))
 p_l_in zombies countermeasure fpf rdf retries  = (r_l_in zombies countermeasure fpf rdf retries) / ((r_l_in zombies countermeasure fpf rdf retries) + (r_l_out zombies countermeasure fpf rdf retries))
-p_b_out zombies countermeasure df rdf = (r_b_out zombies countermeasure df rdf) / ((r_b_in zombies countermeasure df rdf) + (r_b_out zombies countermeasure df rdf))
+p_b_out zombies countermeasure df rdf = if zombies == 0 then 1 else (r_b_out zombies countermeasure df rdf) / ((r_b_in zombies countermeasure df rdf) + (r_b_out zombies countermeasure df rdf))
 p_l_out zombies countermeasure fpf rdf retries = (r_l_out zombies countermeasure fpf rdf retries) / ((r_l_in zombies countermeasure fpf rdf retries) + (r_l_out zombies countermeasure fpf rdf retries))
 
 r_in zombies countermeasure df fpf rdf retries   = (r_b_in zombies countermeasure df rdf) + (r_l_in zombies countermeasure fpf rdf retries)
@@ -36,3 +56,5 @@ fpfs = [0.05, 0.10, 0.15]
 rdfs = [0.75, 0.85, 0.95]
 retries = [2, 4, 6]
 
+-- Get the set of parameters that make the sum (r_b_in z c df rdf) + (r_b_out z c df rdf) equal to 0, making p_b_in and p_b_out infeasible. 
+-- filter (\(z, c, df, rdf) -> ((r_b_in z c df rdf) + (r_b_out z c df rdf)) == 0) [ (z, c, df, rdf) | z <- zombies, c <- countermeasures, df <- dfs, rdf <- rdfs ]

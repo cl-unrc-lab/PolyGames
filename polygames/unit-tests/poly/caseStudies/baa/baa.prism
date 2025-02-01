@@ -27,28 +27,12 @@ global rdf_index : [0..2] init 0;
 module attacker
   zombies : [0..100] init 0;
 
-  // [] turn = 0 & time < maxTime -> (zombies'=0)   & (turn'=1);
-  // [] turn = 0 & time < maxTime -> (zombies'=20)  & (turn'=1);
-  // [] turn = 0 & time < maxTime -> (zombies'=40)  & (turn'=1);
-  // [] turn = 0 & time < maxTime -> (zombies'=60)  & (turn'=1);
-  // [] turn = 0 & time < maxTime -> (zombies'=80)  & (turn'=1);
-  // [] turn = 0 & time < maxTime -> (zombies'=100) & (turn'=1);
-
-  [] turn = 0 & time < maxTime -U-> p1 : (zombies'=0)   & (turn'=1)
-                                  + p2 : (zombies'=20)  & (turn'=1)
-                                  + p3 : (zombies'=40)  & (turn'=1)
-                                  + p4 : (zombies'=60)  & (turn'=1)
-                                  + p5 : (zombies'=80)  & (turn'=1)
-                                  + p6 : (zombies'=100) & (turn'=1)
-                                {
-                                  p1  = 0.5 * p2,
-                                  p2 >= 0.4,
-                                  p3 <= 0.3,
-                                  p4 <= 0.3,
-                                  p5 <= 0.3,
-                                  p6 >= 0.2,
-                                  p6 <= 0.8
-                                };
+  [] turn = 0 & time < maxTime -> (zombies'=0)   & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=20)  & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=40)  & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=60)  & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=80)  & (turn'=1);
+  [] turn = 0 & time < maxTime -> (zombies'=100) & (turn'=1);
 endmodule
 
 module defender
@@ -66,36 +50,24 @@ module vs
   vs_step : [0..1] init 0;
   packet_status : [0..4] init 0; // packet_status = { 0: "default", 1: "bogus_packet_received", 2: "bogus_packet_dropped", 3: "legit_packet_received", 4: "legit_packet_dropped" }
 
-  [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 0 -> p_b_receive : (packet_status'=1) & (vs_step'=1) + p_b_drop : (packet_status'=2) & (vs_step'=1);
-  [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 0 -> p_l_receive : (packet_status'=3) & (vs_step'=1) + p_l_drop : (packet_status'=4) & (vs_step'=1);
+  [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 0 -> p_b_receive : (packet_status'=1) & (vs_step'=1)
+                                                                      + p_b_drop    : (packet_status'=2) & (vs_step'=1)
+                                                                      + p_l_receive : (packet_status'=3) & (vs_step'=1)
+                                                                      + p_l_drop    : (packet_status'=4) & (vs_step'=1);
   [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
 endmodule
 
 module ftr
-  [] ftr_selected & parameters_selection -> (dfr_index'=0) & (fpf_index'=0) & (parameters_selection'=false);
-  [] ftr_selected & parameters_selection -> (dfr_index'=0) & (fpf_index'=1) & (parameters_selection'=false);
-  [] ftr_selected & parameters_selection -> (dfr_index'=0) & (fpf_index'=2) & (parameters_selection'=false);
+  ftr_step : [0..1] init 0;
+  
+  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 0) & (ftr_step'= 1);
+  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 1) & (ftr_step'= 1);
+  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 2) & (ftr_step'= 1);
 
-  [] ftr_selected & parameters_selection -> (dfr_index'=1) & (fpf_index'=0) & (parameters_selection'=false);
-  [] ftr_selected & parameters_selection -> (dfr_index'=1) & (fpf_index'=1) & (parameters_selection'=false);
-  [] ftr_selected & parameters_selection -> (dfr_index'=1) & (fpf_index'=2) & (parameters_selection'=false);
-
-  [] ftr_selected & parameters_selection -> (dfr_index'=2) & (fpf_index'=0) & (parameters_selection'=false);
-  [] ftr_selected & parameters_selection -> (dfr_index'=2) & (fpf_index'=1) & (parameters_selection'=false);
-  [] ftr_selected & parameters_selection -> (dfr_index'=2) & (fpf_index'=2) & (parameters_selection'=false);
+  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 0) & (parameters_selection'= false) & (ftr_step'= 0);
+  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 1) & (parameters_selection'= false) & (ftr_step'= 0);
+  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 2) & (parameters_selection'= false) & (ftr_step'= 0);
 endmodule
-
-//module ftr
-//  ftr_step : [0..1] init 0;
-//  
-//  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 0) & (ftr_step'= 1);
-//  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 1) & (ftr_step'= 1);
-//  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 2) & (ftr_step'= 1);
-//
-//  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 0) & (parameters_selection'= false) & (ftr_step'= 0);
-//  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 1) & (parameters_selection'= false) & (ftr_step'= 0);
-//  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 2) & (parameters_selection'= false) & (ftr_step'= 0);
-//endmodule
 
 module rnd
   [] rnd_selected & parameters_selection -> (rdf_index' = 0) & (parameters_selection' = false);
@@ -110,84 +82,32 @@ module agr
 endmodule
 
 module rdr
-  [] rdr_selected & parameters_selection -> (rdf_index' = 0) & (retries' = 2) & (parameters_selection' = false);
-  [] rdr_selected & parameters_selection -> (rdf_index' = 0) & (retries' = 4) & (parameters_selection' = false);
-  [] rdr_selected & parameters_selection -> (rdf_index' = 0) & (retries' = 6) & (parameters_selection' = false);
+  rdr_step : [0..1] init 0;
 
-  [] rdr_selected & parameters_selection -> (rdf_index' = 1) & (retries' = 2) & (parameters_selection' = false);
-  [] rdr_selected & parameters_selection -> (rdf_index' = 1) & (retries' = 4) & (parameters_selection' = false);
-  [] rdr_selected & parameters_selection -> (rdf_index' = 1) & (retries' = 6) & (parameters_selection' = false);
+  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 0) & (rdr_step' = 1);
+  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 1) & (rdr_step' = 1);
+  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 2) & (rdr_step' = 1);
 
-  [] rdr_selected & parameters_selection -> (rdf_index' = 2) & (retries' = 2) & (parameters_selection' = false);
-  [] rdr_selected & parameters_selection -> (rdf_index' = 2) & (retries' = 4) & (parameters_selection' = false);
-  [] rdr_selected & parameters_selection -> (rdf_index' = 2) & (retries' = 6) & (parameters_selection' = false);
+  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 2) & (parameters_selection' = false) & (rdr_step' = 0);
+  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 4) & (parameters_selection' = false) & (rdr_step' = 0);
+  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 6) & (parameters_selection' = false) & (rdr_step' = 0);
 endmodule
-
-//module rdr
-//  rdr_step : [0..1] init 0;
-//
-//  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 0) & (rdr_step' = 1);
-//  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 1) & (rdr_step' = 1);
-//  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 2) & (rdr_step' = 1);
-//
-//  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 2) & (parameters_selection' = false) & (rdr_step' = 0);
-//  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 4) & (parameters_selection' = false) & (rdr_step' = 0);
-//  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 6) & (parameters_selection' = false) & (rdr_step' = 0);
-//endmodule
 
 module agf
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 0) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 0) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 0) & (retries' = 6) & (parameters_selection' = false);
+  agf_step : [0..2] init 0;
 
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 1) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 1) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 1) & (retries' = 6) & (parameters_selection' = false);
+  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 0) & (agf_step' = 1);
+  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 1) & (agf_step' = 1);
+  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 2) & (agf_step' = 1);
 
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 2) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 2) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 0) & (fpf_index' = 2) & (retries' = 6) & (parameters_selection' = false);
+  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 0) & (agf_step' = 2);
+  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 1) & (agf_step' = 2);
+  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 2) & (agf_step' = 2);
 
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 0) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 0) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 0) & (retries' = 6) & (parameters_selection' = false);
-
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 1) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 1) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 1) & (retries' = 6) & (parameters_selection' = false);
-
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 2) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 2) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 1) & (fpf_index' = 2) & (retries' = 6) & (parameters_selection' = false);
-
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 0) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 0) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 0) & (retries' = 6) & (parameters_selection' = false);
-
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 1) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 1) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 1) & (retries' = 6) & (parameters_selection' = false);
-
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 2) & (retries' = 2) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 2) & (retries' = 4) & (parameters_selection' = false);
-  [] agf_selected & parameters_selection -> (dfr_index' = 2) & (fpf_index' = 2) & (retries' = 6) & (parameters_selection' = false);
+  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 2) & (parameters_selection' = false) & (agf_step' = 0);
+  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 4) & (parameters_selection' = false) & (agf_step' = 0);
+  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 6) & (parameters_selection' = false) & (agf_step' = 0);
 endmodule
-
-//module agf
-//  agf_step : [0..2] init 0;
-//
-//  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 0) & (agf_step' = 1);
-//  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 1) & (agf_step' = 1);
-//  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 2) & (agf_step' = 1);
-//
-//  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 0) & (agf_step' = 2);
-//  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 1) & (agf_step' = 2);
-//  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 2) & (agf_step' = 2);
-//
-//  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 2) & (parameters_selection' = false) & (agf_step' = 0);
-//  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 4) & (parameters_selection' = false) & (agf_step' = 0);
-//  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 6) & (parameters_selection' = false) & (agf_step' = 0);
-//endmodule
 
 formula AF = 15.31;
 formula bogus_rate = 10 * AF;
@@ -239,15 +159,15 @@ formula agr_selected    = (countermeasure = 3);
 formula rdr_selected    = (countermeasure = 4);
 formula agf_selected    = (countermeasure = 5);
 
-// p_b_in: Probability with which a bogus packet passes through the Defender.
-// If the number of zombies is zero (i.e., the attack has stopped), then the probability with which a bogus packet passes through the DF is zero.
+// p_b_in: Probability that a bogus packet passes through the Defender.
+// If the number of zombies is zero (i.e., the attack has stopped), the probability of a bogus packet reaching the VS is zero.
 formula p_b_in  = (zombies > 0) ? R_b_in / (R_b_in + R_b_out) : 0 ;
 
 // p_l_in: Probability with which a legit packet passes through the Defender.
 formula p_l_in  = R_l_in / (R_l_in + R_l_out);
 
-// p_b_out: Probability with which a bogus packet is dropped at the Defender.
-// If the number of zombies is zero (i.e., the attack has stopped), then the probability with which a bogus packet is dropped at the DF is one.
+// p_b_out: Probability that a bogus packet is dropped at the Defender.
+// If the number of zombies is zero (i.e., the attack has stopped), the probability of a bogus packet not reaching the VS is one.
 formula p_b_out = (zombies > 0) ? R_b_out / (R_b_in + R_b_out) : 1 ;
 
 // p_l_out: Probability with which a legitimate packet is dropped at the Defender.
@@ -263,32 +183,33 @@ formula p_drop = (BW >= R_in ? 0 : ((R_in - BW) / R_in));
 formula p_receive = (1 - p_drop);
 
 // p_b_receive: Probability that a bogus packet is received.
-formula p_b_receive = p_b_in * p_receive;
+formula p_b_receive = (p_b_in * p_receive)/2;
 
 // p_l_receive: Probability that a legit packet is received.
-formula p_l_receive = p_l_in * p_receive;
+formula p_l_receive = (p_l_in * p_receive)/2;
 
 // p_b_drop: Probability that a bogus packet is dropped.
-formula p_b_drop = p_b_in * p_drop + p_b_out;
+formula p_b_drop = (p_b_in * p_drop + p_b_out)/2;
 
 // p_l_drop: Probability that a legit packet is dropped.
-formula p_l_drop = p_l_in * p_drop + p_l_out;
+formula p_l_drop = (p_l_in * p_drop + p_l_out)/2;
 
 const double dfr_values[3] = {0.85, 0.90, 0.95}; // Detection fraction parameter values
 const double fpf_values[3] = {0.05, 0.10, 0.15}; // False positive fraction parameter values
-const double rdf_values[3] = {0.05, 0.10, 0.15}; // Random-drop fraction parameter values
+const double rdf_values[3] = {0.75, 0.85, 0.95}; // Random-drop fraction parameter values
 
 formula dfr = dfr_values[dfr_index];
 formula fpf = fpf_values[fpf_index];
 formula rdf = rdf_values[rdf_index];
 
 rewards "AttackerPayoff_1"
-  turn = 2 & bogus_packet_received : 1;
-endrewards
-
-rewards "AttackerCost_1"
-  turn = 2 & bogus_packet_dropped : 1;
+  turn = 2 & legit_packet_received : 0;
+  turn = 2 & (bogus_packet_dropped | legit_packet_dropped) : 1;
+  turn = 2 & bogus_packet_received : 2;
+  turn = 0 | turn = 1 : 0;
 endrewards
 
 formula bogus_packet_received = packet_status = 1;
 formula bogus_packet_dropped  = packet_status = 2;
+formula legit_packet_received = packet_status = 3;
+formula legit_packet_dropped  = packet_status = 4;
