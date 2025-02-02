@@ -13,6 +13,8 @@ player p3
 endplayer
 
 const int maxTime;
+const int max_succ_attacks;
+const int attacker_latency;
 
 global turn : [0..2] init 0;
 global time : [0..maxTime] init 0;
@@ -26,13 +28,18 @@ global rdf_index : [0..2] init 0;
 
 module attacker
   zombies : [0..100] init 0;
+  current_succ_attacks : [0..max_succ_attacks] init 0;
+  wait_time : [0..attacker_latency] init 0;
 
-  [] turn = 0 & time < maxTime -> (zombies'=0)   & (turn'=1);
-  [] turn = 0 & time < maxTime -> (zombies'=20)  & (turn'=1);
-  [] turn = 0 & time < maxTime -> (zombies'=40)  & (turn'=1);
-  [] turn = 0 & time < maxTime -> (zombies'=60)  & (turn'=1);
-  [] turn = 0 & time < maxTime -> (zombies'=80)  & (turn'=1);
-  [] turn = 0 & time < maxTime -> (zombies'=100) & (turn'=1);
+  [] turn = 0 & time < maxTime & current_succ_attacks = max_succ_attacks & wait_time = attacker_latency -> (current_succ_attacks'=0) & (wait_time'=0);
+  [] turn = 0 & time < maxTime & current_succ_attacks = max_succ_attacks & wait_time < attacker_latency -> (zombies'=0) & (wait_time'=wait_time+1);
+
+  [] turn = 0 & time < maxTime & current_succ_attacks < max_succ_attacks -> (zombies'=0)   & (current_succ_attacks'=0) & (turn'=1);
+  [] turn = 0 & time < maxTime & current_succ_attacks < max_succ_attacks -> (zombies'=20)  & (current_succ_attacks'=current_succ_attacks+1) & (turn'=1);
+  [] turn = 0 & time < maxTime & current_succ_attacks < max_succ_attacks -> (zombies'=40)  & (current_succ_attacks'=current_succ_attacks+1) & (turn'=1);
+  [] turn = 0 & time < maxTime & current_succ_attacks < max_succ_attacks -> (zombies'=60)  & (current_succ_attacks'=current_succ_attacks+1) & (turn'=1);
+  [] turn = 0 & time < maxTime & current_succ_attacks < max_succ_attacks -> (zombies'=80)  & (current_succ_attacks'=current_succ_attacks+1) & (turn'=1);
+  [] turn = 0 & time < maxTime & current_succ_attacks < max_succ_attacks -> (zombies'=100) & (current_succ_attacks'=current_succ_attacks+1) & (turn'=1);
 endmodule
 
 module defender
