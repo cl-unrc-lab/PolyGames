@@ -1447,7 +1447,6 @@ public class ModulesFile extends ASTElement implements ModelInfo, RewardGenerato
 	{
 		ModulesFileSemanticCheck visitor = new ModulesFileSemanticCheck(this);
 		accept(visitor);
-		
 	}
 	
 	/**

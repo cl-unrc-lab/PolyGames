@@ -1,9 +1,10 @@
 package parser.ast;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.HashMap;
+import java.util.List;
 
+import parser.type.TypeDouble;
 import parser.visitor.ASTVisitor;
 import parser.visitor.DeepCopy;
 import prism.PrismLangException;
@@ -11,168 +12,164 @@ import prism.PrismException;
 
 import parma_polyhedra_library.Coefficient;
 import parma_polyhedra_library.Linear_Expression_Variable;
-import parma_polyhedra_library.Parma_Polyhedra_Library;
 import parma_polyhedra_library.Variable;
-import parma_polyhedra_library.C_Polyhedron;
-import parma_polyhedra_library.NNC_Polyhedron;
-import parma_polyhedra_library.Generator_Type;
 import parma_polyhedra_library.Constraint;
 import parma_polyhedra_library.Linear_Expression;
 import parma_polyhedra_library.Linear_Expression_Sum;
 import parma_polyhedra_library.Linear_Expression_Times;
 import parma_polyhedra_library.Linear_Expression_Coefficient;
-import parma_polyhedra_library.Polyhedron;
 import parma_polyhedra_library.Constraint_System;
 
-
-import parma_polyhedra_library.Generator;
-import parma_polyhedra_library.Generator_System;
 import parma_polyhedra_library.Relation_Symbol;
 import explicit.PPLSupport;
 
-public class UncertainUpdates extends Updates{
-	enum relOps{
-		GE,
-		LE
+public class UncertainUpdates extends Updates {
+
+	private ArrayList<Expression> uncertains; // the list of uncertains
+	private HashMap<String, HashMap<Integer, Expression>> coefficients; // coefficients contains for each uncertain the corresponding column of coefficients
+																																	    // for instance, coefficients.get(uncertain).get(i) returns the coefficiente corresponding to row i, null if none
+	private ArrayList<Expression> constants; // constains the columns of constants in the equations
+	private List<Relation_Symbol> relationSymbols;
+	int div = 1; 	     // the divisor allows us to move the decimal point, PPL only allows for integers.
+	int precision = 6; // this is the precision, after that we truncate the number	
+
+	/**
+	 * Basic constructor, it initializes the object, all the coefficients and constants are initialized to zero,
+	 * we assume that, when a uncertain is added, the coefficient is set to a number different from 0
+	 */
+	public UncertainUpdates() {
+		super();
+		this.uncertains = new ArrayList<Expression>();
+		this.coefficients = new HashMap<String, HashMap<Integer, Expression>>();
+		this.constants = new ArrayList<Expression>();
+		this.relationSymbols = new ArrayList<Relation_Symbol>();
 	}
-    private ArrayList<Expression> uncertains; // the list of uncertains
-    private HashMap<String, HashMap<Integer, Double>> coefficients;  // coefficients contains for each uncertain the corresponding column of coefficients
-    																 // for instance, coefficients.get(uncertain).get(i) returns the coefficiente corresponding to row i, null if none
-    private ArrayList<Double> constants;							 // constains the columns of constants in the equations
-    private ArrayList<relOps> ineqs;								 // the ineqs in the constraints: Relation_Symbol.LESS_OR_EQUAL, or Relation_Symbol.G
-    int div = 1; 													 // the divisor allows us to move the decimal point, PPL only allows for integers.
-    int precision = 6; 												 // this is the precision, after that we truncate the number	
-    /**
-     * Basic constructor, it initializes the object, all the coefficients and constants are initialized to zero,
-     * we assume that, when a uncertain is added, the coefficient is set to a number different from 0
-     */
-    public UncertainUpdates() {
-        super();
-        this.uncertains   = new ArrayList<Expression>();
-        //this.coefficients = new double[10][10]; // we have to do a resize of arrays
-        //this.constants = new double[10];
-        this.coefficients = new HashMap<String, HashMap<Integer, Double>>();
-        this.constants = new ArrayList<Double>();
-        this.ineqs = new ArrayList<relOps>();
-        
-    }
 
-   /**
-    * @param Expression
-    * @param Up
-    */
-    public void addUpdate(Expression un, Update up) {
-        if (un == null) { throw new IllegalArgumentException(); }
-        if (up == null) { throw new IllegalArgumentException(); }
-        
-        this.uncertains.add(un);
-        //this.updates.add(up);
-        super.addUpdate(un, up); // we call the super version
-        //up.setParent(this);
-    }
+	public HashMap<String, HashMap<Integer, Expression>> coefficients() {
+		return coefficients;
+	}
 
-    /**
-     * 
-     * @param i
-     * @param un
-     */
-    public void setUncertain(int i, Expression un) {
-        if (un == null) { throw new IllegalArgumentException(); }
-        this.uncertains.set(i, un);
-    }
+	public void setCoefficient(String uncertain, int row, Expression coefficient) {
+		this.coefficients.get(uncertain).put(row, coefficient);
+	}
 
-    /**
-     * 
-     * @param i
-     * @return
-     */
-    public Expression getUncertain(int i) { return this.uncertains.get(i); }
+	public List<Expression> constants() {
+		return constants;
+	}
+
+	public void setConstant(int row, Expression constant) {
+		this.constants.set(row, constant);
+	}
+
+	public Expression constant(int row) {
+		return this.constants.get(row);
+	}
+
+	/**
+	* @param Expression
+	* @param Up
+	*/
+	public void addUpdate(Expression un, Update up) {
+		if (un == null) { throw new IllegalArgumentException(); }
+		if (up == null) { throw new IllegalArgumentException(); }
+		
+		this.uncertains.add(un);
+		super.addUpdate(un, up); // we call the super version
+	}
+
+	/**
+	 * 
+	 * @param i
+	 * @param un
+	 */
+	public void setUncertain(int i, Expression un) {
+		if (un == null) { throw new IllegalArgumentException(); }
+		this.uncertains.set(i, un);
+	}
+
+	/**
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public Expression getUncertain(int i) { return this.uncertains.get(i); }
+
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumberUncertains() {
+		return this.uncertains.size();
+	}
+
+	/**
+	 * 
+	 * @return The divisor indicating the number of decimals that one needs to shift the numbers
+	 */
+	public int getDivisor() {
+		return div;
+	}
+	
+	/**
+	 * 
+	 * @return the precision of the constants and coefficients
+	 */
+	public int getPrecision() {
+		return precision;
+	}
+	/**
+	 * @param c
+	 * @param i			the row of the coefficient
+	 * @param uncertain	the uncertain to which the coefficient applies
+	 */
+	public void addCoefficient(Expression coefficient, int i, UncertainExpression uncertain, boolean isInLeftSide) {
+		
+		String uncertainName = uncertain.getName();
+		
+		// we check if the row for the uncertain was initialised
+		if (this.coefficients.get(uncertainName) == null)
+			this.coefficients.put(uncertainName, new HashMap<Integer, Expression>());
+		
+		if (!isInLeftSide)
+			coefficient = new ExpressionUnaryOp(2, coefficient);
+
+		if (this.coefficients.get(uncertainName).get(i) == null) { // if the uncertain hasn't a mapped coefficient
+			this.coefficients.get(uncertainName).put(i, coefficient);
+		} else { // if the uncertain has a mapped coefficient
+			this.coefficients.get(uncertainName).put(i, new ExpressionBinaryOp(11, coefficient, this.coefficients.get(uncertainName).get(i)));
+		}
+	}
+
+	public void addConstant(Expression constant, int i, boolean isInLeftSide) {
+		if (isInLeftSide)
+			constant = new ExpressionUnaryOp(2, constant);
+		
+		if ( i < this.constants.size() ) { // if there is already a constant for the i-th row then
+			this.constants.set(i, new ExpressionBinaryOp(11, constant, this.constants.get(i)));
+		} else {
+			this.constants.add(i, constant);
+		}
+	}
+
+	public void setRelationSymbol(String relationSymbol) {
+		load_PPL();
+
+		switch (relationSymbol) {
+			case "=":
+				this.relationSymbols.add(Relation_Symbol.EQUAL);
+				break;
+			case "<=":
+				this.relationSymbols.add(Relation_Symbol.LESS_OR_EQUAL);
+				break;
+			case ">=":
+				this.relationSymbols.add(Relation_Symbol.GREATER_OR_EQUAL);
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid relation symbol: " + relationSymbol);
+		}
+	}
     
-
-    /**
-     * 
-     * @return
-     */
-    public int getNumberUncertains() {
-    	return this.uncertains.size();
-    }
-
-    /**
-     * 
-     * @return	The divisor indicating the number of decimals that one needs to shift the numbers
-     */
-    public int getDivisor() {
-    	return div;
-    }
-    
-    /**
-     * 
-     * @return the precision of the constants and coefficients
-     */
-    public int getPrecision() {
-    	return precision;
-    }
-    /**
-     * @param c
-     * @param i			the row of the coefficient
-     * @param uncertain	the uncertain to which the coefficient applies
-     */
-    public void addCoefficient(double c, int i, UncertainExpression uncertain)
-    {	
-    	// first, we determine the number of decimals in the coefficient
-    	// and normalise the number
-    	//int dec = 0;
-    	//double newc = c;
-    	//while ((newc - (int) newc) != 0 && dec <= precision){
-    	//	System.out.println("double:"+newc);
-    	//	System.out.println("int part:"+(int) newc);
-    		
-    	//	newc = newc * 10;
-    	//	dec++;
-    	//}
-    	// we update the divisor
-    	//div = Math.max(div, dec);
-    	
-    	
-    	String uncertainName = uncertain.getName();
-    	
-    	// we check if the row for the uncertain was initialised
-    	if (this.coefficients.get(uncertainName) == null)
-    		this.coefficients.put(uncertainName, new HashMap<Integer, Double>());
-    	
-    	this.coefficients.get(uncertainName).put(i, c);
-    }
-
-    public void addConstant(double c, int i, String rel) {
-    	
-    	// first, we determine the number of decimals in the coefficient
-    	// and normalise the number
-    	//int dec = 0;
-    	//double newc = c;
-    	//while ((newc - (int) newc) != 0){
-    	//	newc = newc * 10;
-    	//	dec++;
-    	//}
-    	// we update the divisor
-    	//div = Math.max(div, dec);
-    	
-    	// we add the constants
-        this.constants.add(i, c);
-        
-        switch (rel) {
-        	case "<=":
-        		this.ineqs.add(relOps.LE);
-        		break;
-        	case ">=":
-        		this.ineqs.add(relOps.GE);
-        		break;
-        	default:
-        		throw new IllegalArgumentException("Invalid inequality: " + rel);
-        }
-        
-    }
-    
-    /**
+	/**
 	 * Visitor method.
 	 */
 	public Object accept(ASTVisitor v) throws PrismLangException
@@ -182,6 +179,8 @@ public class UncertainUpdates extends Updates{
 	
 	@Override
 	public String toString() {
+		load_PPL();
+
 		String result = "";
 		
 		for (int j = 0; j < this.constants.size(); j++) {
@@ -189,7 +188,8 @@ public class UncertainUpdates extends Updates{
 				String uncertain = ((UncertainExpression) this.uncertains.get(i)).getName();
 				result += this.coefficients.get(uncertain).get(j) + uncertain;
 			}
-			result += " <=" + constants.get(j); 
+
+			result += " " + relationSymbols.get(j) + " " + constants.get(j) ;
 		}
 		
 		return result;
@@ -204,100 +204,107 @@ public class UncertainUpdates extends Updates{
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public UncertainUpdates clone()
-	{
+	public UncertainUpdates clone() {
 		UncertainUpdates clone = (UncertainUpdates) super.clone();
+		clone.uncertains   = (ArrayList<Expression>) uncertains.clone();
+		clone.coefficients = (HashMap<String, HashMap<Integer, Expression>>) coefficients.clone();
+		clone.constants    = (ArrayList<Expression>) constants.clone();
 
-		// clone.probs   = (ArrayList<Expression>) probs.clone();
-		// clone.updates = (ArrayList<Update>) updates.clone();
-		clone.uncertains = (ArrayList<Expression>) uncertains.clone();
-		clone.coefficients = (HashMap<String, HashMap<Integer, Double>>) coefficients.clone();
-		clone.constants = (ArrayList<Double>) constants.clone();
 		return clone;
 	}
 	
 	/**
 	 * @return The PPL constrain system corresponding to the equations in the uncertain system
+	 * @throws PrismLangException 
 	 */
-	public Constraint_System getPPLConstraintSystem(){
+	public Constraint_System getPPLConstraintSystem() throws PrismLangException{
+		load_PPL();
+
+		Constraint_System constraint_System = new Constraint_System();
 		
-		Constraint_System result = new Constraint_System(); // the result
-		
-		// We init PPL
-		try {
-			PPLSupport.initPPL();
-		}
-		catch(PrismException e) {
-			System.out.println("Error Loading PPL Library");
-		}
-		
-		// we define an array of variables for the uncertains
-		// the uncertains are mapped using their index in {@code uncertains}
+		// Each variable corresponds to an uncertain. The uncertains are mapped using their index in {@code uncertains}.
 		ArrayList<Variable> vars = new ArrayList<Variable>();
 		for (int i = 0; i < this.uncertains.size() ; i++) {
 			vars.add(new Variable(i));
 		}
-		
-		// An array of expressions, exprs[i] corresponds to the left expression in the ith row  of the equation system
-		Linear_Expression[] exprs = new Linear_Expression[this.constants.size()];
-		
-		// We build the equation system, one equation for each constant: expr <> constants[i]
+
+		// linear_Expressions[i] represents the left linear expression in the i-th row of the constraint system
+		Linear_Expression[] linear_Expressions = new Linear_Expression[this.constants.size()];
+
 		for (int i = 0; i < this.constants.size(); i++) {
-			Linear_Expression lexp = new Linear_Expression_Coefficient(new Coefficient(0)); // we start with 0
-			for (int j = 0; j < this.uncertains.size(); j++){ // for each uncertain we construct the rows
-				String uncertainName = ((UncertainExpression) this.uncertains.get(j)).getName();
-				if (this.coefficients.get(((UncertainExpression) this.uncertains.get(j)).getName()).get(i) != null) { // we get the corresponding coefficient to the uncertain
-					Integer coef = this.coefficients.get(uncertainName).get(i).intValue();
-					Linear_Expression times = new Linear_Expression_Times(new Coefficient(coef), vars.get(j));
-					lexp = new Linear_Expression_Sum(times, lexp); // we sum the expression to create the corresponding expression for the row
-				}
+			Linear_Expression linear_Expression = new Linear_Expression_Coefficient(new Coefficient(0));
+
+			for (int j = 0; j < this.uncertains.size(); j++) {
+				String uncertain = ((UncertainExpression) this.uncertains.get(j)).getName();
+
+				if (this.coefficients.get(uncertain).get(i) == null)
+					continue ;
+
+				Integer coefficient = ((Double) this.coefficients.get(uncertain).get(i).evaluate()).intValue();
+				Linear_Expression times = new Linear_Expression_Times(new Coefficient(coefficient), vars.get(j));
+				linear_Expression = new Linear_Expression_Sum(linear_Expression, times);
 			}
-			exprs[i] = lexp;
+
+			linear_Expressions[i] = linear_Expression;
 		}
-		
-		// TO DO: Add other relations:  Equality for example
-		// we build the constrain system
+
 		for (int i = 0; i < this.constants.size(); i++) {
-			Constraint c = new Constraint(exprs[i], this.ineqs.get(i) == relOps.LE ? Relation_Symbol.LESS_OR_EQUAL : Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(constants.get(i).intValue())));
-			result.add(c);
+			constraint_System.add(
+				new Constraint(linear_Expressions[i], this.relationSymbols.get(i), new Linear_Expression_Coefficient(new Coefficient(((Double) constants.get(i).evaluate()).intValue())))
+			);
 		}
-		// we add restrictions for the variables, every var is between 0 and 1
+
+		// Structural constraints
+		// Each p_i must lie within the interval [0, 1].
 		for (int i = 0; i < vars.size(); i++) {
-			Constraint c1 = new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.LESS_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(1)));
-			Constraint c2 = new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(0)));
-			result.add(c1);
-			result.add(c2);
+			constraint_System.add(
+				new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.LESS_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(1)))
+			);
+
+			constraint_System.add(
+				new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.GREATER_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(0)))
+			);
 		}
-		
-		// Furthermore, the sum of all the vertices has to be 1
-		Linear_Expression lexp = new Linear_Expression_Coefficient(new Coefficient(0));
+
+		// The sum of all the p_i must equal 1.
+		Linear_Expression sum = new Linear_Expression_Coefficient(new Coefficient(0));
 		for (int i = 0; i < vars.size(); i++) {
-			lexp = new Linear_Expression_Sum(new Linear_Expression_Variable(vars.get(i)), lexp);
+			sum = new Linear_Expression_Sum(sum, new Linear_Expression_Variable(vars.get(i)));
 		}
-		Constraint c = new Constraint(lexp, Relation_Symbol.EQUAL, new Linear_Expression_Coefficient(new Coefficient(1)));
-		result.add(c);
-		
-		return result;
+
+		constraint_System.add(new Constraint(sum, Relation_Symbol.EQUAL, new Linear_Expression_Coefficient(new Coefficient(1))));
+
+		return constraint_System;
 	}
 	
 	/**
-	 * It converts all the coefficients to int, this is needed for PPL
+	 * Converts all the coefficients to integers. This conversion is required for PPL (Parma Polyhedra Library) operations.
 	 */
-	public void convertToInt(){
-		
+	public void convertToInt() throws PrismLangException{
 		for (int i = 0; i < this.uncertains.size(); i++) {
 			String uncertainName = ((UncertainExpression) this.uncertains.get(i)).getName();
 			for (int j = 0; j < this.constants.size(); j++) {
 				if (this.coefficients.get(uncertainName).get(j) != null) {
-					this.coefficients.get(uncertainName).put(j, Math.floor(this.coefficients.get(uncertainName).get(j) * Math.pow(10, precision)));
+					this.coefficients.get(uncertainName).put(
+						j, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.coefficients.get(uncertainName).get(j).evaluateDouble() * Math.pow(10, precision)))
+					);
 				}
 			}
 		}
 		
 		for (int i = 0; i < this.constants.size(); i++) {
-			this.constants.set(i, Math.floor(this.constants.get(i) * Math.pow(10, precision)));
+			this.constants.set(
+				i, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.constants.get(i).evaluateDouble() * Math.pow(10, precision)))
+			);
 		}
 	}
-	
-	
+
+	private void load_PPL() {
+		// Initialize PPL (Parma Polyhedra Library)
+		try {
+			PPLSupport.initPPL();
+		} catch (PrismException e) {
+			System.err.println("Error loading Parma Polyhedra Library:");
+		}
+	}
 }

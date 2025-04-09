@@ -746,5 +746,19 @@ public class ASTTraverseModify implements ASTVisitor
 	}
 	public void visitPost(Filter e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+
+	@Override
+	public Object visit(CommandWithArrays e) throws PrismLangException {
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+	}
+
+	@Override
+	public Object visit(ExpressionArrayIndex e) throws PrismLangException {
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+	}
+	@Override
+	public Object visit(RewardStructWithArrays e) throws PrismLangException {
+		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+	}
 }
 

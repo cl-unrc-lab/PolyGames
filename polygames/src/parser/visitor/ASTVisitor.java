@@ -97,5 +97,8 @@ public interface ASTVisitor
 	public Object visit(Filter e) throws PrismLangException;
 	public Object visit(ForLoop e) throws PrismLangException;
 
+	public Object visit(CommandWithArrays e) throws PrismLangException;
+	public Object visit(RewardStructWithArrays e) throws PrismLangException;
+	public Object visit(ExpressionArrayIndex e) throws PrismLangException;
 }
 

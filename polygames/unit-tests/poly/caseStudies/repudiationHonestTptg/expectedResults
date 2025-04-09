@@ -1,0 +1,48 @@
+<<>>Pmax=? [ F "terminated_successfully" ]:
+Result
+1
+
+<<o>>Pmax=? [ F "terminated_successfully" ]:
+Result
+1
+
+<<r>>Pmax=? [ F "terminated_successfully" ]:
+Result
+1
+
+<<o,r>>Pmax=? [ F "terminated_successfully" ]:
+Result
+1
+
+<<>>Pmax=? [ F<=K "terminated_successfully" ]:
+Result
+0.296552305
+
+<<o>>Pmax=? [ F<=K "terminated_successfully" ]:
+Result
+0.510109726996
+
+<<r>>Pmax=? [ F<=K "terminated_successfully" ]:
+Result
+0.394993932862
+
+<<o,r>>Pmax=? [ F<=K "terminated_successfully" ]:
+Result
+0.811443154833
+
+<<>>Rmin=? [ F "terminated_successfully" ]:
+Result
+Error: Iterative method did not converge within 10000 iterations.
+Consider using a different numerical method or increasing the maximum number of iterations.
+
+<<o>>Rmin=? [ F "terminated_successfully" ]:
+Result
+700.364404595
+
+<<r>>Rmin=? [ F "terminated_successfully" ]:
+Result
+1000.67784384
+
+<<o,r>>Rmin=? [ F "terminated_successfully" ]:
+Result
+300.104372628
