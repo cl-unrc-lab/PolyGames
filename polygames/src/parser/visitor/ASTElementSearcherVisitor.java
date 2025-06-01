@@ -888,6 +888,16 @@ public class ASTElementSearcherVisitor implements ASTVisitor {
 		return elements;
   }
 
+	@Override
+	public Object visit(ExpressionMinMax e) throws PrismLangException {
+		addASTElementIfIsInstance(e);
+
+		e.left().accept(this);
+		e.right().accept(this);
+
+		return elements;
+	}
+
 	private void addASTElementIfIsInstance(ASTElement e) {
     if (e.getClass() == this.classType) {
       this.elements.add(e);

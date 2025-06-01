@@ -1,0 +1,105 @@
+// This is a version of the investor case study with uncertainty
+// there are uncetain factors that may affect the probabilities that the actions go up or down
+// typically these factors increase or decrease faster after some treshold.
+smg
+
+const double uf_down;
+const double uf_up;
+
+// Player info
+player investor [invest], [noinvest], [cashin], [done] endplayer
+player env [bar], [nobar], [month] endplayer
+
+// Scheduler use to synchronise system transitions
+module sched
+    m : [0..2];
+    // At the start of the month, investor makes decision
+    [noinvest] (m=0) -> (m'=1); 
+    [invest]   (m=0) -> (m'=1);
+    [bar]      m=1   -> (m'=2); // Then, decision is made whether to bar or not
+    [nobar]    m=1   -> (m'=2);
+    [month]    m=2   -> (m'=0); // Then, market changes
+    [cashin]   m=0   -> (m'=0); // Once investor has cashed in shares nothing changes
+    [done]     m=0   -> (m'=0);
+endmodule
+
+// Investor
+ module investor
+    // State: 0 = no reservation, 1 = made reservation, 2 = finished
+    i : [0..2];
+    // (if currently not reserving or was barred last time)
+    // Decide whether to do nothing or make reservation
+    [noinvest] i=0 | i=1 & b=1   -> (i'=0);
+    [invest]   i=0 | i=1 & b=1   -> (i'=1);
+    [cashin]   i=1 & b=0         -> (i'=2); // Cash in shares (if not barred)
+    [done]     i=2               -> true;   // Finished
+endmodule
+
+// Bar on the investor
+module barred     
+    // State: 0 = not barred, 1 = barred
+    // (initially cannot bar)
+    b : [0..1] init 1;
+
+    // Bar or not bar (cannot if do so last month)
+    [nobar] true -> (b'=0);
+    [bar] b=0 -> (b'=1);
+endmodule
+
+// Value of the shares
+const int vmax;  // input constant
+const int vinit; // input constant
+
+module value
+    v : [0..vmax] init vinit;
+    [month] true -> p/10 : (v'=min(v+1,c,vmax)) + (1-p/10) : (v'=min(max(v-1,0),c));
+
+    // Note that, because the shares and the cap are updated simultaneously,
+    // v can exceed c temporarily (but by at most 1).
+    // We leave this as-is for compatibility with the original model
+endmodule
+
+// Probability of shares going up/down
+const int pmax = 10;
+    
+module probability
+    // Probability is p/pmax and initially the probability is approx 1/2
+    p : [0..pmax] init floor(pmax/2);
+	[month] (v<5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
+        {
+            &p1 + &p2 =  1,
+            &p1      >= 2/3 - (uf_up*v),
+            &p1      >= 2/3
+        };
+	[month] (v=5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
+        {
+            &p1 + &p2 =  1,
+            &p1      >= 1/2 - (uf_up*v),
+            &p1      >= 1/2 + (uf_down*v)
+        };
+	[month] (v>5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
+        {
+            &p1 + &p2 =  1,
+            &p2      >= 2/3 - (uf_down*v),
+            &p2      <= 2/3
+        };
+endmodule
+
+// Cap on the value of the shares
+const int cmax;
+module cap
+    c : [0..cmax] init cmax;
+    [month] true -> 1/2 : (c'=max(c-1,0)) + 1/2 : (c'=c); // probability 1/2 the cap decreases
+endmodule
+
+// Labels
+label "finished" = i=2;
+
+// Reward: one-off collection of shares value at the end
+rewards "profit"
+// Use state rewards:
+    i=1 & b=0 & m=0 : v;
+// Could also use transition rewards
+// [cashin] i=1 : v;
+endrewards
+          

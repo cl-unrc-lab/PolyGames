@@ -46,6 +46,8 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Map;
+import java.util.HashMap;
 
 import jltl2ba.SimpleLTL;
 import parser.BooleanUtils;
@@ -70,6 +72,11 @@ public class PrismParser
 			keywordList.add(PrismParserConstants.tokenImage[i].replaceAll("\"", ""));
 		}
 	}
+
+	//
+
+	private static Map<String, Integer> lineLengths = new HashMap<String, Integer>();
+	private static Expression ZERO = new ExpressionLiteral(TypeInt.getInstance(), 0);
 	
 	//-----------------------------------------------------------------------------------
 	// Main method for testing purposes
@@ -815,31 +822,47 @@ void ConstantDef(ConstantList constantList) throws PrismLangException :
 	Type type = TypeInt.getInstance();
 	ExpressionIdent name = null;
 	Expression expr = null;
-
-	int size = 0;
+	int i = 0;
+	int j = 0;
+	int k = 0;
 	Expression lowerLimit = null;
 	Expression upperLimit = null;
 	Expression value;
-	List<Expression> values = new ArrayList<Expression>();
+	List<List<Expression>> values = new ArrayList<List<Expression>>();
+	boolean unidimensionalArray   = true;
 }
 {
 	(
 		(
 			<CONST>
 			(
-				// const double array[N] : = { v0, ..., vN-1 } or const int var (= expr)?;
+				// const double array[N] = { v0, ..., vN-1 } or const int var (= expr)?;
 				(	<DOUBLE> name = IdentifierExpression() { type = TypeDouble.getInstance(); }
 						(
 							(
-								<LBRACKET> token = <REG_INT> { size = Integer.parseInt(token.image); } <RBRACKET> <EQ> <LBRACE> value = Expression(false, false) { values.add(value); } (<COMMA> value = Expression(false, false) { values.add(value); })* <RBRACE>
+								 <LBRACKET> token = <REG_INT> { i = Integer.parseInt(token.image); lineLengths.put(name.getName(), i); } <RBRACKET> { initializeList(values, 1, i); }
+								(<LBRACKET> token = <REG_INT> { j = Integer.parseInt(token.image); lineLengths.put(name.getName(), j); } <RBRACKET> { initializeList(values, i, j); unidimensionalArray = !unidimensionalArray; } )?
+								<EQ>
+								<LBRACE>
+								(
+									  value = Expression(false, false) { values.get(0).add(value); } (<COMMA> value = Expression(false, false) { values.get(0).add(value); })*
+									| (
+											<LBRACE>
+												value = Expression(false, false) { values.get(k).add(value); } (<COMMA> value = Expression(false, false) { values.get(k).add(value); } )*
+											<RBRACE>
+											{ k++; }
+											(<COMMA> <LBRACE> value = Expression(false, false) { values.get(k).add(value); } (<COMMA> value = Expression(false, false) { values.get(k).add(value); } )* <RBRACE> { k++; })*
+									  )
+								)
+								<RBRACE>
 								{
-									if (values.size() != size)
-										throw new PrismLangException(
-											String.format("Expected %d values for an array of size %d, but only %d values were provided", size, size, values.size())
-										);
+									if (unidimensionalArray) {
+										verifyArray(values.get(0), i);
+									} else {
+										verifyMatrix(values, i, j);
+									}
 
-									for (int i = 0; i < size; i++)
-										constantList.addConstant(new ExpressionIdent(name.getName() + i), values.get(i), TypeDouble.getInstance());
+									addConstantArrayToConstantList(constantList, name, values, unidimensionalArray);
 								}
 							)
 							| (<EQ> expr = Expression(false, false) )? { constantList.addConstant(name, expr, type); }
@@ -853,6 +876,18 @@ void ConstantDef(ConstantList constantList) throws PrismLangException :
 		)
 	)
 	<SEMICOLON>
+}
+
+JAVACODE
+void addConstantArrayToConstantList(ConstantList constantList, ExpressionIdent name, List<List<Expression>> list, boolean unidimensionalArray) {
+	for (int i = 0; i < list.size(); i++) {
+		for (int j = 0; j < list.get(i).size(); j++) {
+			ExpressionIdent expressionIdent = unidimensionalArray ? new ExpressionIdent(name.getName() + j) : new ExpressionIdent(name.getName() + i + "" + j);
+			constantList.addConstant(
+				expressionIdent, list.get(i).get(j), TypeDouble.getInstance()
+			);
+		}
+	}
 }
 
 // Global variable declaration
@@ -920,41 +955,105 @@ void ArrayDeclaration(parser.ast.Module module) throws PrismLangException :
 {
 	String identifier;
 	DeclarationType declarationType;
-	int size;
+	int i = 0;
+	int j = 0;
+	int k = 0;
 	Expression lowerLimit;
 	Expression upperLimit;
 	Token token;
-	List<Expression> values = new ArrayList<Expression>();
+	List<List<Expression>> values = new ArrayList<List<Expression>>();
 	Expression value;
 	Declaration declaration;
+	boolean unidimensionalArray = true;
 }
 {
-	// int array[5] : [0..5] = { 0, 1, 2, 3, 4 };
-	<INT> identifier = Identifier()
-	<LBRACKET> token = <REG_INT> { size = Integer.parseInt(token.image); } <RBRACKET>
-		<COLON>
-	<LBRACKET> lowerLimit = Expression(false, false) <DOTS>  upperLimit = Expression(false, false) <RBRACKET> { declarationType = new DeclarationInt(lowerLimit, upperLimit); }
-	(<EQ> <LBRACE> value = Expression(false, false) { values.add(value); } (<COMMA> value = Expression(false, false) { values.add(value); })* <RBRACE>)?
+	 <INT> identifier = Identifier()
+	 <LBRACKET> token = <REG_INT> { i = Integer.parseInt(token.image); lineLengths.put(identifier, i); } <RBRACKET> { initializeList(values, 1, i); }
+	(<LBRACKET> token = <REG_INT> { j = Integer.parseInt(token.image); lineLengths.put(identifier, j); } <RBRACKET> { initializeList(values, i, j); unidimensionalArray = !unidimensionalArray; } )?
+	<COLON>
+	<LBRACKET> lowerLimit = Expression(false, false) <DOTS> upperLimit = Expression(false, false) <RBRACKET> { declarationType = new DeclarationInt(lowerLimit, upperLimit); }
+	(
+		<EQ> <LBRACE>
+		(
+			  value = Expression(false, false) { values.get(0).add(value); } (<COMMA> value = Expression(false, false) { values.get(0).add(value); })*
+			| (
+					<LBRACE>
+						value = Expression(false, false) { values.get(k).add(value); } (<COMMA> value = Expression(false, false) { values.get(k).add(value); } )*
+					<RBRACE>
+					{ k++; }
+					(
+						<COMMA> <LBRACE> value = Expression(false, false) { values.get(k).add(value); } (<COMMA> value = Expression(false, false) { values.get(k).add(value); })* <RBRACE> { k++; }
+					)*
+			  )
+		)
+		<RBRACE>
+	)?
 	{
-		if (!values.isEmpty() && values.size() != size) {
-			throw new PrismLangException(
-				String.format("Expected %d values for an array of size %d, but only %d values were provided", size, size, values.size())
-			);
+		if (unidimensionalArray) {
+			verifyArray(values.get(0), i);
+		} else {
+			verifyMatrix(values, i, j);
 		}
 
-		for (int i = 0; i < size; i++) {
-			declaration = new Declaration(identifier + i, declarationType);
-			
+		addArrayToModule(module, identifier, values, declarationType, unidimensionalArray);
+	}
+	<SEMICOLON>
+}
+
+JAVACODE
+void addArrayToModule(parser.ast.Module module, String identifier, List<List<Expression>> values, DeclarationType declarationType, boolean unidimensionalArray) {
+	Declaration declaration;
+
+	for (int i = 0; i < values.size(); i++) {
+		for (int j = 0; j < values.get(i).size(); j++) {
+			declaration =
+				unidimensionalArray ? new Declaration(identifier + j, declarationType) : new Declaration(identifier + i + "" + j, declarationType) ;
+
 			if ( !values.isEmpty() ) {
-				declaration.setStart(values.get(i));
+				declaration.setStart(values.get(i).get(j));
 			} else {
-				declaration.setStart(new ExpressionLiteral(TypeInt.getInstance(), 0));
+				declaration.setStart(ZERO.clone().deepCopy());
 			}
-			
+
 			module.addDeclaration(declaration);
 		}
 	}
-	<SEMICOLON>
+}
+
+JAVACODE
+void verifyArray(List<Expression> values, int size) throws PrismLangException {
+	if (!values.isEmpty() && values.size() != size) {
+		throw new PrismLangException(
+			String.format("Expected %d values for an array of size %d, but only %d values were provided", size, size, values.size())
+		);
+	}
+}
+
+JAVACODE
+void verifyMatrix(List<List<Expression>> values, int listCount, int elementsPerList) throws PrismLangException {
+	if (!values.isEmpty() && values.size() != listCount) {
+		throw new PrismLangException(
+			String.format("Expected %d subarrays but got %d", listCount, values.size())
+		);
+	}
+
+	for (int i = 0; i < values.size(); i++) {
+		List<Expression> sublist = values.get(i);
+		if (sublist.size() != elementsPerList) {
+			throw new PrismLangException(
+				String.format("Subarray at index %d should have %d elements, but has %d", i, elementsPerList, sublist.size())
+			);
+		}
+	}
+}
+
+JAVACODE
+void initializeList(List<List<Expression>> list, int listCount, int elementsPerList) {
+	list.clear();
+
+	for (int i = 0; i < listCount; i++) {
+		list.add(i, new ArrayList<Expression>(elementsPerList));
+	}
 }
 
 // Module
@@ -1011,8 +1110,9 @@ UncertainUpdates UncertainUpdates() throws PrismLangException :
     int i = 0;
 }
 {
-    uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); }
+             uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); }
     ( <PLUS> uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); } )*
+		{ updates.initializeConstraintSystem(); }
     <LBRACE>
 			updates = Equation(updates, i) ( { i++; } <COMMA> updates = Equation(updates, i) )*
     <RBRACE>
@@ -1021,11 +1121,8 @@ UncertainUpdates UncertainUpdates() throws PrismLangException :
 
 UncertainUpdates Equation(UncertainUpdates updates, int i) throws PrismLangException :
 {
-  	UncertainExpression ue;
-    Token token;
-    Token relationSymbol;
-    double coeff;
-    double cte;
+	Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
+	Token relationSymbol;
 }
 {
     UncertainEquationTerm(updates, i, true)
@@ -1034,62 +1131,137 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) throws PrismLangExcep
 		{ updates.setRelationSymbol(relationSymbol.image); }
 		UncertainEquationTerm(updates, i, false)
     (<PLUS> UncertainEquationTerm(updates, i, false))*
-    { return updates; }
+    { updates.addConstant(ZERO, i, false) ; return updates; }
 }
 
 // A basic rule for the terms of an inequation in uncertains 
 void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide) throws PrismLangException :
 {
+	Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
+	Expression ONE  = new ExpressionLiteral(TypeDouble.getInstance(), 1.0);
+
 	UncertainExpression uncertainExpression = null;
-	Token token = null;
-	Expression coeff = new ExpressionLiteral(TypeDouble.getInstance(), 1.0);
-	Expression cte;
+	Expression coefficient = ONE;
+	Expression constant    = null;
+  Token minus = null;
 }
 {
-	(token = <MINUS>)?
-	( LOOKAHEAD(2) // LOOKAHEAD is needed because both UncertainExpression() and Coefficient() may start with Identifier()
-		( coeff = Coefficient() ( <TIMES> uncertainExpression = UncertainExpression() )?
+	LOOKAHEAD(2)
+		(
+			(minus = <MINUS>)? uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression())?
 			{
-				if (Objects.nonNull(token)) {
-					coeff = new ExpressionUnaryOp(2, coeff);
+				if (Objects.nonNull(minus)) {
+					coefficient = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, coefficient);
 				}
 
-				if (Objects.isNull(uncertainExpression)) {
-					updates.addConstant(coeff, i, isInLeftSide);
-				} else {
-					updates.addCoefficient(coeff, i, uncertainExpression, isInLeftSide);
-				}
+				updates.addCoefficient(coefficient, i, uncertainExpression, isInLeftSide);
 			}
 		)
-		|
-		( uncertainExpression = UncertainExpression() (<TIMES> coeff = Coefficient())?
+	| (
+			constant = ConstantExpression()
 			{
-				if (Objects.nonNull(token)) {
-					coeff = new ExpressionUnaryOp(2, coeff);
-				}
-
-				updates.addCoefficient(coeff, i, uncertainExpression, isInLeftSide);
+				updates.addConstant(constant, i, isInLeftSide);
 			}
-		)
-	)
-	{ updates.addConstant(new ExpressionLiteral(TypeDouble.getInstance(), 0.0), i, false); } // edge-case: pr <= pf, expected: pr + -1 * pf <= 0.0
+	  )
 }
 
-Expression Coefficient() throws PrismLangException :
+Expression ConstantExpression() throws PrismLangException :
+{
+	Expression constantTerm = null;
+	Expression result       = null;
+}
+{
+	constantTerm = ConstantTerm() result = ConstantExpression_(constantTerm)
+	{
+		return result;
+	}
+}
+
+Expression ConstantExpression_(Expression left) throws PrismLangException :
+{
+	Expression right  = null;
+	Expression result = left;
+}
+{
+		<PLUS>  right = ConstantTerm() { result = new ExpressionBinaryOp(ExpressionBinaryOp.PLUS,  left, right); } result = ConstantExpression_(result) { return result; }
+	| <MINUS> right = ConstantTerm() { result = new ExpressionBinaryOp(ExpressionBinaryOp.MINUS, left, right); } result = ConstantExpression_(result) { return result; }
+	| { return result; }
+}
+
+Expression ConstantTerm() throws PrismLangException :
+{
+	Expression constantFactor = null;
+	Expression result         = null;
+}
+{
+	constantFactor = ConstantFactor() result = ConstantTerm_(constantFactor)
+	{
+		return result;
+	}
+}
+
+Expression ConstantTerm_(Expression left) throws PrismLangException :
+{
+	Expression right  = null;
+	Expression result = left;
+}
+{
+		<TIMES>  right = ConstantFactor() { result = new ExpressionBinaryOp(ExpressionBinaryOp.TIMES, left, right);  } result = ConstantTerm_(result) { return result; }
+	| <DIVIDE> right = ConstantFactor() { result = new ExpressionBinaryOp(ExpressionBinaryOp.DIVIDE, left, right); } result = ConstantTerm_(result) { return result; }
+	| { return result; }
+}
+
+Expression ConstantFactor() throws PrismLangException : 
+{
+	Expression result = null;
+}
+{
+		<MINUS> result = ConstantFactor() { result = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, result); return result; }
+	| result = Basic() { return result;}
+}
+
+Expression Basic() throws PrismLangException :
 {
 	String identifier = null;
-	Expression index = null;
+	Expression i      = null;
+	Expression j      = null;
 	Expression expression = null;
-	Token token = null;
+	Token token           = null;
 }
 {
 	(
 			token = <REG_DOUBLE> { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
 		| token = <REG_INT>    { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
-		| identifier = Identifier() <LBRACKET> index = Expression(false, false) <RBRACKET> { expression = new ExpressionArrayIndex(identifier, index); }
+		| (
+				identifier = Identifier() (<LBRACKET> i = Expression(false, false) <RBRACKET> (<LBRACKET> j = Expression(false, false) <RBRACKET>)?)?
+				{
+					if (Objects.nonNull(i) && Objects.nonNull(j)) {
+						expression = new ExpressionArrayIndex(identifier, i, j, lineLengths.get(identifier));
+					} else if (Objects.nonNull(i)) {
+						expression = new ExpressionArrayIndex(identifier, ZERO.clone().deepCopy(), i, lineLengths.get(identifier));
+					} else {
+						expression = new ExpressionIdent(identifier);
+					}
+				}
+		  )
+		| expression = MinMaxFunction()
+		| <LPARENTH> expression = ConstantExpression() { expression = new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, expression); } <RPARENTH>
 	)
-
 	{ return expression; }
+}
+
+Expression MinMaxFunction() throws PrismLangException:
+{
+	ExpressionMinMax expressionMinMax = new ExpressionMinMax();
+	Expression left  = null;
+	Expression right = null;
+}
+{
+	(<MIN> { expressionMinMax.setFunction(ExpressionMinMax.MIN); } | <MAX> { expressionMinMax.setFunction(ExpressionMinMax.MAX); })
+	<LPARENTH>
+		left = ConstantExpression() { expressionMinMax.setLeft(left); } <COMMA> right = ConstantExpression() { expressionMinMax.setRight(right); }
+	<RPARENTH>
+	{ return expressionMinMax; }
 }
 
 // Updates
@@ -1763,7 +1935,8 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	Expression ret = null;
 	Token begin = null;
 	ExpressionIdent p;
-	Expression index;
+	Expression i;
+	Expression j;
 }
 {
 	// If there is no "(...)", this is an identifier
@@ -1774,7 +1947,10 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	// If there is, it's a function
 	(
 		  (<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
-		| (<LBRACKET> index = Expression(false, false) { ret = new ExpressionArrayIndex(s, index); } <RBRACKET>)
+		| (
+			   <LBRACKET> i = Expression(false, false) { ret = new ExpressionArrayIndex(s, ZERO.clone().deepCopy(), i, lineLengths.get(s)); } <RBRACKET>
+				(<LBRACKET> j = Expression(false, false) { ret = new ExpressionArrayIndex(s, i, j, lineLengths.get(s)); } <RBRACKET>)?
+			)
 	)?
 	{ ret.setPosition(begin, getToken(0)); return ret; }
 }
@@ -2429,8 +2605,8 @@ UncertainExpression UncertainExpression() :
 	String ident;
 }
 {
-    ident = Identifier()
-    { return new UncertainExpression(ident); }
+	"&" ident = Identifier()
+	{ return new UncertainExpression("&" + ident); }
 }
 
 // Identifier (returns ExpressionIdent, storing position info)
@@ -2463,22 +2639,28 @@ ExpressionIdent IdentifierExpressionMinMax() :
 ExpressionIdent IdentifierPrime() throws PrismLangException :
 {
 	Token token;
-	Expression index = null;
+	Expression i = null;
+	Expression j = null;
 }
 {
 	token = <REG_IDENTPRIME>
-	( <LBRACKET> index = Expression(false, false) <RBRACKET> )?
+	(
+		 <LBRACKET> i = Expression(false, false) <RBRACKET>
+		(<LBRACKET> j = Expression(false, false) <RBRACKET>)?
+	)?
 	{
 		// Remove prime, create new ident and return
 		String s = token.image;
 		s = s.substring(0, s.length()-1);
 
 		ExpressionIdent expr;
-		
-		if (index == null) {
-			expr = new ExpressionIdent(s);
+
+		if (Objects.nonNull(i) && Objects.nonNull(j)) {
+			expr = new ExpressionArrayIndex(s, i, j, lineLengths.get(s));
+		} else if (Objects.nonNull(i)) {
+			expr = new ExpressionArrayIndex(s, ZERO.clone().deepCopy(), i, lineLengths.get(s));
 		} else {
-			expr = new ExpressionArrayIndex(s, index, true);
+			expr = new ExpressionIdent(s);
 		}
 
 		expr.setPosition(token);

@@ -19,7 +19,9 @@ public class RewardStructItemWithArraysReplacer extends ASTElementReplacer {
     Expression guard =
       ExpressionBinaryOp.And(
         (Expression) rewardStructItem.getStates().accept(this), new ExpressionBinaryOp(
-          5, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index)
+          ExpressionBinaryOp.EQ,
+          new ExpressionLiteral(TypeInt.getInstance(), expressionArrayIndex.index()),
+          new ExpressionLiteral(TypeInt.getInstance(), index)
         )
       );
 

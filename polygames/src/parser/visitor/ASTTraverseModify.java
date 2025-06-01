@@ -749,16 +749,41 @@ public class ASTTraverseModify implements ASTVisitor
 
 	@Override
 	public Object visit(CommandWithArrays e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		visitPre(e);
+
+		e.setGuard((Expression)(e.getGuard().accept(this)));
+		e.setUpdates((Updates)(e.getUpdates().accept(this)));
+
+		visitPost(e);
+		return e;
 	}
 
 	@Override
 	public Object visit(ExpressionArrayIndex e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		return e;
 	}
 	@Override
 	public Object visit(RewardStructWithArrays e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		visitPre(e);
+
+		int i, n;
+		n = e.getNumItems();
+		for (i = 0; i < n; i++) {
+			if (e.getRewardStructItem(i) != null) {
+				e.setRewardStructItem(i, (RewardStructItem)(e.getRewardStructItem(i).accept(this)));
+			}
+		}
+
+		visitPost(e);
+
+		return e;
+	}
+	@Override
+	public Object visit(ExpressionMinMax e) throws PrismLangException {
+		e.left().accept(this);
+		e.right().accept(this);
+
+		return e;
 	}
 }
 

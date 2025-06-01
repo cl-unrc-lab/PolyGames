@@ -1,26 +1,23 @@
 package parser.ast;
 
 import parser.EvaluateContext;
+import parser.type.TypeInt;
 import parser.visitor.ASTVisitor;
 import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 public class ExpressionArrayIndex extends ExpressionIdent {
-  private String  name;     // name of the array
-  private boolean prime;    // whether this reference is to name' rather than name
-  private Expression index; // index expression
+  private String  name; // name of the array
+  private Expression i = new ExpressionLiteral(TypeInt.getInstance(), 0);
+  private Expression j = new ExpressionLiteral(TypeInt.getInstance(), 0);
+  private int lineLength;
 
-
-  public ExpressionArrayIndex(String name, Expression index) {
-    this.name  = name;
-    this.prime = false;
-    this.index = index;
-  }
-
-  public ExpressionArrayIndex(String name, Expression index, boolean prime) {
-    this.name  = name;
-    this.prime = prime;
-    this.index = index;
+  public ExpressionArrayIndex(String name, Expression i, Expression j, int lineLength) {
+    this.name       = name;
+    this.prime      = false;
+    this.i          = i;
+    this.j          = j;
+    this.lineLength = lineLength;
   }
 
   public String name() {
@@ -31,8 +28,8 @@ public class ExpressionArrayIndex extends ExpressionIdent {
     return prime;
   }
 
-  public Expression index() {
-    return index;
+  public int index() throws PrismLangException {
+    return i.evaluateInt() * lineLength + j.evaluateInt();
   }
 
   @Override
@@ -47,7 +44,7 @@ public class ExpressionArrayIndex extends ExpressionIdent {
 
   @Override
   public Object evaluate() throws PrismLangException {
-    return index.evaluateInt();
+    return null;
   }
 
   @Override
@@ -62,11 +59,23 @@ public class ExpressionArrayIndex extends ExpressionIdent {
 
   @Override
   public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(this.name);
+
     if (this.prime) {
-      return this.name + "'";
+      sb.append("'");
     }
 
-    return this.name;
+    // Assume `i` and `j` are Expressions representing indices
+    if (this.i != null) {
+      sb.append("[").append(this.i);
+      if (this.j != null) {
+        sb.append("][").append(this.j);
+      }
+      sb.append("]");
+    }
+
+    return sb.toString();
   }
 
   @Override
@@ -85,4 +94,24 @@ public class ExpressionArrayIndex extends ExpressionIdent {
 	{
 		return this;
 	}
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null) {
+      return false;
+    }
+
+    if (! (obj instanceof ExpressionArrayIndex)) {
+      return false;
+    }
+
+    ExpressionArrayIndex other = (ExpressionArrayIndex) obj;
+    try {
+      return name.equals(other.name()) && index() == other.index() && prime == other.prime();
+    } catch (PrismLangException e) {
+      e.printStackTrace();
+    }
+
+    return false;
+  }
 }

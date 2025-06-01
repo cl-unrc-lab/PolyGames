@@ -262,9 +262,9 @@ public class ASTTraverse implements ASTVisitor
 	public void visitPre(UncertainUpdates e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(UncertainUpdates e) throws PrismLangException
 	{
-			//TBD
-			//visitPost(e);
-			return null;
+		//TBD
+		//visitPost(e);
+		return null;
 	}
 	public void visitPost(UncertainUpdates e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
@@ -735,15 +735,47 @@ public class ASTTraverse implements ASTVisitor
 
 	@Override
 	public Object visit(CommandWithArrays e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		visitPre(e);
+
+		e.getGuard().accept(this);
+		e.getUpdates().accept(this);
+
+		visitPost(e);
+
+		return null;
 	}
 	
 	@Override
 	public Object visit(ExpressionArrayIndex e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		visitPre(e);
+		visitPost(e);
+
+		return null;
 	}
 	@Override
 	public Object visit(RewardStructWithArrays e) throws PrismLangException {
-		throw new UnsupportedOperationException("Unimplemented method 'visit'");
+		visitPre(e);
+
+		int i, n;
+		n = e.getNumItems();
+		for (i = 0; i < n; i++) {
+			if (e.getRewardStructItem(i) != null) e.getRewardStructItem(i).accept(this);
+		}
+
+		visitPost(e);
+
+		return null;
 	}
+	
+	public void visitPre(ExpressionMinMax e) throws PrismLangException { defaultVisitPre(e); }
+
+	@Override
+	public Object visit(ExpressionMinMax e) throws PrismLangException {
+		visitPre(e);
+		visitPost(e);
+
+		return null;
+	}
+
+	public void visitPost(ExpressionMinMax e) throws PrismLangException { defaultVisitPost(e); }
 }

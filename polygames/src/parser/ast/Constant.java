@@ -11,9 +11,9 @@ public class Constant extends ASTElement {
   private Type type;
 
   public Constant(String name, Expression expression, Type type) {
-    this.name = name;
+    this.name       = name;
     this.expression = expression;
-    this.type = type;
+    this.type       = type;
   }
 
   public String name() {
@@ -28,8 +28,8 @@ public class Constant extends ASTElement {
     return type;
   }
 
-  public Double evaluate() throws PrismLangException {
-    return expression.evaluateDouble();
+  public Object evaluate() throws PrismLangException {
+    return expression.evaluate();
   }
 
   @Override

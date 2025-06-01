@@ -53,6 +53,7 @@ import parser.ast.ExpressionIdent;
 import parser.ast.ExpressionInterval;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionLiteral;
+import parser.ast.ExpressionMinMax;
 import parser.ast.ExpressionMultiNash;
 import parser.ast.ExpressionMultiNashProb;
 import parser.ast.ExpressionMultiNashReward;
@@ -504,6 +505,11 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(RewardStructWithArrays e) throws PrismLangException {
+		return e.clone().deepCopy(this);
+	}
+
+	@Override
+	public Object visit(ExpressionMinMax e) throws PrismLangException {
 		return e.clone().deepCopy(this);
 	}
 }
