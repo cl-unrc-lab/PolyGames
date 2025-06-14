@@ -1,6 +1,8 @@
 package parser.ast;
 
 import parser.type.TypeInt;
+import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 public class ExpressionArray extends ExpressionIdent {
@@ -17,6 +19,21 @@ public class ExpressionArray extends ExpressionIdent {
 
   public int evalIndex() throws PrismLangException {
     return i.evaluateInt() * lineLength + j.evaluateInt();
+  }
+
+  @Override
+  public Object accept(ASTVisitor v) throws PrismLangException {
+    return v.visit(this);
+  }
+
+  @Override
+  public ExpressionIdent deepCopy(DeepCopy copier) {
+    return this;
+  }
+
+  @Override
+  public ExpressionIdent clone() {
+    return this;
   }
 
   @Override
