@@ -867,7 +867,7 @@ public class ASTElementSearcherVisitor implements ASTVisitor {
 	}
 	
 	@Override
-  public Object visit(ExpressionArrayIndex e) throws PrismLangException {
+  public Object visit(ExpressionArray e) throws PrismLangException {
     addASTElementIfIsInstance(e);
     
     return elements;

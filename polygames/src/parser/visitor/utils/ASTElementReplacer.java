@@ -10,7 +10,7 @@ import prism.PrismLangException;
  */
 public abstract class ASTElementReplacer extends ASTTraverseModify {
   private Expression           expression;
-  private ExpressionArrayIndex expressionArrayIndex;
+  private ExpressionArray expressionArrayIndex;
   /**
    * Creates a new ASTElement by copying the given ASTElement and omitting the 'expressionArrayIndex' value. 
    * The new ASTElement will use the provided index as the value for the 'expressionArrayIndex'.
@@ -22,19 +22,19 @@ public abstract class ASTElementReplacer extends ASTTraverseModify {
    *         which is replaced by the provided index.
    */
   public abstract ASTElement replace(
-    ASTElement astElement, ExpressionArrayIndex expressionArrayIndex, Expression expression, int index
+    ASTElement astElement, ExpressionArray expressionArrayIndex, Expression expression, int index
   ) throws PrismLangException;
 
   public void setExpression(Expression expression) {
     this.expression = expression;
   }
 
-  public void setExpressionArrayIndex(ExpressionArrayIndex expressionArrayIndex) {
+  public void setExpressionArrayIndex(ExpressionArray expressionArrayIndex) {
     this.expressionArrayIndex = expressionArrayIndex;
   }
 
   @Override
-  public Object visit(ExpressionArrayIndex e) throws PrismLangException {
+  public Object visit(ExpressionArray e) throws PrismLangException {
     if (e == expressionArrayIndex) {
       return expression;
     } else {

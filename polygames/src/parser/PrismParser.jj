@@ -1236,9 +1236,9 @@ Expression Basic() throws PrismLangException :
 				identifier = Identifier() (<LBRACKET> i = Expression(false, false) <RBRACKET> (<LBRACKET> j = Expression(false, false) <RBRACKET>)?)?
 				{
 					if (Objects.nonNull(i) && Objects.nonNull(j)) {
-						expression = new ExpressionArrayIndex(identifier, i, j, lineLengths.get(identifier));
+						expression = new ExpressionArray(identifier, i, j, lineLengths.get(identifier));
 					} else if (Objects.nonNull(i)) {
-						expression = new ExpressionArrayIndex(identifier, ZERO.clone().deepCopy(), i, lineLengths.get(identifier));
+						expression = new ExpressionArray(identifier, ZERO.clone().deepCopy(), i, lineLengths.get(identifier));
 					} else {
 						expression = new ExpressionIdent(identifier);
 					}
@@ -1948,8 +1948,8 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	(
 		  (<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
 		| (
-			   <LBRACKET> i = Expression(false, false) { ret = new ExpressionArrayIndex(s, ZERO.clone().deepCopy(), i, lineLengths.get(s)); } <RBRACKET>
-				(<LBRACKET> j = Expression(false, false) { ret = new ExpressionArrayIndex(s, i, j, lineLengths.get(s)); } <RBRACKET>)?
+			   <LBRACKET> i = Expression(false, false) { ret = new ExpressionArray(s, ZERO.clone().deepCopy(), i, lineLengths.get(s)); } <RBRACKET>
+				(<LBRACKET> j = Expression(false, false) { ret = new ExpressionArray(s, i, j, lineLengths.get(s)); } <RBRACKET>)?
 			)
 	)?
 	{ ret.setPosition(begin, getToken(0)); return ret; }
@@ -2656,9 +2656,9 @@ ExpressionIdent IdentifierPrime() throws PrismLangException :
 		ExpressionIdent expr;
 
 		if (Objects.nonNull(i) && Objects.nonNull(j)) {
-			expr = new ExpressionArrayIndex(s, i, j, lineLengths.get(s));
+			expr = new ExpressionArray(s, i, j, lineLengths.get(s));
 		} else if (Objects.nonNull(i)) {
-			expr = new ExpressionArrayIndex(s, ZERO.clone().deepCopy(), i, lineLengths.get(s));
+			expr = new ExpressionArray(s, ZERO.clone().deepCopy(), i, lineLengths.get(s));
 		} else {
 			expr = new ExpressionIdent(s);
 		}

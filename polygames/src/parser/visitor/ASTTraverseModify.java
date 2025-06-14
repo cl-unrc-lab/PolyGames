@@ -759,7 +759,7 @@ public class ASTTraverseModify implements ASTVisitor
 	}
 
 	@Override
-	public Object visit(ExpressionArrayIndex e) throws PrismLangException {
+	public Object visit(ExpressionArray e) throws PrismLangException {
 		return e;
 	}
 	@Override

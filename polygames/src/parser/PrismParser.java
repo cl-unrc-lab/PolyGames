@@ -2111,9 +2111,9 @@ expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(
         ;
       }
 if (Objects.nonNull(i) && Objects.nonNull(j)) {
-                                                expression = new ExpressionArrayIndex(identifier, i, j, lineLengths.get(identifier));
+                                                expression = new ExpressionArray(identifier, i, j, lineLengths.get(identifier));
                                         } else if (Objects.nonNull(i)) {
-                                                expression = new ExpressionArrayIndex(identifier, ZERO.clone().deepCopy(), i, lineLengths.get(identifier));
+                                                expression = new ExpressionArray(identifier, ZERO.clone().deepCopy(), i, lineLengths.get(identifier));
                                         } else {
                                                 expression = new ExpressionIdent(identifier);
                                         }
@@ -3819,13 +3819,13 @@ ret = new ExpressionFunc(s);
       case LBRACKET:{
         jj_consume_token(LBRACKET);
         i = Expression(false, false);
-ret = new ExpressionArrayIndex(s, ZERO.clone().deepCopy(), i, lineLengths.get(s));
+ret = new ExpressionArray(s, ZERO.clone().deepCopy(), i, lineLengths.get(s));
         jj_consume_token(RBRACKET);
         switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
         case LBRACKET:{
           jj_consume_token(LBRACKET);
           j = Expression(false, false);
-ret = new ExpressionArrayIndex(s, i, j, lineLengths.get(s));
+ret = new ExpressionArray(s, i, j, lineLengths.get(s));
           jj_consume_token(RBRACKET);
           break;
           }
@@ -5473,9 +5473,9 @@ ExpressionIdent IdentifierPrime() throws ParseException, PrismLangException {Tok
                 ExpressionIdent expr;
 
                 if (Objects.nonNull(i) && Objects.nonNull(j)) {
-                        expr = new ExpressionArrayIndex(s, i, j, lineLengths.get(s));
+                        expr = new ExpressionArray(s, i, j, lineLengths.get(s));
                 } else if (Objects.nonNull(i)) {
-                        expr = new ExpressionArrayIndex(s, ZERO.clone().deepCopy(), i, lineLengths.get(s));
+                        expr = new ExpressionArray(s, ZERO.clone().deepCopy(), i, lineLengths.get(s));
                 } else {
                         expr = new ExpressionIdent(s);
                 }

@@ -99,7 +99,7 @@ public interface ASTVisitor
 
 	public Object visit(CommandWithArrays e) throws PrismLangException;
 	public Object visit(RewardStructWithArrays e) throws PrismLangException;
-	public Object visit(ExpressionArrayIndex e) throws PrismLangException;
+	public Object visit(ExpressionArray e) throws PrismLangException;
 	public Object visit(ExpressionMinMax e) throws PrismLangException;
 }
 

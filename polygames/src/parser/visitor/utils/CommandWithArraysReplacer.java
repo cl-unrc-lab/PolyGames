@@ -12,7 +12,7 @@ public class CommandWithArraysReplacer extends ASTElementReplacer {
   public CommandWithArraysReplacer() {}
 
   @Override
-  public ASTElement replace(ASTElement astElement, ExpressionArrayIndex expressionArrayIndex, Expression expression, int index)
+  public ASTElement replace(ASTElement astElement, ExpressionArray expressionArrayIndex, Expression expression, int index)
       throws PrismLangException {
     setExpression(expression);
     setExpressionArrayIndex(expressionArrayIndex);
@@ -23,7 +23,7 @@ public class CommandWithArraysReplacer extends ASTElementReplacer {
       ExpressionBinaryOp.And(
         (Expression) command.getGuard().accept(this), new ExpressionBinaryOp(
           ExpressionBinaryOp.EQ,
-          new ExpressionLiteral(TypeInt.getInstance(), expressionArrayIndex.index()),
+          new ExpressionLiteral(TypeInt.getInstance(), expressionArrayIndex.evalIndex()),
           new ExpressionLiteral(TypeInt.getInstance(), index)
         )
       )

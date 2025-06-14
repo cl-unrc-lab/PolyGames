@@ -3,4 +3,4 @@ package parser.visitor.utils;
 
 import parser.ast.ASTElement;
 
-public record IndexedIdentifier(ASTElement identifier, int index) {}
+public record IdentifierWithIndex(ASTElement identifier, int index) {}
