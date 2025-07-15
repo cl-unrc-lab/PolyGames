@@ -7,44 +7,72 @@ const double uf_down;
 const double uf_up;
 
 // Player info
-player investor [invest], [noinvest], [cashin], [done] endplayer
-player env [bar], [nobar], [month] endplayer
+player investor
+    [invest], [noinvest], [cashin], [done]
+endplayer
+
+player env
+    [bar], [nobar], [month]
+endplayer
 
 // Scheduler use to synchronise system transitions
-module sched
+module scheduler
     m : [0..2];
     // At the start of the month, investor makes decision
-    [noinvest] (m=0) -> (m'=1); 
-    [invest]   (m=0) -> (m'=1);
-    [bar]      m=1   -> (m'=2); // Then, decision is made whether to bar or not
-    [nobar]    m=1   -> (m'=2);
-    [month]    m=2   -> (m'=0); // Then, market changes
-    [cashin]   m=0   -> (m'=0); // Once investor has cashed in shares nothing changes
-    [done]     m=0   -> (m'=0);
+    [noinvest] m=0 -> (m'=1); 
+    [invest]   m=0 -> (m'=1);
+    [bar]      m=1 -> (m'=2); // Then, decision is made whether to bar or not
+    [nobar]    m=1 -> (m'=2);
+    [month]    m=2 -> (m'=0); // Then, market changes
+    [cashin]   m=0 -> (m'=0); // Once investor has cashed in shares nothing changes
+    [done]     m=0 -> (m'=0);
+endmodule
+
+module investor
+    // i = {
+    //     0: "initial state", 1: "reservation", 2: "finished"
+    // }
+    i : [0..2] init 0;
+
+    [noinvest] i = 0          -> (i'=0);
+    [invest]   i = 0 & b != 2 -> (i'=1);
+    [cashin]   i = 1          -> (i'=2);
+    [done]     i = 2          -> true;
+endmodule
+
+module barred
+    // b/previous_b = {
+    //     0: 'initial useless state', 1: 'not barred', 2: 'barred'
+    // }
+    b          : [0..2] init 0;
+    previous_b : [0..2] init 0;
+
+    [nobar] i = 0                     -> (b'=1) & (previous_b'=b);
+    [bar]   i = 0 & (previous_b != 2) -> (b'=2) & (previous_b'=b);
 endmodule
 
 // Investor
- module investor
-    // State: 0 = no reservation, 1 = made reservation, 2 = finished
-    i : [0..2];
-    // (if currently not reserving or was barred last time)
-    // Decide whether to do nothing or make reservation
-    [noinvest] i=0 | i=1 & b=1   -> (i'=0);
-    [invest]   i=0 | i=1 & b=1   -> (i'=1);
-    [cashin]   i=1 & b=0         -> (i'=2); // Cash in shares (if not barred)
-    [done]     i=2               -> true;   // Finished
-endmodule
+// module investor
+//     // State: 0 = no reservation, 1 = made reservation, 2 = finished
+//     i : [0..2];
+//     // (if currently not reserving or was barred last time)
+//     // Decide whether to do nothing or make reservation
+//     [noinvest] i=0 | i=1 & b=1   -> (i'=0);
+//     [invest]   i=0 | i=1 & b=1   -> (i'=1);
+//     [cashin]   i=1 & b=0         -> (i'=2); // Cash in shares (if not barred)
+//     [done]     i=2               -> true;   // Finished
+// endmodule
 
 // Bar on the investor
-module barred     
-    // State: 0 = not barred, 1 = barred
-    // (initially cannot bar)
-    b : [0..1] init 1;
-
-    // Bar or not bar (cannot if do so last month)
-    [nobar] true -> (b'=0);
-    [bar] b=0 -> (b'=1);
-endmodule
+// module barred     
+//     // State: 0 = not barred, 1 = barred
+//     // (initially cannot bar)
+//     b : [0..1] init 1;
+// 
+//     // Bar or not bar (cannot if do so last month)
+//     [nobar] true -> (b'=0);
+//     [bar]   b=0  -> (b'=1);
+// endmodule
 
 // Value of the shares
 const int vmax;  // input constant
@@ -67,20 +95,20 @@ module probability
     p : [0..pmax] init floor(pmax/2);
 	[month] (v<5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
         {
-            &p1 + &p2 =  1,
-            &p1      >= 2/3 - (uf_up*v),
-            &p1      >= 2/3
+            &p1 + &p2 = 1,
+            &p1      >= 2/3 - (uf_up * v),
+            &p1      <= 2/3
         };
 	[month] (v=5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
         {
-            &p1 + &p2 =  1,
-            &p1      >= 1/2 - (uf_up*v),
-            &p1      >= 1/2 + (uf_down*v)
+            &p1 + &p2 = 1,
+            &p1      >= 1/2 - (uf_up   * v),
+            &p1      >= 1/2 + (uf_down * v)
         };
 	[month] (v>5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
         {
-            &p1 + &p2 =  1,
-            &p2      >= 2/3 - (uf_down*v),
+            &p1 + &p2 = 1,
+            &p2      >= 2/3 - (uf_down * v),
             &p2      <= 2/3
         };
 endmodule
