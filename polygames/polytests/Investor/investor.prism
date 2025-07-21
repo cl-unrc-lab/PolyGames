@@ -57,8 +57,8 @@ module barred
 endmodule
 
 // Value of the shares
-const vmax;
-const vinit;
+const int vmax;
+const int vinit;
 module value
 	
 	v : [0..vmax] init vinit;

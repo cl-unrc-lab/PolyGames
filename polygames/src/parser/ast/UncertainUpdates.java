@@ -284,7 +284,7 @@ public class UncertainUpdates extends Updates {
 		for (int i = 0; i < this.uncertains.size(); i++) {
 			String uncertainName = ((UncertainExpression) this.uncertains.get(i)).getName();
 			for (int j = 0; j < this.constants.size(); j++) {
-				if (this.coefficients.get(uncertainName).get(j) != null) {
+				if (this.coefficients.get(uncertainName) != null && this.coefficients.get(uncertainName).get(j) != null) {
 					this.coefficients.get(uncertainName).put(
 						j, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.coefficients.get(uncertainName).get(j).evaluateDouble() * Math.pow(10, precision)))
 					);

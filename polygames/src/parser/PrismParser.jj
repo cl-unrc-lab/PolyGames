@@ -1028,12 +1028,13 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) throws PrismLangExcep
     double cte;
 }
 {
-    UncertainEquationTerm(updates, i, true)
-    (<PLUS> UncertainEquationTerm(updates, i, true))*
+    
+      UncertainEquationTerm(updates, i, true)
+    	(LOOKAHEAD(2) <PLUS> UncertainEquationTerm(updates, i, true) |   <PLUS> <LPARENTH> UncertainEquationTerm(updates, i, true) <RPARENTH>)*
     (relationSymbol = <LE> | relationSymbol = <GE> | relationSymbol = <EQ>)
 		{ updates.setRelationSymbol(relationSymbol.image); }
 		UncertainEquationTerm(updates, i, false)
-    (<PLUS> UncertainEquationTerm(updates, i, false))*
+    (LOOKAHEAD(2) <PLUS> UncertainEquationTerm(updates, i, false) |  <PLUS> <LPARENTH> UncertainEquationTerm(updates, i, true) <RPARENTH> )*
     { return updates; }
 }
 
@@ -1050,10 +1051,9 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 	( LOOKAHEAD(2) // LOOKAHEAD is needed because both UncertainExpression() and Coefficient() may start with Identifier()
 		( coeff = Coefficient() ( <TIMES> uncertainExpression = UncertainExpression() )?
 			{
-				if (Objects.nonNull(token)) {
+				if (Objects.nonNull(token)){
 					coeff = new ExpressionUnaryOp(2, coeff);
 				}
-
 				if (Objects.isNull(uncertainExpression)) {
 					updates.addConstant(coeff, i, isInLeftSide);
 				} else {
@@ -1067,10 +1067,9 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 				if (Objects.nonNull(token)) {
 					coeff = new ExpressionUnaryOp(2, coeff);
 				}
-
 				updates.addCoefficient(coeff, i, uncertainExpression, isInLeftSide);
 			}
-		)
+		) 
 	)
 	{ updates.addConstant(new ExpressionLiteral(TypeDouble.getInstance(), 0.0), i, false); } // edge-case: pr <= pf, expected: pr + -1 * pf <= 0.0
 }
@@ -1078,15 +1077,17 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 Expression Coefficient() throws PrismLangException :
 {
 	String identifier = null;
+	String divisor = null; // just to support of division of constants
 	Expression index = null;
 	Expression expression = null;
 	Token token = null;
 }
 {
 	(
-			token = <REG_DOUBLE> { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
+	      token = <REG_DOUBLE> { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
 		| token = <REG_INT>    { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
-		| identifier = Identifier() <LBRACKET> index = Expression(false, false) <RBRACKET> { expression = new ExpressionArrayIndex(identifier, index); }
+		| identifier = Identifier() 
+	       <LBRACKET> index = Expression(false, false) <RBRACKET> { expression = new ExpressionArrayIndex(identifier, index); }
 	)
 
 	{ return expression; }
