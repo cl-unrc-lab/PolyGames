@@ -95,19 +95,16 @@ module probability
     p : [0..pmax] init floor(pmax/2);
 	[month] (v<5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
         {
-            &p1 + &p2 = 1,
             &p1      >= 2/3 - (uf_up * v),
             &p1      <= 2/3
         };
 	[month] (v=5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
         {
-            &p1 + &p2 = 1,
             &p1      >= 1/2 - (uf_up   * v),
             &p1      >= 1/2 + (uf_down * v)
         };
 	[month] (v>5) -U-> &p1 : (p'=min(p+1,pmax)) + &p2 : (p'=max(p-1,0))
         {
-            &p1 + &p2 = 1,
             &p2      >= 2/3 - (uf_down * v),
             &p2      <= 2/3
         };
