@@ -21,9 +21,10 @@ public class ASTUncertainVisitor extends DeepCopy {
 		for (Declaration declaration : this.copyAll(e.getDeclarations())) {
 			result.addDeclaration(declaration);
 		}
-		
+
 		for (Command command : e.getCommands()) {
 			for (Command cc : this.visit(command)) {
+
 				result.addCommand(cc);
 			}
 		}
@@ -34,41 +35,44 @@ public class ASTUncertainVisitor extends DeepCopy {
 	@Override
 	public ArrayList<Command> visit(Command e) throws PrismLangException {
 		ArrayList<Command> result = new ArrayList<Command>();
-		
+
 		// in the case that the update is normal
 
 		if (!(e.getUpdates() instanceof UncertainUpdates)) {
 			result.add(e.clone().deepCopy(this));
+
 			return result;
 		}
-		
+
 		// otherwise we copy everything except the update
 		ArrayList<Updates> updates = (ArrayList<Updates>) this.visit((UncertainUpdates) e.getUpdates());
 		for (Updates update : updates) {
 			Command command = e.clone();
+
 			command.setParent(e.getParent());
 			command.setGuard(this.copy(command.getGuard()));
 			command.setUpdates(update);
+
 			result.add(command);
 		}
-		
+
 		return result;
 	}
-	
+
 	@Override
-	public List<Updates> visit(UncertainUpdates e) throws PrismLangException {	
+	public List<Updates> visit(UncertainUpdates e) throws PrismLangException {
 		if (e.getNumberUncertains() == 0) {
 			throw new PrismLangException("Error computing the vertices of the equations");
 		}
-	
+
 		List<Updates> result = new ArrayList<Updates>();
-		
+
 		try {
 			PPLSupport.initPPL();
 		} catch (Exception exception) {
 			System.err.println("Error loading Parma Polyhedra Library:");
 		}
-		
+
 		e.convertToInt();
 
 		NNC_Polyhedron ph   = new NNC_Polyhedron(e.getPPLConstraintSystem());
@@ -76,20 +80,23 @@ public class ASTUncertainVisitor extends DeepCopy {
 
 		for (Generator g : gs) {
 			try {
-				Updates updates = new Updates();
+				Updates updates       = new Updates();
 				List<Double> vertices = PPLSupport.getGeneratorAsVector(g, e.getNumberUncertains());
 				for (int i = 0; i < vertices.size(); i++) {
-					if (vertices.get(i) != 0 ) {
-						updates.addUpdate(new ExpressionLiteral(TypeDouble.getInstance(), vertices.get(i), vertices.get(i).toString()), e.getUpdate(i));
+					if (vertices.get(i) != 0) {
+						updates.addUpdate(
+							new ExpressionLiteral(TypeDouble.getInstance(), vertices.get(i), vertices.get(i).toString()), e.getUpdate(i)
+						);
 						updates.setParent(e.getParent());
 					}
 				}
+
 				result.add(updates);
-			} catch(Exception exp) {
+			} catch (Exception exp) {
 				throw new PrismLangException("Error computing the vertices of the equations");
 			}
 		}
-		
+
 		return result;
 	}
 }
