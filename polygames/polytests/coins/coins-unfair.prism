@@ -32,17 +32,17 @@ module player1
 
 	coin : [0..2];
 
-	[] sched=1 & coin=0 & guess=0 -U-> p1 : (coin'=1) & (sched'=2) + p2 : (coin'=2) & (sched'=2)
+	[] sched=1 & coin=0 & guess=0 -U-> &p1 : (coin'=1) & (sched'=2) + &p2 : (coin'=2) & (sched'=2)
 									  {
 										// p + q = 1.0 is assumed
-										1.0 * p2 >= 0.25,
-										1.0 * p1 >= 0.25
+										&p2 >= 0.25,
+										&p1 >= 0.25
 									  };
-	[] sched=1 & coin=0 & guess!=0 -U-> p1 : (coin'=1)  + p2 : (coin'=2)
+	[] sched=1 & coin=0 & guess!=0 -U-> &p1 : (coin'=1)  + &p2 : (coin'=2)
 									  {
 										// p + q = 1.0 is assumed
-										1.0 * p2 >= 0.25,
-										1.0 * p1 >= 0.25
+										&p2 >= 0.25,
+										&p1 >= 0.25
 									  };	
 
 endmodule

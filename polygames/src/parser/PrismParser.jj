@@ -523,6 +523,7 @@ TOKEN :
 |	< TRUE:				"true" >
 |	< U:				"U" >
 |	< W:				"W" >
+|   < ABS:              "abs"> 
 	// Punctuation, etc.
 	// Note that "NOT" must be the first item of punctuation in this list
 	// (PrismSyntaxHighlighter relies on this fact)
@@ -1148,7 +1149,9 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 {
 	LOOKAHEAD(2)
 		(
-			(minus = <MINUS>)? uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression())?
+			(minus = <MINUS>)?
+			  
+			uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression()  )?
 			{
 				if (Objects.nonNull(minus)) {
 					coefficient = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, coefficient);
@@ -1156,7 +1159,8 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 
 				updates.addCoefficient(coefficient, i, uncertainExpression, isInLeftSide);
 			}
-		)
+
+	  )
 	| (
 			constant = ConstantExpression()
 			{
@@ -1171,12 +1175,14 @@ Expression ConstantExpression() throws PrismLangException :
 	Expression result       = null;
 }
 {
-	constantTerm = ConstantTerm() result = ConstantExpression_(constantTerm)
+	//constantTerm = ConstantTerm() result = ConstantExpression_(constantTerm)
+	constantTerm = ConstantTerm()
 	{
-		return result;
+		return constantTerm;
 	}
 }
 
+// unused rule, results in ambiguous grammar
 Expression ConstantExpression_(Expression left) throws PrismLangException :
 {
 	Expression right  = null;
@@ -1184,7 +1190,7 @@ Expression ConstantExpression_(Expression left) throws PrismLangException :
 }
 {
 		<PLUS>  right = ConstantTerm() { result = new ExpressionBinaryOp(ExpressionBinaryOp.PLUS,  left, right); } result = ConstantExpression_(result) { return result; }
-	| <MINUS> right = ConstantTerm() { result = new ExpressionBinaryOp(ExpressionBinaryOp.MINUS, left, right); } result = ConstantExpression_(result) { return result; }
+	|  <MINUS> right = ConstantTerm() { result = new ExpressionBinaryOp(ExpressionBinaryOp.MINUS, left, right); } result = ConstantExpression_(result) { return result; }
 	| { return result; }
 }
 
@@ -1235,9 +1241,12 @@ Expression Basic() throws PrismLangException :
 		| (
 				identifier = Identifier() (<LBRACKET> i = Expression(false, false) <RBRACKET> (<LBRACKET> j = Expression(false, false) <RBRACKET>)?)?
 				{
-					if (Objects.nonNull(i) && Objects.nonNull(j)) {
+					//if (Objects.nonNull(i) && Objects.nonNull(j)) {
+					if (i != null && j != null) { 
 						expression = new ExpressionArray(identifier, i, j, lineLengths.get(identifier));
-					} else if (Objects.nonNull(i)) {
+					//} else if (Objects.nonNull(i)) {
+					} else if (i!=null) {
+					  	System.out.println(lineLengths.get(identifier));
 						expression = new ExpressionArray(identifier, ZERO.clone().deepCopy(), i, lineLengths.get(identifier));
 					} else {
 						expression = new ExpressionIdent(identifier);
@@ -1263,6 +1272,21 @@ Expression MinMaxFunction() throws PrismLangException:
 	<RPARENTH>
 	{ return expressionMinMax; }
 }
+
+Expression Abs() throws PrismLangException:
+{
+	ExpressionMinMax expressionMinMax = new ExpressionMinMax();
+	Expression left  = null;
+	Expression right = null;
+}
+{
+	<ABS> { expressionMinMax.setFunction(ExpressionMinMax.MIN); } 
+	<LPARENTH>
+		left = ConstantExpression() { expressionMinMax.setLeft(left); right = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, left); expressionMinMax.setRight(right); } 
+	<RPARENTH>
+	{ return expressionMinMax; }
+}
+
 
 // Updates
 

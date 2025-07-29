@@ -34,240 +34,241 @@ import prism.PrismLangException;
  * based on the provided array and index expressions.
  */
 public class ASTElementWithArraysReplacerVisitor extends ASTTraverseModify {
-  private ModulesFile modulesFile;
+	private ModulesFile modulesFile;
 
-  @Override
-  public Object visit(ModulesFile e) throws PrismLangException {
-    this.modulesFile = e;
+	@Override
+	public Object visit(ModulesFile e) throws PrismLangException {
+		this.modulesFile = e;
 
-    return super.visit(e);
-  }
+		return super.visit(e);
+	}
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public Object visit(parser.ast.Module e) throws PrismLangException {
-    List<Command> commands = null;
+	@SuppressWarnings("unchecked")
+	@Override
+	public Object visit(parser.ast.Module e) throws PrismLangException {
+		List<Command> commands = null;
 		int i, n;
 		n = e.getNumDeclarations();
 		for (i = 0; i < n; i++) {
 			if (e.getDeclaration(i) != null) {
-        e.setDeclaration(i, (Declaration) (e.getDeclaration(i).accept(this)));
-      }
+				e.setDeclaration(i, (Declaration) (e.getDeclaration(i).accept(this)));
+			}
 		}
 
 		if (e.getInvariant() != null) {
-      e.setInvariant((Expression) (e.getInvariant().accept(this)));
-    }
+			e.setInvariant((Expression) (e.getInvariant().accept(this)));
+		}
 
-    n = e.getNumCommands();
+		n = e.getNumCommands();
 		for (i = 0; i < n; i++) {
-      Command command = e.getCommand(0);
+			Command command = e.getCommand(0); // it should be i
 
-      e.removeCommand(command);
+			e.removeCommand(command);
 
 			if (command != null) {
-        commands = (List<Command>) command.accept(this);
+				commands = (List<Command>) command.accept(this);
 
-        for (Command c : commands) {
-          e.addCommand(c);
-        }
-      }
+				for (Command c : commands) {
+					e.addCommand(c);
+				}
+			}
 		}
 
 		return e;
 	}
 
-  @Override
-  public Object visit(CommandWithArrays e) throws PrismLangException {
-    ASTElementReplacer astElementReplacer = new CommandWithArraysReplacer();
-    List<ASTElement> commands             = new ArrayList<>();
+	@Override
+	public Object visit(CommandWithArrays e) throws PrismLangException {
+		ASTElementReplacer astElementReplacer = new CommandWithArraysReplacer();
+		List<ASTElement> commands             = new ArrayList<>();
 
-    commands.add(e.clone().deepCopy(new DeepCopy()));
+		commands.add(e.clone().deepCopy(new DeepCopy()));
+		
+		for (ExpressionArray expression : getExpressionArrays(e)) {
+			List<IdentifierWithIndex> identifierWithIndexs = getIdentifierWithIndexs(expression);
+			try {
+				int i                = expression.evalIndex();
+				identifierWithIndexs = List.of(identifierWithIndexs.get(i));
+			} finally {
+				commands = createASTElementsWithoutExpressionArrayIndex(commands, expression, identifierWithIndexs, astElementReplacer);
+			}
+		}
 
-    for (ExpressionArray expression : getExpressionArrays(e)) {
-      List<IdentifierWithIndex> identifierWithIndexs = getIdentifierWithIndexs(expression);
-
-      try {
-        int i                = expression.evalIndex();
-        identifierWithIndexs = List.of(identifierWithIndexs.get(i));
-      } finally {
-        commands = createASTElementsWithoutExpressionArrayIndex(commands, expression, identifierWithIndexs, astElementReplacer);
-      }
-    }
-
-    return commands;
-  }
-
-  @Override
-  public Object visit(FormulaList e) throws PrismLangException {
-    ASTElementReplacer astElementReplacer = new FormulaWithArraysReplacer();
-    int i, n;
-    n = e.size();
-    for (i = 0; i < n; i++) {
-      Expression formula = (Expression) e.getFormula(i);
-      Expression result  = formula.clone().deepCopy(new DeepCopy());
-
-      List<ExpressionArray> expressionArrayIndexList = getExpressionArrays(formula);
-
-      for (ExpressionArray expression : expressionArrayIndexList) {
-        List<IdentifierWithIndex> identifierWithIndexs = getIdentifierWithIndexs(expression);
-
-        try {
-          int index            = expression.evalIndex();
-          identifierWithIndexs = List.of(identifierWithIndexs.get(index));
-        } catch (Exception exception) {
-          // Nothing to do
-        } finally {
-          for (IdentifierWithIndex identifierWithIndex : identifierWithIndexs) {
-            ASTElement identifier = identifierWithIndex.identifier();
-            Integer indexValue    = identifierWithIndex.index();
-
-            if (indexValue < identifierWithIndexs.size() - 1) {
-              Expression guard = new ExpressionBinaryOp(
-                ExpressionBinaryOp.EQ,
-                new ExpressionLiteral(TypeInt.getInstance(), expression.evalIndex()),
-                new ExpressionLiteral(TypeInt.getInstance(), indexValue)
-              ); // index =? value
-              Expression eThen = (Expression) astElementReplacer.replace(
-                formula, expression, resolve(identifier, expression), indexValue
-              );
-              Expression eElse = result.clone().deepCopy(new DeepCopy());
-
-              result = new ExpressionITE(guard, eThen, eElse);
-            } else {
-              result = (Expression) astElementReplacer.replace(
-                result, expression, resolve(identifier, expression), indexValue
-              );
-            }
-          }
-        }
-
-        formula = result;
-      }
-
-      if ( !expressionArrayIndexList.isEmpty() ) {
-        e.setFormula(i, result);
-      }
-    }
-
-    return e;
+		return commands;
 	}
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public Object visit(RewardStructWithArrays e) throws PrismLangException {
-    RewardStruct rewardStruct = new RewardStruct();
-    rewardStruct.setName(e.getName());
+	@Override
+	public Object visit(FormulaList e) throws PrismLangException {
+		ASTElementReplacer astElementReplacer = new FormulaWithArraysReplacer();
+		int i, n;
+		n = e.size();
+		for (i = 0; i < n; i++) {
+			Expression formula = (Expression) e.getFormula(i);
+			Expression result  = formula.clone().deepCopy(new DeepCopy());
 
-    List<RewardStructItem> rewardStructItems = new ArrayList<>();
+			List<ExpressionArray> expressionArrayIndexList = getExpressionArrays(formula);
+
+			for (ExpressionArray expression : expressionArrayIndexList) {
+				List<IdentifierWithIndex> identifierWithIndexs = getIdentifierWithIndexs(expression);
+
+				try {
+					int index            = expression.evalIndex();
+					identifierWithIndexs = List.of(identifierWithIndexs.get(index));
+				} catch (Exception exception) {
+					// Nothing to do
+				} finally {
+					for (IdentifierWithIndex identifierWithIndex : identifierWithIndexs) {
+						ASTElement identifier = identifierWithIndex.identifier();
+						Integer indexValue    = identifierWithIndex.index();
+
+						if (indexValue < identifierWithIndexs.size() - 1) {
+							Expression guard = new ExpressionBinaryOp(
+									ExpressionBinaryOp.EQ,
+									new ExpressionLiteral(TypeInt.getInstance(), expression.evalIndex()),
+									new ExpressionLiteral(TypeInt.getInstance(), indexValue)
+									); // index =? value
+							Expression eThen = (Expression) astElementReplacer.replace(
+									formula, expression, resolve(identifier, expression), indexValue
+									);
+							Expression eElse = result.clone().deepCopy(new DeepCopy());
+
+							result = new ExpressionITE(guard, eThen, eElse);
+						} else {
+							result = (Expression) astElementReplacer.replace(
+									result, expression, resolve(identifier, expression), indexValue
+									);
+						}
+					}
+				}
+
+				formula = result;
+			}
+
+			if ( !expressionArrayIndexList.isEmpty() ) {
+				e.setFormula(i, result);
+			}
+		}
+
+		return e;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Object visit(RewardStructWithArrays e) throws PrismLangException {
+		RewardStruct rewardStruct = new RewardStruct();
+		rewardStruct.setName(e.getName());
+
+		List<RewardStructItem> rewardStructItems = new ArrayList<>();
 		int i, n;
 		n = e.getNumItems();
 		for (i = 0; i < n; i++) {
-      RewardStructItem rewardStructItem = e.getRewardStructItem(0);
-      e.removeItem(rewardStructItem);
-      
+			RewardStructItem rewardStructItem = e.getRewardStructItem(0);
+			e.removeItem(rewardStructItem);
+
 			if (rewardStructItem != null) {
-        rewardStructItems.addAll((List<RewardStructItem>) rewardStructItem.accept(this));
-      }
+				rewardStructItems.addAll((List<RewardStructItem>) rewardStructItem.accept(this));
+			}
 		}
 
-    for (RewardStructItem rsi : rewardStructItems) {
-      rewardStruct.addItem(rsi);
-    }
+		for (RewardStructItem rsi : rewardStructItems) {
+			rewardStruct.addItem(rsi);
+		}
 
 		return rewardStruct;
 	}
 
-  @Override
-  public Object visit(RewardStructItem e) throws PrismLangException {
-    ASTElementReplacer astElementReplacer = new RewardStructItemWithArraysReplacer();
-    List<ASTElement> rewardStructItems    = new ArrayList<>();
+	@Override
+	public Object visit(RewardStructItem e) throws PrismLangException {
+		ASTElementReplacer astElementReplacer = new RewardStructItemWithArraysReplacer();
+		List<ASTElement> rewardStructItems    = new ArrayList<>();
 
-    rewardStructItems.add(e.clone().deepCopy(new DeepCopy()));
+		rewardStructItems.add(e.clone().deepCopy(new DeepCopy()));
 
-    for (ExpressionArray expression : getExpressionArrays(e)) {
-      List<IdentifierWithIndex> identifierWithIndexs = getIdentifierWithIndexs(expression);
+		for (ExpressionArray expression : getExpressionArrays(e)) {
+			List<IdentifierWithIndex> identifierWithIndexs = getIdentifierWithIndexs(expression);
 
-      try {
-        int index            = expression.evalIndex();
-        identifierWithIndexs = List.of(identifierWithIndexs.get(index));
-      } catch (Exception exception) {
-        // Nothing to do
-      } finally {
-        rewardStructItems = createASTElementsWithoutExpressionArrayIndex(
-          rewardStructItems, expression, identifierWithIndexs, astElementReplacer
-        );
-      }
-    }
+			try {
+				int index            = expression.evalIndex();
+				identifierWithIndexs = List.of(identifierWithIndexs.get(index));
+			} catch (Exception exception) {
+				// Nothing to do
+			} finally {
+				rewardStructItems = createASTElementsWithoutExpressionArrayIndex(
+						rewardStructItems, expression, identifierWithIndexs, astElementReplacer
+						);
+			}
+		}
 
-    return rewardStructItems;
+		return rewardStructItems;
 	}
 
-  private List<ASTElement> createASTElementsWithoutExpressionArrayIndex(
-      List<ASTElement>          astElements,
-      ExpressionArray           expressionArrayIndex,
-      List<IdentifierWithIndex> indexedIdentifiers,
-      ASTElementReplacer        astElementReplacer
-    ) throws PrismLangException {
+	private List<ASTElement> createASTElementsWithoutExpressionArrayIndex(
+			List<ASTElement>          astElements,
+			ExpressionArray           expressionArrayIndex,
+			List<IdentifierWithIndex> indexedIdentifiers,
+			ASTElementReplacer        astElementReplacer
+			) throws PrismLangException {
 
-    ListIterator<ASTElement> iterator = astElements.listIterator();
+		ListIterator<ASTElement> iterator = astElements.listIterator();
 
-    while(iterator.hasNext()) {
-      ASTElement astElement = iterator.next();
+		while(iterator.hasNext()) {
+			ASTElement astElement = iterator.next();
 
-      iterator.remove();
+			iterator.remove();
 
-      for (IdentifierWithIndex indexedIdentifier : indexedIdentifiers) {
-        ASTElement identifier = indexedIdentifier.identifier();
-        int index             = indexedIdentifier.index();
+			for (IdentifierWithIndex indexedIdentifier : indexedIdentifiers) {
+				ASTElement identifier = indexedIdentifier.identifier();
+				int index             = indexedIdentifier.index();
 
-        iterator.add(astElementReplacer.replace(astElement, expressionArrayIndex, resolve(identifier, expressionArrayIndex), index));
-      }
-    }
+				iterator.add(astElementReplacer.replace(astElement, expressionArrayIndex, resolve(identifier, expressionArrayIndex), index));
+			}
+		}
 
-    return astElements;
-  }
+		return astElements;
+	}
 
-  private Expression resolve(ASTElement identifier, ExpressionArray expression) throws PrismLangException {
-    if (identifier instanceof Declaration) {
-      Declaration declaration = (Declaration) identifier;
+	private Expression resolve(ASTElement identifier, ExpressionArray expression) throws PrismLangException {
+		if (identifier instanceof Declaration) {
+			Declaration declaration = (Declaration) identifier;
 
-      ExpressionIdent result = new ExpressionIdent(declaration.getName());
-      result.setPrime(expression.getPrime());
+			ExpressionIdent result = new ExpressionIdent(declaration.getName());
+			result.setPrime(expression.getPrime());
 
-      return result;
-    } else if (identifier instanceof ExpressionConstant) {
-      ExpressionConstant constant = (ExpressionConstant) identifier;
+			return result;
+		} else if (identifier instanceof ExpressionConstant) {
+			ExpressionConstant constant = (ExpressionConstant) identifier;
 
-      ConstantList constantList = modulesFile.getConstantList();
-      int indexOfConstant       = constantList.getConstantIndex(constant.getName());
+			ConstantList constantList = modulesFile.getConstantList();
+			int indexOfConstant       = constantList.getConstantIndex(constant.getName());
 
-      ExpressionLiteral result = new ExpressionLiteral(
-        constantList.getConstantType(indexOfConstant), constantList.getConstant(indexOfConstant).evaluate()
-      );
+			ExpressionLiteral result = new ExpressionLiteral(
+					constantList.getConstantType(indexOfConstant), constantList.getConstant(indexOfConstant).evaluate()
+					);
 
-      return result;
-    }
+			return result;
+		}
 
-    return null;
-  }
+		return null;
+	}
 
-  @SuppressWarnings("unchecked")
-  private List<ExpressionArray> getExpressionArrays(ASTElement e) throws PrismLangException {
-    ASTVisitor searcher              = new ASTElementSearcherVisitor(ExpressionArray.class);
-    List<ExpressionArray> allMatches = (List<ExpressionArray>) e.accept(searcher);
+	@SuppressWarnings("unchecked")
+	private List<ExpressionArray> getExpressionArrays(ASTElement e) throws PrismLangException {
+		ASTVisitor searcher              = new ASTElementSearcherVisitor(ExpressionArray.class);
+		List<ExpressionArray> allMatches = (List<ExpressionArray>) e.accept(searcher);
 
-    return allMatches;
-  }
+		return allMatches;
+	}
 
-  private List<IdentifierWithIndex> getIdentifierWithIndexs(ExpressionIdent expressionIdent) {
-    String prefix                = expressionIdent.getName();
-    List<ASTElement> identifiers = IdentifiersFinder.identifiers(modulesFile, prefix, ComparisonType.STARTS_WITH);
+	private List<IdentifierWithIndex> getIdentifierWithIndexs(ExpressionIdent expressionIdent) {
+		String prefix                = expressionIdent.getName();
+		List<ASTElement> identifiers = IdentifiersFinder.identifiers(modulesFile, prefix, ComparisonType.STARTS_WITH);
+		System.out.println(identifiers);
+		
+		
+		List<IdentifierWithIndex> identifierWithIndexs = IntStream.range(
+				0, identifiers.size()).mapToObj(i -> new IdentifierWithIndex(identifiers.get(i), i)
+						).collect(Collectors.toList());
 
-    List<IdentifierWithIndex> identifierWithIndexs = IntStream.range(
-      0, identifiers.size()).mapToObj(i -> new IdentifierWithIndex(identifiers.get(i), i)
-    ).collect(Collectors.toList());
-
-    return identifierWithIndexs;
-  }
+		return identifierWithIndexs;
+	}
 }

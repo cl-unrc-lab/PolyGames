@@ -709,7 +709,7 @@ public class PolyCL implements PrismModelListener
 				modulesFile = resolveConstants(modulesFile);
 
 				ASTTraverseModify[] visitors = {
-					new ASTElementWithArraysReplacerVisitor(), new ExpressionIdentReplacerVisitor(), new ExpressionMinMaxReplacerVisitor()
+						new ASTElementWithArraysReplacerVisitor(),  new ExpressionIdentReplacerVisitor(),new ExpressionMinMaxReplacerVisitor()
 				};
 		
 				for (ASTTraverseModify visitor : visitors) {

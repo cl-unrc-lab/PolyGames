@@ -21,7 +21,7 @@ module scheduler
 	// could be unfair but both choices has a probability
 	[] sched_random & sched=0 -U-> p1 : (sched'=1) + p2 : (sched'=2)
 			                    {
-					              1.0 * p1 >= 0.1,
+					              p1 * 1.0 >= 0.1,
 					              1.0 * p2 >= 0.1 		
 				                };
 	// if scheduling is nondeterministic
