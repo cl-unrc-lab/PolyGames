@@ -1254,6 +1254,7 @@ Expression Basic() throws PrismLangException :
 				}
 		  )
 		| expression = MinMaxFunction()
+		| expression = Abs()
 		| <LPARENTH> expression = ConstantExpression() { expression = new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, expression); } <RPARENTH>
 	)
 	{ return expression; }
@@ -1282,7 +1283,7 @@ Expression Abs() throws PrismLangException:
 {
 	<ABS> { expressionMinMax.setFunction(ExpressionMinMax.MIN); } 
 	<LPARENTH>
-		left = ConstantExpression() { expressionMinMax.setLeft(left); right = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, left); expressionMinMax.setRight(right); } 
+		left = ConstantExpression() { expressionMinMax.setFunction(ExpressionMinMax.MAX); expressionMinMax.setLeft(left); right = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, left); expressionMinMax.setRight(right); } 
 	<RPARENTH>
 	{ return expressionMinMax; }
 }
