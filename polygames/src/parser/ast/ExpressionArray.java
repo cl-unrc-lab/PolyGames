@@ -21,6 +21,13 @@ public class ExpressionArray extends ExpressionIdent {
     return i.evaluateInt() * lineLength + j.evaluateInt();
   }
 
+  public Expression index() throws PrismLangException {
+    // i * lineLength + j
+    return new ExpressionBinaryOp(
+      ExpressionBinaryOp.PLUS, new ExpressionBinaryOp(ExpressionBinaryOp.TIMES, i, new ExpressionLiteral(TypeInt.getInstance(), lineLength)), j
+    );
+  }
+
   @Override
   public Object accept(ASTVisitor v) throws PrismLangException {
     return v.visit(this);

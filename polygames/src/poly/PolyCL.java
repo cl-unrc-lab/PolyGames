@@ -706,12 +706,13 @@ public class PolyCL implements PrismModelListener
 				mainLog.print("\nPoly: Parsing model file \"" + modelFilename + "\"...\n");
 
 				modulesFile = prism.parseModelFile(new File(modelFilename), typeOverride);
+
 				modulesFile = resolveConstants(modulesFile);
 
 				ASTTraverseModify[] visitors = {
-						new ASTElementWithArraysReplacerVisitor(),  new ExpressionIdentReplacerVisitor(),new ExpressionMinMaxReplacerVisitor()
+					new ASTElementWithArraysReplacerVisitor(), new ExpressionIdentReplacerVisitor(), new ExpressionMinMaxReplacerVisitor()
 				};
-		
+
 				for (ASTTraverseModify visitor : visitors) {
 					modulesFile = (ModulesFile) visitor.visit(modulesFile);
 				}
@@ -720,7 +721,7 @@ public class PolyCL implements PrismModelListener
 				modulesFile                 = visitor.copy(modulesFile);
 
 				modulesFile.tidyUp();
-				
+
 				writeModelToFile(modulesFile, "modelRR.txt");
 
 				System.out.println(modulesFile);

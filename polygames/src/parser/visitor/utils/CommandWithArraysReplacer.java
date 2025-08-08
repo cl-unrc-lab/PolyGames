@@ -21,11 +21,8 @@ public class CommandWithArraysReplacer extends ASTElementReplacer {
 
     command.setGuard(
       ExpressionBinaryOp.And(
-        (Expression) command.getGuard().accept(this), new ExpressionBinaryOp(
-          ExpressionBinaryOp.EQ,
-          new ExpressionLiteral(TypeInt.getInstance(), expressionArrayIndex.evalIndex()),
-          new ExpressionLiteral(TypeInt.getInstance(), index)
-        )
+        (Expression) command.getGuard().accept(this),
+        new ExpressionBinaryOp(ExpressionBinaryOp.EQ, expressionArrayIndex.index(), new ExpressionLiteral(TypeInt.getInstance(), index)) // i =? value
       )
     );
 
