@@ -1,8 +1,4 @@
-// This example is just for testing the basic behavior of the tool
-// it tests the array syntax
-
 smg
-
 const double a[3] = {0.25, 0.25, 0.25};
 
 player p1
@@ -22,14 +18,15 @@ endmodule
 
 module client
 	c : [0..2] init 0;
+	i : [0..2] init 0;
 	[send1] c=0 -U-> &p1 : (c'=1) + &p2 : (c'=0) // receive message 1
 	{
-		&p1 * a[c] + &p2 * a[c] >= 1/2,
+		&p1 * abs(-1) >= 1/2,
 		&p2 >=0.25
 	};
 	[send2] c=0 -U-> &p1 : (c'=2) + &p2 : (c'=0) // receive message 2
 	{
-		&p2 * 0.25  >= 0.25,
+		&p2 >= 0.25,
 		&p2 >= 0.25
 	}; 
 	[] c!=0 -> (c'=0); // request another message
