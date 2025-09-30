@@ -26,6 +26,10 @@
 
 package parser.visitor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import parma_polyhedra_library.Relation_Symbol;
 import parser.ast.*;
 import prism.PrismLangException;
 
@@ -248,7 +252,11 @@ public class ASTTraverseModify implements ASTVisitor
 	{
 		visitPre(e);
 		e.setGuard((Expression)(e.getGuard().accept(this)));
-		e.setUpdates((Updates)(e.getUpdates().accept(this)));
+		//if (e.getUpdates() instanceof UncertainUpdates) {
+		//	e.setUpdates((UncertainUpdates)(e.getUpdates().accept(this)));
+		//}else {
+			e.setUpdates((Updates)(e.getUpdates().accept(this)));
+		//}
 		visitPost(e);
 		return e;
 	}
@@ -270,11 +278,35 @@ public class ASTTraverseModify implements ASTVisitor
 	public void visitPost(Updates e) throws PrismLangException { defaultVisitPost(e); }
 	
 	public void visitPre(UncertainUpdates e) throws PrismLangException { defaultVisitPre(e); }
+	
+	/**
+	 * Visitor for UncertainUpdates, it recursively visits the data structure
+	 */
 	public Object visit(UncertainUpdates e) throws PrismLangException
 	{
-		// TBD
+		
+		visitPre(e);
+		// we set the uncertains
+		for (int i = 0; i < e.getNumberUncertains(); i++) {
+			e.setUncertain(i,(Expression) e.getUncertain(i).accept(this));
+		}
+		
+		// we set the constants
+		for (int i = 0; i<e.getNumberConstants(); i++) {
+			e.setConstant(i,(Expression) e.constant(i).accept(this));
+		}
+		
+		// we recursively deal with the coefficients
+		for (String k : e.getUncertainNames()) {
+			for (int i = 0;  i < e.getNumberConstants(); i++) {
+			e.setCoefficient(k, i , (Expression) e.getCoefficient(k,i).accept(this));
+			}
+		}	
+		
 		return e;
 	}
+		
+		
 	public void visitPost(UncertainUpdates e) throws PrismLangException { defaultVisitPost(e); }
 	
 	// -----------------------------------------------------------------------------------
@@ -760,8 +792,11 @@ public class ASTTraverseModify implements ASTVisitor
 
 	@Override
 	public Object visit(ExpressionArray e) throws PrismLangException {
+		e.setI((Expression) e.getI().accept(this));
+		e.setJ((Expression) e.getJ().accept(this));
 		return e;
 	}
+	
 	@Override
 	public Object visit(RewardStructWithArrays e) throws PrismLangException {
 		visitPre(e);

@@ -1,0 +1,37 @@
+// this tests the absolute value
+smg
+const double a[3] = {0.25, 0.25, 0.25};
+
+player p1
+  host, [send1], [send2]
+endplayer
+
+player p2
+  client
+endplayer
+
+module host
+	h : [0..2] init 0;
+	[send1] h=0 -> (h'=1);	// send message 1
+	[send2] h=0 -> (h'=2);  // send message 2
+	[] c=0 -> (h'=0); // restart
+endmodule
+
+module client
+	c : [0..2] init 0;
+	i : [0..2] init 0;
+	[send1] c=0 -U-> &p1 : (c'=1) + &p2 : (c'=0) // receive message 1
+	{
+		&p1 * max(a[c],1) >= 1/2,
+		&p2 >=0.25
+	};
+	[send2] c=0 -U-> &p1 : (c'=2) + &p2 : (c'=0) // receive message 2
+	{
+		&p2 >= 0.25,
+		&p2 >= 0.25
+	}; 
+	[] c!=0 -> (c'=0); // request another message
+	[] c!=0 -> true;   // wait
+endmodule
+
+

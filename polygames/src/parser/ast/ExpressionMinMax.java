@@ -12,7 +12,7 @@ public class ExpressionMinMax extends Expression {
   private Expression right;
 
   public static final int MIN = 1;
-	public static final int MAX = 2;
+  public static final int MAX = 2;
 
   public ExpressionMinMax() {}
 

@@ -500,7 +500,7 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(ExpressionArray e) throws PrismLangException {
-		return e;
+		return e.clone().deepCopy(this);
 	}
 
 	@Override

@@ -25,7 +25,7 @@ public abstract class ASTElementReplacer extends ASTTraverseModify {
     ASTElement astElement, ExpressionArray expressionArrayIndex, Expression expression, int index
   ) throws PrismLangException;
 
-  public void setExpression(Expression expression) {
+  public void setExpression(Expression expression) {  
     this.expression = expression;
   }
 

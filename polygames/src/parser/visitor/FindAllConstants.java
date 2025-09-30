@@ -72,11 +72,14 @@ public class FindAllConstants extends ASTTraverseModify
 		}
 	}
 	
+	
 	public Object visit(ExpressionIdent e) throws PrismLangException
 	{
 		// See if identifier corresponds to a constant
 		int i = getConstantIndex(e.getName());
 		if (i != -1) {
+			System.out.println("Nombre:"+constantList.getConstantName(i));
+			System.out.println("Valor:"+constantList.getConstant(i));
 			// If so, replace it with an ExpressionConstant object
 			ExpressionConstant expr = new ExpressionConstant(e.getName(), getConstantType(i));
 			expr.setPosition(e);

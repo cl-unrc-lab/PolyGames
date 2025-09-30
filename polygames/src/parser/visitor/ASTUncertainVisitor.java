@@ -72,12 +72,11 @@ public class ASTUncertainVisitor extends DeepCopy {
 		} catch (Exception exception) {
 			System.err.println("Error loading Parma Polyhedra Library:");
 		}
-
 		e.convertToInt();
 
 		NNC_Polyhedron ph   = new NNC_Polyhedron(e.getPPLConstraintSystem());
 		Generator_System gs = ph.generators();
-
+		
 		for (Generator g : gs) {
 			try {
 				Updates updates       = new Updates();

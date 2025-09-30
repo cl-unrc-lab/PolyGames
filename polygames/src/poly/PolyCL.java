@@ -59,6 +59,9 @@ import parser.visitor.ASTUncertainVisitor;
 import parser.visitor.ConstantsReplacerVisitor;
 import parser.visitor.ExpressionIdentReplacerVisitor;
 import parser.visitor.ExpressionMinMaxReplacerVisitor;
+import parser.visitor.ReplaceConstants;
+import parser.visitor.ReplaceMinMaxArrays;
+import parser.visitor.ReplaceVariables;
 import strat.StrategyExportOptions;
 import prism.ResultsExporter.ResultsExportShape;
 import prism.ResultsImporter.RawResultsCollection;
@@ -126,6 +129,7 @@ public class PolyCL implements PrismModelListener
 	private boolean nobuild = false;
 	private boolean test = false;
 	private boolean testExitsOnFail = true;
+	private boolean polyDebug = false;
 
 	// property info
 	private List<Object> propertyIndices = null;
@@ -709,23 +713,33 @@ public class PolyCL implements PrismModelListener
 
 				modulesFile = resolveConstants(modulesFile);
 
-				ASTTraverseModify[] visitors = {
-					new ASTElementWithArraysReplacerVisitor(), new ExpressionIdentReplacerVisitor(), new ExpressionMinMaxReplacerVisitor()
-				};
+				//ASTTraverseModify[] visitors = {
+				//	new ASTElementWithArraysReplacerVisitor(), new ExpressionIdentReplacerVisitor(), new ExpressionMinMaxReplacerVisitor()
+				//};
+				
+				//ASTTraverseModify[] visitors = {
+				//		new ExpressionIdentReplacerVisitor(), new ExpressionMinMaxReplacerVisitor()
+				//	};
 
-				for (ASTTraverseModify visitor : visitors) {
-					modulesFile = (ModulesFile) visitor.visit(modulesFile);
-				}
-
+				//for (ASTTraverseModify visitor : visitors) {
+				//	modulesFile = (ModulesFile) visitor.visit(modulesFile);
+				//}
+				// we replace the constants and variables for their possible values, this allows us
+				// to deal with arrays
+				ReplaceConstants replacerConstant = new ReplaceConstants(modulesFile.getConstantList());
+				ReplaceVariables replacerVariables = new ReplaceVariables();
+				ReplaceMinMaxArrays replacerArrays = new ReplaceMinMaxArrays(modulesFile);
 				ASTUncertainVisitor visitor = new ASTUncertainVisitor();
+				modulesFile = (ModulesFile) replacerConstant.visit(modulesFile); // we replace all constants
+				modulesFile = (ModulesFile) replacerVariables.visit(modulesFile); // we replace all variables
+				modulesFile = (ModulesFile) replacerArrays.visit(modulesFile); // we replace arrays and maxmins	
 				modulesFile                 = visitor.copy(modulesFile);
-
 				modulesFile.tidyUp();
-
-				writeModelToFile(modulesFile, "modelRR.txt");
-
-				System.out.println(modulesFile);
-
+				
+				// if polydebug is one we print out the model to a file
+				if (this.polyDebug){
+					writeModelToFile(modulesFile, "modelForDebugging.txt");
+				}
 				prism.loadPRISMModel(modulesFile);
 			}
 		} catch (FileNotFoundException e) {
@@ -2075,6 +2089,9 @@ public class PolyCL implements PrismModelListener
 				// enable bisimulation minimisation before model checking (hidden option)
 				else if (sw.equals("bisim")) {
 					prism.setDoBisim(true);
+				}
+				else if (sw.equals("polydebug")) { // used for debugging polygames
+					this.polyDebug = true;
 				}
 
 				// Other switches - pass to PrismSettings

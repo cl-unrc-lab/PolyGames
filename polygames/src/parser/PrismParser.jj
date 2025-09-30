@@ -880,6 +880,7 @@ void ConstantDef(ConstantList constantList) throws PrismLangException :
 }
 
 JAVACODE
+// To add constant arrays to constant lists
 void addConstantArrayToConstantList(ConstantList constantList, ExpressionIdent name, List<List<Expression>> list, boolean unidimensionalArray) {
 	for (int i = 0; i < list.size(); i++) {
 		for (int j = 0; j < list.get(i).size(); j++) {
@@ -952,6 +953,7 @@ DeclarationType DeclarationVarType() throws PrismLangException :
 	{ declType.setPosition(begin, getToken(0)); return declType; }
 }
 
+// Defines array declarations
 void ArrayDeclaration(parser.ast.Module module) throws PrismLangException :
 {
 	String identifier;
@@ -1077,8 +1079,7 @@ parser.ast.Module Module() throws PrismLangException :
 	{ module.setPosition(begin, getToken(0)); module.setNameASTElement(name); return module; }
 }
 
-// Command
-
+// Add support to array and uncertain commands
 CommandWithArrays Command() throws PrismLangException :
 {
 	List<String> synchs = null;
@@ -1144,7 +1145,7 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 	UncertainExpression uncertainExpression = null;
 	Expression coefficient = ONE;
 	Expression constant    = null;
-  Token minus = null;
+    Token minus = null;
 }
 {
 	LOOKAHEAD(2)
@@ -1236,7 +1237,7 @@ Expression Basic() throws PrismLangException :
 }
 {
 	(
-			token = <REG_DOUBLE> { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
+		  token = <REG_DOUBLE> { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
 		| token = <REG_INT>    { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
 		| (
 				identifier = Identifier() (<LBRACKET> i = Expression(false, false) <RBRACKET> (<LBRACKET> j = Expression(false, false) <RBRACKET>)?)?

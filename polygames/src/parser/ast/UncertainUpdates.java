@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import parser.type.TypeDouble;
 import parser.visitor.ASTVisitor;
@@ -26,10 +27,12 @@ import explicit.PPLSupport;
 public class UncertainUpdates extends Updates {
 
 	private ArrayList<Expression> uncertains; // the list of uncertains
-	private HashMap<String, HashMap<Integer, Expression>> coefficients; // coefficients contains for each uncertain the corresponding column of coefficients
-																																	    // for instance, coefficients.get(uncertain).get(i) returns the coefficiente corresponding to row i, null if none
+	private HashMap<String, HashMap<Integer, Expression>> coefficients; 
+	// coefficients contains, for each uncertain, the corresponding column of coefficients
+    // for instance, coefficients.get(uncertain).get(i) returns the coefficient corresponding to row i, null if none
 	private ArrayList<Expression> constants; // constains the columns of constants in the equations
 	private List<Relation_Symbol> relationSymbols;
+	private boolean converted=false;
 	int div = 1; 	     // the divisor allows us to move the decimal point, PPL only allows for integers.
 	int precision = 6; // this is the precision, after that we truncate the number	
 
@@ -43,6 +46,7 @@ public class UncertainUpdates extends Updates {
 		this.coefficients    = new HashMap<String, HashMap<Integer, Expression>>();
 		this.constants       = new ArrayList<Expression>();
 		this.relationSymbols = new ArrayList<Relation_Symbol>();
+		this.converted		 = false;
 	}
 
 	public HashMap<String, HashMap<Integer, Expression>> coefficients() {
@@ -50,9 +54,18 @@ public class UncertainUpdates extends Updates {
 	}
 
 	public void setCoefficient(String uncertain, int row, Expression coefficient) {
-		this.coefficients.get(uncertain).put(row, coefficient);
+		if (this.coefficients.keySet().contains(uncertain))
+			this.coefficients.get(uncertain).put(row, coefficient);
+		else {
+			this.coefficients.put(uncertain, new HashMap<Integer,Expression>());
+			this.coefficients.get(uncertain).put(row, coefficient);
+		}
 	}
 
+	public List<Relation_Symbol> getRelations(){
+		return this.relationSymbols;
+	}
+	
 	public List<Expression> constants() {
 		return constants;
 	}
@@ -92,8 +105,17 @@ public class UncertainUpdates extends Updates {
 	 * @param i
 	 * @return
 	 */
-	public Expression getUncertain(int i) { return this.uncertains.get(i); }
+	public Expression getUncertain(int i) { 
+		return this.uncertains.get(i); 
+	}
 
+	public HashMap<String, HashMap<Integer, Expression>> getCoefficients(){
+		return this.coefficients;
+	}
+	
+	public ArrayList<Expression> getUncertains(){
+		return this.uncertains;
+	}
 	/**
 	 * 
 	 * @return
@@ -102,6 +124,28 @@ public class UncertainUpdates extends Updates {
 		return this.uncertains.size();
 	}
 
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumberConstants() {
+		return this.constants.size();
+	}
+	
+	
+	public Set<String> getUncertainNames(){
+		return coefficients.keySet();
+	}
+	
+	public Expression getCoefficient(String uncertain, int row) throws PrismLangException {
+		Expression result = this.coefficients.get(uncertain).get(row);
+		if (result == null) {
+			throw new PrismLangException("Error: null coefficient.");
+		}
+		return result;
+	}
+	
 	/**
 	 * 
 	 * @return The divisor indicating the number of decimals that one needs to shift the numbers
@@ -146,6 +190,16 @@ public class UncertainUpdates extends Updates {
 					ExpressionUnaryOp.PARENTH, new ExpressionBinaryOp(ExpressionBinaryOp.PLUS, coefficient, previousCoefficient)
 				)
 			);
+		}
+	}
+	
+	/**
+	 * Sets the coefficient for an uncertain
+	 */
+	public void setCoefficient(UncertainExpression uncertainExpression, int row, Expression coefficient) throws PrismLangException {
+		
+		if (coefficients.containsKey(uncertainExpression.getName())) {
+			coefficients.get(uncertainExpression.getName()).put(row, coefficient);
 		}
 	}
 
@@ -196,11 +250,14 @@ public class UncertainUpdates extends Updates {
 	@Override
 	public String toString() {
 		String result = "";
-
+		result += super.toString()+"\n";
+		result += "{";
 		for (int row = 0; row < constants.size(); row++) {
 			for (int col = 0; col < uncertains.size(); col++) {
-				String uncertain = ((UncertainExpression) uncertains.get(col)).getName();
-				result += uncertain + " * " + coefficients.get(uncertain).get(row);
+				if (uncertains.get(col) != null ) {
+					String uncertain = ((UncertainExpression) uncertains.get(col)).getName();
+					result += uncertain + " * " + coefficients.get(uncertain).get(row);
+				}
 
 				if (col < uncertains.size() - 1) {
 					result += " + ";
@@ -209,15 +266,47 @@ public class UncertainUpdates extends Updates {
 
 			result += " " + relationSymbols.get(row) + " " + constants.get(row) + "\n";
 		}
-
+		result += "}";
 		return result;
 	}
 	
 	@Override
 	public UncertainUpdates deepCopy(DeepCopy copier) throws PrismLangException
 	{
+		UncertainUpdates result = new UncertainUpdates();
 		super.deepCopy(copier);
-		return this;
+		
+		ArrayList<Expression> newuncertains = (ArrayList<Expression>) copier.copyAll(this.uncertains);
+		ArrayList<Expression> newconstants  = (ArrayList<Expression>) copier.copyAll(this.constants);
+		
+		for (Expression e : newconstants) {
+			Expression ecopy = copier.copy(e);
+			result.constants().add(ecopy);
+		}
+		
+		for (Expression e : newuncertains) {
+			Expression ecopy = copier.copy(e);
+			result.getUncertains().add(ecopy);
+		}
+		
+		
+		HashMap<String, HashMap<Integer, Expression>> coefficients_new = new HashMap<String, HashMap<Integer, Expression>>();
+		for (String key : this.coefficients.keySet()) { // for all uncertain names
+			HashMap<Integer, Expression> uncertain_coeffs = coefficients.get(key);
+			HashMap<Integer, Expression> new_uncertain_coeffs = new HashMap<Integer, Expression>();
+			for (Integer i : uncertain_coeffs.keySet()) {
+				//new_uncertain_coeffs.put(i, (Expression) uncertain_coeffs.get(i).accept(copier));
+				//new_uncertain_coeffs.put(i, (Expression) copier.copy(uncertain_coeffs.get(i)));
+				result.setCoefficient(key, i, (Expression) copier.copy(uncertain_coeffs.get(i)));
+			}
+				
+			//coefficients_new.put(key, new_uncertain_coeffs);
+		}
+		//this.coefficients = coefficients_new;
+		result.getRelations().addAll(this.getRelations());
+		result.getUpdates().addAll(copier.copyAll(this.updates));
+		result.getProbabilities().addAll(copier.copyAll(this.getProbabilities()));
+		return result;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -302,22 +391,26 @@ public class UncertainUpdates extends Updates {
 	 * Converts all the coefficients to integers. This conversion is required for PPL (Parma Polyhedra Library) operations.
 	 */
 	public void convertToInt() throws PrismLangException{
-		for (int i = 0; i < this.uncertains.size(); i++) {
-			String uncertainName = ((UncertainExpression) this.uncertains.get(i)).getName();
-			for (int j = 0; j < this.constants.size(); j++) {
-				if (this.coefficients.get(uncertainName).get(j) != null) {
-					this.coefficients.get(uncertainName).put(
-						j, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.coefficients.get(uncertainName).get(j).evaluateDouble() * Math.pow(10, precision)))
-					);
+		if (!converted) { // if it was not converted before
+			for (int i = 0; i < this.uncertains.size(); i++) {
+				String uncertainName = ((UncertainExpression) this.uncertains.get(i)).getName();
+				for (int j = 0; j < this.constants.size(); j++) {
+					if (this.coefficients.get(uncertainName).get(j) != null) {
+						this.coefficients.get(uncertainName).put(
+							j, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.coefficients.get(uncertainName).get(j).evaluateDouble() * Math.pow(10, precision)))
+						);
+					}
 				}
 			}
+			
+			for (int i = 0; i < this.constants.size(); i++) {
+				this.constants.set(
+					i, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.constants.get(i).evaluateDouble() * Math.pow(10, precision)))
+				);
+			}
+			converted = true;
 		}
 		
-		for (int i = 0; i < this.constants.size(); i++) {
-			this.constants.set(
-				i, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.constants.get(i).evaluateDouble() * Math.pow(10, precision)))
-			);
-		}
 	}
 
 	public void initializeConstraintSystem() {

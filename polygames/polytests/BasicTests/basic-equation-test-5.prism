@@ -1,6 +1,6 @@
 smg
 
-const double a[3] = {0.25, 0.25, 0.25};
+const double a[3] = {0.25, 0.30, 0.40};
 
 player p1
   host, [send1], [send2]
