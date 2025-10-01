@@ -1127,14 +1127,67 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) throws PrismLangExcep
 	Token relationSymbol;
 }
 {
-    UncertainEquationTerm(updates, i, true)
-    (<PLUS> UncertainEquationTerm(updates, i, true))*
+    //UncertainEquationTerm(updates, i, true)
+    //(<PLUS> UncertainEquationTerm(updates, i, true))*
+    //(relationSymbol = <LE> | relationSymbol = <GE> | relationSymbol = <EQ>)
+	//	{ updates.setRelationSymbol(relationSymbol.image); }
+	//	UncertainEquationTerm(updates, i, false)
+    //(<PLUS> UncertainEquationTerm(updates, i, false))*
+    //{ updates.addConstant(ZERO, i, false) ; return updates; }
+    UncertainEquationSide(updates, i, true)
     (relationSymbol = <LE> | relationSymbol = <GE> | relationSymbol = <EQ>)
 		{ updates.setRelationSymbol(relationSymbol.image); }
-		UncertainEquationTerm(updates, i, false)
-    (<PLUS> UncertainEquationTerm(updates, i, false))*
-    { updates.addConstant(ZERO, i, false) ; return updates; }
+	UncertainEquationSide(updates, i, false)
+	{ updates.addConstant(ZERO, i, false) ; return updates; }
+    
 }
+
+
+void UncertainEquationSide(UncertainUpdates updates, int i, boolean isInLeftSide) throws PrismLangException :
+{
+ 
+}
+{
+   initUncertainEquationTerm(updates, i, isInLeftSide)
+    ( UncertainEquationTerm(updates, i, isInLeftSide))*
+}
+
+
+// A basic rule for the terms of an inequation in uncertains 
+void initUncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide) throws PrismLangException :
+{
+	Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
+	Expression ONE  = new ExpressionLiteral(TypeDouble.getInstance(), 1.0);
+
+	UncertainExpression uncertainExpression = null;
+	Expression coefficient = ONE;
+	Expression constant    = null;
+    Token minus = null;
+}
+{
+	LOOKAHEAD(2)
+		(
+			(minus = <MINUS>)?
+
+			  
+			uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression()  )?
+			{
+				if (Objects.nonNull(minus)) {
+					coefficient = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, coefficient);
+				}
+
+				updates.addCoefficient(coefficient, i, uncertainExpression, isInLeftSide);
+			}
+
+	  )
+	| (
+			constant = ConstantExpression()
+			{
+				updates.addConstant(constant, i, isInLeftSide);
+			}
+	  )
+}
+
 
 // A basic rule for the terms of an inequation in uncertains 
 void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide) throws PrismLangException :
@@ -1150,8 +1203,8 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 {
 	LOOKAHEAD(2)
 		(
-			(minus = <MINUS>)?
-			  
+			(<PLUS> | minus = <MINUS>)?
+
 			uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression()  )?
 			{
 				if (Objects.nonNull(minus)) {

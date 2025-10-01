@@ -1301,7 +1301,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		
 		
 		//System.out.println(modulesFile);
-		modulesFile.tidyUp();
+		//modulesFile.tidyUp();
 		return modulesFile;
 	}
 
