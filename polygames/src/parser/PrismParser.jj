@@ -1169,8 +1169,9 @@ void initUncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeft
 		(
 			(minus = <MINUS>)?
 
-			  
 			uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression()  )?
+			// we could use expression instead of constant expressions
+			//uncertainExpression = UncertainExpression() (<TIMES> coefficient = Expression(false, false)  )?
 			{
 				if (Objects.nonNull(minus)) {
 					coefficient = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, coefficient);
@@ -1182,6 +1183,8 @@ void initUncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeft
 	  )
 	| (
 			constant = ConstantExpression()
+			// this could be an expression but expression also considers relational operators and then many conflict arise
+			//constant = Expression(false, false)
 			{
 				updates.addConstant(constant, i, isInLeftSide);
 			}
@@ -1201,11 +1204,14 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
     Token minus = null;
 }
 {
-	LOOKAHEAD(2)
+	
+	(<PLUS> | minus = <MINUS>)
+	(LOOKAHEAD(2)	  
 		(
-			(<PLUS> | minus = <MINUS>)?
+			
 
 			uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression()  )?
+			//uncertainExpression = UncertainExpression() (<TIMES> coefficient = Expression(false, false)  )?
 			{
 				if (Objects.nonNull(minus)) {
 					coefficient = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, coefficient);
@@ -1217,10 +1223,12 @@ void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide
 	  )
 	| (
 			constant = ConstantExpression()
+			//constant = Expression(false, false)
 			{
 				updates.addConstant(constant, i, isInLeftSide);
 			}
 	  )
+   )
 }
 
 Expression ConstantExpression() throws PrismLangException :
@@ -1236,17 +1244,6 @@ Expression ConstantExpression() throws PrismLangException :
 	}
 }
 
-// unused rule, results in ambiguous grammar
-Expression ConstantExpression_(Expression left) throws PrismLangException :
-{
-	Expression right  = null;
-	Expression result = left;
-}
-{
-		<PLUS>  right = ConstantTerm() { result = new ExpressionBinaryOp(ExpressionBinaryOp.PLUS,  left, right); } result = ConstantExpression_(result) { return result; }
-	|  <MINUS> right = ConstantTerm() { result = new ExpressionBinaryOp(ExpressionBinaryOp.MINUS, left, right); } result = ConstantExpression_(result) { return result; }
-	| { return result; }
-}
 
 Expression ConstantTerm() throws PrismLangException :
 {
@@ -1292,23 +1289,24 @@ Expression Basic() throws PrismLangException :
 	(
 		  token = <REG_DOUBLE> { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
 		| token = <REG_INT>    { expression = new ExpressionLiteral(TypeDouble.getInstance(), Double.parseDouble(token.image)); }
-		| (
-				identifier = Identifier() (<LBRACKET> i = Expression(false, false) <RBRACKET> (<LBRACKET> j = Expression(false, false) <RBRACKET>)?)?
-				{
-					//if (Objects.nonNull(i) && Objects.nonNull(j)) {
-					if (i != null && j != null) { 
-						expression = new ExpressionArray(identifier, i, j, lineLengths.get(identifier));
-					//} else if (Objects.nonNull(i)) {
-					} else if (i!=null) {
-					  	System.out.println(lineLengths.get(identifier));
-						expression = new ExpressionArray(identifier, ZERO.clone().deepCopy(), i, lineLengths.get(identifier));
-					} else {
-						expression = new ExpressionIdent(identifier);
-					}
-				}
-		  )
-		| expression = MinMaxFunction()
-		| expression = Abs()
+		//| (
+		//		identifier = Identifier() (<LBRACKET> i = Expression(false, false) <RBRACKET> (<LBRACKET> j = Expression(false, false) <RBRACKET>)?)?
+		//		{
+		//			//if (Objects.nonNull(i) && Objects.nonNull(j)) {
+		//			if (i != null && j != null) { 
+		//				expression = new ExpressionArray(identifier, i, j, lineLengths.get(identifier));
+		//			//} else if (Objects.nonNull(i)) {
+		//			} else if (i!=null) {
+		//			  	System.out.println(lineLengths.get(identifier));
+		//				expression = new ExpressionArray(identifier, ZERO.clone().deepCopy(), i, lineLengths.get(identifier));
+		//			} else {
+		//				expression = new ExpressionIdent(identifier);
+		//			}
+		//		}
+		//  )
+		//| expression = MinMaxFunction()
+		//| expression = Abs()
+		| expression =   ExpressionFuncOrIdentOrArrayIndexing(false, false)
 		| <LPARENTH> expression = ConstantExpression() { expression = new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, expression); } <RPARENTH>
 	)
 	{ return expression; }
