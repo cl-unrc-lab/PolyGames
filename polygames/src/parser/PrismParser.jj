@@ -1263,7 +1263,7 @@ Expression ConstantTerm_(Expression left) throws PrismLangException :
 	Expression result = left;
 }
 {
-		<TIMES>  right = ConstantFactor() { result = new ExpressionBinaryOp(ExpressionBinaryOp.TIMES, left, right);  } result = ConstantTerm_(result) { return result; }
+	   <TIMES>  right = ConstantFactor() { result = new ExpressionBinaryOp(ExpressionBinaryOp.TIMES, left, right);  } result = ConstantTerm_(result) { return result; }
 	| <DIVIDE> right = ConstantFactor() { result = new ExpressionBinaryOp(ExpressionBinaryOp.DIVIDE, left, right); } result = ConstantTerm_(result) { return result; }
 	| { return result; }
 }
@@ -1305,7 +1305,7 @@ Expression Basic() throws PrismLangException :
 		//		}
 		//  )
 		//| expression = MinMaxFunction()
-		//| expression = Abs()
+		| expression =   ExpressionFuncMinMax(false, false)
 		| expression =   ExpressionFuncOrIdentOrArrayIndexing(false, false)
 		| <LPARENTH> expression = ConstantExpression() { expression = new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH, expression); } <RPARENTH>
 	)
@@ -2032,18 +2032,23 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	{ ret.setPosition(begin, getToken(0)); return ret; }
 }
 
-// Expression: min/max function (treated differently because min/max are keywords)
+// Expression: min/max function (treated differently because min/max are keywords) also abs
 
 Expression ExpressionFuncMinMax(boolean prop, boolean pathprop) throws PrismLangException :
 {
 	String s = null;
 	ExpressionFunc func = null;
+	Expression arg = null;
 	Token begin = null;
 }
 {
 	( begin = <MIN> { s = "min"; } | begin = <MAX> { s = "max"; } ) 
 	{ func = new ExpressionFunc(s); } <LPARENTH>  ExpressionFuncArgs(prop, pathprop, func) <RPARENTH>
 	{ func.setPosition(begin, getToken(0)); return func; }
+	|
+	(<ABS> <LPARENTH> arg = Expression(false, false) <RPARENTH>
+	{ func = new ExpressionFunc("max"); func.addOperand(arg); func.addOperand(new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, arg)); return func; }
+	) 
 }
 
 // Expression: old-style function, i.e. "func(name, ...)"

@@ -6,53 +6,105 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import explicit.PPLSupport;
+import parma_polyhedra_library.Coefficient;
+import parma_polyhedra_library.Constraint;
+import parma_polyhedra_library.Constraint_System;
+import parma_polyhedra_library.Linear_Expression;
+import parma_polyhedra_library.Linear_Expression_Coefficient;
+import parma_polyhedra_library.Linear_Expression_Sum;
+import parma_polyhedra_library.Linear_Expression_Times;
+import parma_polyhedra_library.Linear_Expression_Variable;
+import parma_polyhedra_library.Relation_Symbol;
+import parma_polyhedra_library.Variable;
 import parser.type.TypeDouble;
 import parser.visitor.ASTVisitor;
 import parser.visitor.DeepCopy;
-import prism.PrismLangException;
 import prism.PrismException;
-import parma_polyhedra_library.Coefficient;
-import parma_polyhedra_library.Linear_Expression_Variable;
-import parma_polyhedra_library.Variable;
-import parma_polyhedra_library.Constraint;
-import parma_polyhedra_library.Linear_Expression;
-import parma_polyhedra_library.Linear_Expression_Sum;
-import parma_polyhedra_library.Linear_Expression_Times;
-import parma_polyhedra_library.Linear_Expression_Coefficient;
-import parma_polyhedra_library.Constraint_System;
+import prism.PrismLangException;
 
-import parma_polyhedra_library.Relation_Symbol;
-import explicit.PPLSupport;
+/**
+ * This a class for representing equation system, when declared outside of any module (for reusing)
+ * in this case we use the following syntax
+ * 
+ * equations Name : 
+ * 
+ * parameters: p0,...pn;
+ * unknowns: &u0,...,&um;
+ * 
+ * &u0*c00 + ... + &um*c0m + k0 >= c0
+ * &u1*c10+ ... + &um*c1m + k1 >= c1
+ * etc
+ * 
+ 
+ * equation systems can be instanciated to obtain an uncertain update, this is done after parsing
+ * the variables preceded with & are unknowns, in the cis we may have other kinds of variables and/or constants
+ * 
+ *
+ * @author pablo
+ *
+ */
+public class EquationSystem extends ASTElement {
 
-public class UncertainUpdates extends Updates {
-
+	
+	private ArrayList<ExpressionIdent> parameters;  // a list of formal parameters
 	private ArrayList<Expression> uncertains; // the list of uncertains
 	private HashMap<String, HashMap<Integer, Expression>> coefficients; 
 	// coefficients contains, for each uncertain, the corresponding column of coefficients
     // for instance, coefficients.get(uncertain).get(i) returns the coefficient corresponding to row i, null if none
 	private ArrayList<Expression> constants; // constains the columns of constants in the equations
 	private List<Relation_Symbol> relationSymbols;
-	private boolean converted=false;
 	int div = 1; 	     // the divisor allows us to move the decimal point, PPL only allows for integers.
-	int precision = 6; // this is the precision, after that we truncate the number	
-
+	int precision = 6; // this is the precision, after that we truncate the number
+	boolean converted = false;
+	
+	
 	/**
-	 * Basic constructor, it initializes the object, all the coefficients and constants are initialized to zero,
-	 * we assume that, when a uncertain is added, the coefficient is set to a number different from 0
+	 * Basic constructor
 	 */
-	public UncertainUpdates() {
-		super();
-		this.uncertains      = new ArrayList<Expression>();
-		this.coefficients    = new HashMap<String, HashMap<Integer, Expression>>();
-		this.constants       = new ArrayList<Expression>();
+	public EquationSystem() {
+		this.parameters = new ArrayList<ExpressionIdent>();
+		this.coefficients = new HashMap<String, HashMap<Integer, Expression>>();
+		this.constants = new ArrayList<Expression>();
 		this.relationSymbols = new ArrayList<Relation_Symbol>();
-		this.converted		 = false;
 	}
-
+	
+	/**
+	 * 
+	 * @return the formal parameters in the equations
+	 */
+	public ArrayList<ExpressionIdent> parameters(){
+		return this.parameters;
+	}
+	
+	/**
+	 * @return the coefficients of the equation system
+	 */
 	public HashMap<String, HashMap<Integer, Expression>> coefficients() {
 		return coefficients;
 	}
 
+	/**
+	 * @return the list of constants
+	 */
+	public List<Expression> constants() {
+		return constants;
+	}
+	
+	/**
+	 * @return the relations corresponding to the equation system
+	 */
+	public List<Relation_Symbol> getRelations(){
+		return this.relationSymbols;
+	}
+	
+	
+	/**
+	 * Set the coefficient corresponding to an uncertain of a given row
+	 * @param uncertain
+	 * @param row
+	 * @param coefficient
+	 */
 	public void setCoefficient(String uncertain, int row, Expression coefficient) {
 		if (this.coefficients.keySet().contains(uncertain))
 			this.coefficients.get(uncertain).put(row, coefficient);
@@ -62,36 +114,26 @@ public class UncertainUpdates extends Updates {
 		}
 	}
 
-	public List<Relation_Symbol> getRelations(){
-		return this.relationSymbols;
-	}
 	
-	public List<Expression> constants() {
-		return constants;
-	}
-
+	/**
+	 * set a constant for a given row
+	 * @param row
+	 * @param constant
+	 */
 	public void setConstant(int row, Expression constant) {
 		this.constants.set(row, constant);
 	}
 
+	/**
+	 * @param row
+	 * @return the constant of the given row
+	 */
 	public Expression constant(int row) {
 		return this.constants.get(row);
 	}
-
+	
 	/**
-	* @param Expression
-	* @param Up
-	*/
-	public void addUpdate(Expression un, Update up) {
-		if (un == null) { throw new IllegalArgumentException(); }
-		if (up == null) { throw new IllegalArgumentException(); }
-		
-		this.uncertains.add(un);
-		super.addUpdate(un, up); // we call the super version
-	}
-
-	/**
-	 * 
+	 * set the uncertain for the given column
 	 * @param i
 	 * @param un
 	 */
@@ -101,18 +143,25 @@ public class UncertainUpdates extends Updates {
 	}
 
 	/**
-	 * 
 	 * @param i
-	 * @return
+	 * @return the ith uncertain
 	 */
 	public Expression getUncertain(int i) { 
 		return this.uncertains.get(i); 
 	}
-
+	
+	/**
+	 * @deprecated
+	 * @return the coefficients of the system
+	 */
 	public HashMap<String, HashMap<Integer, Expression>> getCoefficients(){
 		return this.coefficients;
 	}
 	
+	/**
+	 * 
+	 * @return the uncertains of the system
+	 */
 	public ArrayList<Expression> getUncertains(){
 		return this.uncertains;
 	}
@@ -133,11 +182,21 @@ public class UncertainUpdates extends Updates {
 		return this.constants.size();
 	}
 	
-	
+	/**
+	 * 
+	 * @return the names of all the incertains
+	 */
 	public Set<String> getUncertainNames(){
 		return coefficients.keySet();
 	}
 	
+	/**
+	 * 
+	 * @param uncertain
+	 * @param row
+	 * @return the coefficient for the given row uncertain
+	 * @throws PrismLangException
+	 */
 	public Expression getCoefficient(String uncertain, int row) throws PrismLangException {
 		Expression result = this.coefficients.get(uncertain).get(row);
 		if (result == null) {
@@ -163,7 +222,7 @@ public class UncertainUpdates extends Updates {
 	}
 	
 	/**
-	 * 
+	 * Adds a coefficient in the given row, for the given uncertain
 	 * @param coefficient
 	 * @param i
 	 * @param uncertain
@@ -220,7 +279,12 @@ public class UncertainUpdates extends Updates {
 			constants.add(row, constant);
 		}
 	}
-
+	
+	
+	/**
+	 * set the relation for the last row
+	 * @param relationSymbol
+	 */
 	public void setRelationSymbol(String relationSymbol) {
 		load_PPL();
 
@@ -250,7 +314,6 @@ public class UncertainUpdates extends Updates {
 	@Override
 	public String toString() {
 		String result = "";
-		result += super.toString()+"\n";
 		result += "{";
 		for (int row = 0; row < constants.size(); row++) {
 			for (int col = 0; col < uncertains.size(); col++) {
@@ -271,10 +334,9 @@ public class UncertainUpdates extends Updates {
 	}
 	
 	@Override
-	public UncertainUpdates deepCopy(DeepCopy copier) throws PrismLangException
+	public EquationSystem deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		UncertainUpdates result = new UncertainUpdates();
-		super.deepCopy(copier);
+		EquationSystem result = new EquationSystem();
 		
 		ArrayList<Expression> newuncertains = (ArrayList<Expression>) copier.copyAll(this.uncertains);
 		ArrayList<Expression> newconstants  = (ArrayList<Expression>) copier.copyAll(this.constants);
@@ -289,8 +351,11 @@ public class UncertainUpdates extends Updates {
 			result.getUncertains().add(ecopy);
 		}
 		
+		
+		HashMap<String, HashMap<Integer, Expression>> coefficients_new = new HashMap<String, HashMap<Integer, Expression>>();
 		for (String key : this.coefficients.keySet()) { // for all uncertain names
 			HashMap<Integer, Expression> uncertain_coeffs = coefficients.get(key);
+			HashMap<Integer, Expression> new_uncertain_coeffs = new HashMap<Integer, Expression>();
 			for (Integer i : uncertain_coeffs.keySet()) {
 				//new_uncertain_coeffs.put(i, (Expression) uncertain_coeffs.get(i).accept(copier));
 				//new_uncertain_coeffs.put(i, (Expression) copier.copy(uncertain_coeffs.get(i)));
@@ -301,19 +366,19 @@ public class UncertainUpdates extends Updates {
 		}
 		//this.coefficients = coefficients_new;
 		result.getRelations().addAll(this.getRelations());
-		result.getUpdates().addAll(copier.copyAll(this.updates));
-		result.getProbabilities().addAll(copier.copyAll(this.getProbabilities()));
+		
 		return result;
 	}
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public UncertainUpdates clone() {
-		UncertainUpdates clone = (UncertainUpdates) super.clone();
+	public EquationSystem clone() {
+		EquationSystem clone = (EquationSystem) super.clone();
 
 		clone.uncertains   = (ArrayList<Expression>) uncertains.clone();
 		clone.coefficients = (HashMap<String, HashMap<Integer, Expression>>) coefficients.clone();
 		clone.constants    = (ArrayList<Expression>) constants.clone();
+		clone.parameters   = (ArrayList<ExpressionIdent>) parameters.clone();
 
 		return clone;
 	}
@@ -411,7 +476,7 @@ public class UncertainUpdates extends Updates {
 	}
 
 	/**
-	 * initializes a constraint system with all zeros
+	 * Initializes the constraint system with all coefficient with zeros
 	 */
 	public void initializeConstraintSystem() {
 		Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
@@ -425,6 +490,9 @@ public class UncertainUpdates extends Updates {
 		}
 	}
 
+	/**
+	 * Private method to load the PPL library
+	 */
 	private void load_PPL() {
 		// Initialize PPL (Parma Polyhedra Library)
 		try {
@@ -433,4 +501,5 @@ public class UncertainUpdates extends Updates {
 			System.err.println("Error loading Parma Polyhedra Library:");
 		}
 	}
+
 }

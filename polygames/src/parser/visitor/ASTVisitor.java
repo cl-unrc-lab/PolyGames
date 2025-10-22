@@ -93,6 +93,7 @@ public interface ASTVisitor
 	public Object visit(ExpressionProp e) throws PrismLangException;
 	public Object visit(ExpressionFilter e) throws PrismLangException;
 	public Object visit(UncertainExpression e) throws PrismLangException;
+	public Object visit(EquationSystem e) throws PrismLangException;
 	// ASTElement classes (misc.)
 	public Object visit(Filter e) throws PrismLangException;
 	public Object visit(ForLoop e) throws PrismLangException;

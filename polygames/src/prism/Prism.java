@@ -74,7 +74,7 @@ import parser.visitor.ExpressionIdentReplacerVisitor;
 import parser.visitor.ExpressionMinMaxReplacerVisitor;
 import parser.visitor.ReplaceConstants;
 import parser.visitor.ReplaceVariables;
-import parser.visitor.ReplaceMinMaxArrays;
+import parser.visitor.ReplaceFuncArrays;
 import parser.visitor.DeepCopy;
 import prism.Accuracy.AccuracyLevel;
 import pta.DigitalClocks;

@@ -97,7 +97,7 @@ public class ReplaceVariable extends DeepCopy{
 		ExpressionFunc result = new ExpressionFunc();
 		result.setName(e.getName());
 		for (int i = 0; i < e.getNumOperands(); i++) {
-			result.setOperand(i, this.copy(e.getOperand(i)));
+			result.addOperand(this.copy(e.getOperand(i)));
 		}
 		result.setOldStyle(e.getOldStyle());
 		return result;

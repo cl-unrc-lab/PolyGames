@@ -8,6 +8,7 @@ import parser.type.TypeInt;
 import parser.type.TypeDouble;
 import parser.ast.ExpressionLiteral;
 import parser.ast.ExpressionArray;
+import parser.ast.ExpressionFunc;
 
 
 
@@ -21,7 +22,7 @@ import prism.PrismLangException;
  *
  */
 
-public class ReplaceMinMaxArrays extends ASTTraverseModify{
+public class ReplaceFuncArrays extends ASTTraverseModify{
 	private ModulesFile mf;
 	
 	
@@ -29,13 +30,14 @@ public class ReplaceMinMaxArrays extends ASTTraverseModify{
 	 * 
 	 * @param mf
 	 */
-	public ReplaceMinMaxArrays(ModulesFile mf)
+	public ReplaceFuncArrays(ModulesFile mf)
 	{
 		this.mf = mf;
 	}
 	
 	/** The visit method for ExpressionMinMax, in this case the two parameters are evaluated and
 	 * the expression is replaced for the result
+	 * the idea is to replace this for a {@code ExpressionFunc} call
 	 */
 	@Override
 	public Object visit(ExpressionMinMax minmax) throws PrismLangException
@@ -57,6 +59,35 @@ public class ReplaceMinMaxArrays extends ASTTraverseModify{
 		}
 		return result;
 	}
+	
+	/**
+	 * A method to evaluate functions, it is assummed that all variables and constants have been replaced
+	 */
+	@Override
+	public Object visit(ExpressionFunc func) throws PrismLangException
+	{
+		ExpressionLiteral result; // the result
+		// we recursively evaluate the left and right operators
+		
+		// we visit all the parameters and recursively evaluate all of them
+		for (int i = 0; i < func.getNumOperands(); i++) {
+			func.setOperand(i, (Expression) func.getOperand(i).accept(this));
+		}
+		
+		if (func.getType() == TypeInt.getInstance()) { // if int 
+			result = new ExpressionLiteral(TypeInt.getInstance(), func.evaluate(mf.getEvaluateContext()));
+		}
+		else if (func.getType() == TypeDouble.getInstance()) { 
+			result = new ExpressionLiteral(TypeDouble.getInstance(), func.evaluate(mf.getEvaluateContext()));
+			
+		}
+		else {
+			throw new PrismLangException("Type error in equation system.");
+		}
+		return result;
+	}
+	
+	
 	
 	/**
 	 *  This replaces all the occurrences of array expressions to the corresponding constant

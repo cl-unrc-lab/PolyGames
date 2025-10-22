@@ -60,8 +60,9 @@ import parser.visitor.ConstantsReplacerVisitor;
 import parser.visitor.ExpressionIdentReplacerVisitor;
 import parser.visitor.ExpressionMinMaxReplacerVisitor;
 import parser.visitor.ReplaceConstants;
-import parser.visitor.ReplaceMinMaxArrays;
+import parser.visitor.ReplaceFuncArrays;
 import parser.visitor.ReplaceVariables;
+import parser.visitor.ReplaceFormulas;
 import strat.StrategyExportOptions;
 import prism.ResultsExporter.ResultsExportShape;
 import prism.ResultsImporter.RawResultsCollection;
@@ -726,10 +727,12 @@ public class PolyCL implements PrismModelListener
 				//}
 				// we replace the constants and variables for their possible values, this allows us
 				// to deal with arrays
+				ReplaceFormulas replacerFormulas = new ReplaceFormulas(modulesFile);
 				ReplaceConstants replacerConstant = new ReplaceConstants(modulesFile.getConstantList());
 				ReplaceVariables replacerVariables = new ReplaceVariables();
-				ReplaceMinMaxArrays replacerArrays = new ReplaceMinMaxArrays(modulesFile);
+				ReplaceFuncArrays replacerArrays = new ReplaceFuncArrays(modulesFile);
 				ASTUncertainVisitor visitor = new ASTUncertainVisitor();
+				modulesFile = (ModulesFile) replacerFormulas.visit(modulesFile);
 				modulesFile = (ModulesFile) replacerConstant.visit(modulesFile); // we replace all constants
 				modulesFile = (ModulesFile) replacerVariables.visit(modulesFile); // we replace all variables
 				modulesFile = (ModulesFile) replacerArrays.visit(modulesFile); // we replace arrays and maxmins	

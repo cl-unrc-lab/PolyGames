@@ -46,7 +46,6 @@ public class ReplaceConstants extends ASTTraverseModify{
 	 */
 	public Object visit(ExpressionIdent e) throws PrismLangException
 	{
-		System.out.println("expression:"+e);
 		// See if identifier corresponds to a constant
 		int i = constantList.getConstantIndex(e.getName());
 		if (i != -1) {

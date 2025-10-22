@@ -94,6 +94,7 @@ import parser.ast.UpdateElement;
 import parser.ast.Updates;
 import parser.ast.UncertainUpdates;
 import parser.ast.UncertainExpression;
+import parser.ast.EquationSystem;
 import prism.PrismLangException;
 
 /**
@@ -510,6 +511,11 @@ public class DeepCopy implements ASTVisitor
 
 	@Override
 	public Object visit(ExpressionMinMax e) throws PrismLangException {
+		return e.clone().deepCopy(this);
+	}
+	
+	@Override
+	public Object visit(EquationSystem e) throws PrismLangException {
 		return e.clone().deepCopy(this);
 	}
 }
