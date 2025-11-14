@@ -39,225 +39,235 @@ public interface PrismParserConstants {
   /** RegularExpression Id. */
   int E = 14;
   /** RegularExpression Id. */
-  int ENDINIT = 15;
+  int ENDEQUATION = 15;
   /** RegularExpression Id. */
-  int ENDINVARIANT = 16;
+  int ENDINIT = 16;
   /** RegularExpression Id. */
-  int ENDMODULE = 17;
+  int ENDINVARIANT = 17;
   /** RegularExpression Id. */
-  int ENDOBSERVABLES = 18;
+  int ENDMODULE = 18;
   /** RegularExpression Id. */
-  int ENDPLAYER = 19;
+  int ENDOBSERVABLES = 19;
   /** RegularExpression Id. */
-  int ENDREWARDS = 20;
+  int ENDPLAYER = 20;
   /** RegularExpression Id. */
-  int ENDSYSTEM = 21;
+  int ENDREWARDS = 21;
   /** RegularExpression Id. */
-  int FALSE = 22;
+  int ENDSYSTEM = 22;
   /** RegularExpression Id. */
-  int FORMULA = 23;
+  int EQUATION = 23;
   /** RegularExpression Id. */
-  int FILTER = 24;
+  int FALSE = 24;
   /** RegularExpression Id. */
-  int FUNC = 25;
+  int FORMULA = 25;
   /** RegularExpression Id. */
-  int F = 26;
+  int FILTER = 26;
   /** RegularExpression Id. */
-  int Fc = 27;
+  int FUNC = 27;
   /** RegularExpression Id. */
-  int F0 = 28;
+  int F = 28;
   /** RegularExpression Id. */
-  int GLOBAL = 29;
+  int Fc = 29;
   /** RegularExpression Id. */
-  int G = 30;
+  int F0 = 30;
   /** RegularExpression Id. */
-  int IF = 31;
+  int GLOBAL = 31;
   /** RegularExpression Id. */
-  int INIT = 32;
+  int G = 32;
   /** RegularExpression Id. */
-  int INVARIANT = 33;
+  int IF = 33;
   /** RegularExpression Id. */
-  int I = 34;
+  int INIT = 34;
   /** RegularExpression Id. */
-  int INT = 35;
+  int INVARIANT = 35;
   /** RegularExpression Id. */
-  int LABEL = 36;
+  int I = 36;
   /** RegularExpression Id. */
-  int MAXMAX = 37;
+  int INSTANCE = 37;
   /** RegularExpression Id. */
-  int MAXMIN = 38;
+  int INT = 38;
   /** RegularExpression Id. */
-  int MAX = 39;
+  int LABEL = 39;
   /** RegularExpression Id. */
-  int MDP = 40;
+  int MAXMAX = 40;
   /** RegularExpression Id. */
-  int MINMAX = 41;
+  int MAXMIN = 41;
   /** RegularExpression Id. */
-  int MINMIN = 42;
+  int MAX = 42;
   /** RegularExpression Id. */
-  int MIN = 43;
+  int MDP = 43;
   /** RegularExpression Id. */
-  int MODULE = 44;
+  int MINMAX = 44;
   /** RegularExpression Id. */
-  int X = 45;
+  int MINMIN = 45;
   /** RegularExpression Id. */
-  int NONDETERMINISTIC = 46;
+  int MIN = 46;
   /** RegularExpression Id. */
-  int OBSERVABLE = 47;
+  int MODULE = 47;
   /** RegularExpression Id. */
-  int OBSERVABLES = 48;
+  int X = 48;
   /** RegularExpression Id. */
-  int OTHERWISE = 49;
+  int NONDETERMINISTIC = 49;
   /** RegularExpression Id. */
-  int UNCERTAIN = 50;
+  int OBSERVABLE = 50;
   /** RegularExpression Id. */
-  int PMAXMAX = 51;
+  int OBSERVABLES = 51;
   /** RegularExpression Id. */
-  int PMAXMIN = 52;
+  int OTHERWISE = 52;
   /** RegularExpression Id. */
-  int PMAX = 53;
+  int UNCERTAIN = 53;
   /** RegularExpression Id. */
-  int PMINMAX = 54;
+  int UNCERTAINS = 54;
   /** RegularExpression Id. */
-  int PMINMIN = 55;
+  int PARAMETERS = 55;
   /** RegularExpression Id. */
-  int PMIN = 56;
+  int PMAXMAX = 56;
   /** RegularExpression Id. */
-  int P = 57;
+  int PMAXMIN = 57;
   /** RegularExpression Id. */
-  int PLAYER = 58;
+  int PMAX = 58;
   /** RegularExpression Id. */
-  int POMDP = 59;
+  int PMINMAX = 59;
   /** RegularExpression Id. */
-  int POPTA = 60;
+  int PMINMIN = 60;
   /** RegularExpression Id. */
-  int PROBABILISTIC = 61;
+  int PMIN = 61;
   /** RegularExpression Id. */
-  int PROB = 62;
+  int P = 62;
   /** RegularExpression Id. */
-  int PTA = 63;
+  int PLAYER = 63;
   /** RegularExpression Id. */
-  int RATE = 64;
+  int POMDP = 64;
   /** RegularExpression Id. */
-  int REWARDS = 65;
+  int POPTA = 65;
   /** RegularExpression Id. */
-  int RMAXMAX = 66;
+  int PROBABILISTIC = 66;
   /** RegularExpression Id. */
-  int RMAXMIN = 67;
+  int PROB = 67;
   /** RegularExpression Id. */
-  int RMAX = 68;
+  int PTA = 68;
   /** RegularExpression Id. */
-  int RMINMAX = 69;
+  int RATE = 69;
   /** RegularExpression Id. */
-  int RMINMIN = 70;
+  int REWARDS = 70;
   /** RegularExpression Id. */
-  int RMIN = 71;
+  int RMAXMAX = 71;
   /** RegularExpression Id. */
-  int R = 72;
+  int RMAXMIN = 72;
   /** RegularExpression Id. */
-  int S = 73;
+  int RMAX = 73;
   /** RegularExpression Id. */
-  int STOCHASTIC = 74;
+  int RMINMAX = 74;
   /** RegularExpression Id. */
-  int STPG = 75;
+  int RMINMIN = 75;
   /** RegularExpression Id. */
-  int SMG = 76;
+  int RMIN = 76;
   /** RegularExpression Id. */
-  int SYSTEM = 77;
+  int R = 77;
   /** RegularExpression Id. */
-  int TPTG = 78;
+  int S = 78;
   /** RegularExpression Id. */
-  int TRUE = 79;
+  int STOCHASTIC = 79;
   /** RegularExpression Id. */
-  int U = 80;
+  int STPG = 80;
   /** RegularExpression Id. */
-  int W = 81;
+  int SMG = 81;
   /** RegularExpression Id. */
-  int ABS = 82;
+  int SYSTEM = 82;
   /** RegularExpression Id. */
-  int NOT = 83;
+  int TPTG = 83;
   /** RegularExpression Id. */
-  int AND = 84;
+  int TRUE = 84;
   /** RegularExpression Id. */
-  int OR = 85;
+  int U = 85;
   /** RegularExpression Id. */
-  int IMPLIES = 86;
+  int W = 86;
   /** RegularExpression Id. */
-  int IFF = 87;
+  int ABS = 87;
   /** RegularExpression Id. */
-  int RARROW = 88;
+  int NOT = 88;
   /** RegularExpression Id. */
-  int URARROW = 89;
+  int AND = 89;
   /** RegularExpression Id. */
-  int COLON = 90;
+  int OR = 90;
   /** RegularExpression Id. */
-  int SEMICOLON = 91;
+  int IMPLIES = 91;
   /** RegularExpression Id. */
-  int COMMA = 92;
+  int IFF = 92;
   /** RegularExpression Id. */
-  int DOTS = 93;
+  int RARROW = 93;
   /** RegularExpression Id. */
-  int LPARENTH = 94;
+  int URARROW = 94;
   /** RegularExpression Id. */
-  int RPARENTH = 95;
+  int COLON = 95;
   /** RegularExpression Id. */
-  int LBRACKET = 96;
+  int SEMICOLON = 96;
   /** RegularExpression Id. */
-  int RBRACKET = 97;
+  int COMMA = 97;
   /** RegularExpression Id. */
-  int DLBRACKET = 98;
+  int DOTS = 98;
   /** RegularExpression Id. */
-  int DRBRACKET = 99;
+  int LPARENTH = 99;
   /** RegularExpression Id. */
-  int LBRACE = 100;
+  int RPARENTH = 100;
   /** RegularExpression Id. */
-  int RBRACE = 101;
+  int LBRACKET = 101;
   /** RegularExpression Id. */
-  int EQ = 102;
+  int RBRACKET = 102;
   /** RegularExpression Id. */
-  int NE = 103;
+  int DLBRACKET = 103;
   /** RegularExpression Id. */
-  int LT = 104;
+  int DRBRACKET = 104;
   /** RegularExpression Id. */
-  int GT = 105;
+  int LBRACE = 105;
   /** RegularExpression Id. */
-  int DLT = 106;
+  int RBRACE = 106;
   /** RegularExpression Id. */
-  int DGT = 107;
+  int EQ = 107;
   /** RegularExpression Id. */
-  int LE = 108;
+  int NE = 108;
   /** RegularExpression Id. */
-  int GE = 109;
+  int LT = 109;
   /** RegularExpression Id. */
-  int PLUS = 110;
+  int GT = 110;
   /** RegularExpression Id. */
-  int MINUS = 111;
+  int DLT = 111;
   /** RegularExpression Id. */
-  int TIMES = 112;
+  int DGT = 112;
   /** RegularExpression Id. */
-  int DIVIDE = 113;
+  int LE = 113;
   /** RegularExpression Id. */
-  int PRIME = 114;
+  int GE = 114;
   /** RegularExpression Id. */
-  int RENAME = 115;
+  int PLUS = 115;
   /** RegularExpression Id. */
-  int QMARK = 116;
+  int MINUS = 116;
   /** RegularExpression Id. */
-  int DQUOTE = 117;
+  int TIMES = 117;
   /** RegularExpression Id. */
-  int REG_INT = 118;
+  int DIVIDE = 118;
   /** RegularExpression Id. */
-  int REG_DOUBLE = 119;
+  int PRIME = 119;
   /** RegularExpression Id. */
-  int REG_IDENTPRIME = 120;
+  int RENAME = 120;
   /** RegularExpression Id. */
-  int REG_IDENT = 121;
+  int QMARK = 121;
   /** RegularExpression Id. */
-  int PREPROC = 122;
+  int DQUOTE = 122;
   /** RegularExpression Id. */
-  int COEFF = 123;
+  int REG_INT = 123;
   /** RegularExpression Id. */
-  int LEXICAL_ERROR = 124;
+  int REG_DOUBLE = 124;
+  /** RegularExpression Id. */
+  int REG_IDENTPRIME = 125;
+  /** RegularExpression Id. */
+  int REG_IDENT = 126;
+  /** RegularExpression Id. */
+  int PREPROC = 127;
+  /** RegularExpression Id. */
+  int COEFF = 128;
+  /** RegularExpression Id. */
+  int LEXICAL_ERROR = 129;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -279,6 +289,7 @@ public interface PrismParserConstants {
     "\"double\"",
     "\"dtmc\"",
     "\"E\"",
+    "\"endequation\"",
     "\"endinit\"",
     "\"endinvariant\"",
     "\"endmodule\"",
@@ -286,6 +297,7 @@ public interface PrismParserConstants {
     "\"endplayer\"",
     "\"endrewards\"",
     "\"endsystem\"",
+    "\"equation\"",
     "\"false\"",
     "\"formula\"",
     "\"filter\"",
@@ -299,6 +311,7 @@ public interface PrismParserConstants {
     "\"init\"",
     "\"invariant\"",
     "\"I\"",
+    "\"instance\"",
     "\"int\"",
     "\"label\"",
     "\"maxmax\"",
@@ -315,6 +328,8 @@ public interface PrismParserConstants {
     "\"observables\"",
     "\"otherwise\"",
     "\"uncertain\"",
+    "\"uncertains\"",
+    "\"parameters\"",
     "\"Pmaxmax\"",
     "\"Pmaxmin\"",
     "\"Pmax\"",

@@ -113,6 +113,7 @@ public class ReplaceVariables extends DeepCopy {
 		ArrayList<Command> resultingCommands= new ArrayList<Command>();
 		// we add the actual command to the list (this will be updated later)
 		resultingCommands.add(e);
+		
 		// for each var declaration  we need to create the corresponding collection of updates
 		for (Declaration decl : decls) {
 			this.currentVar = decl.getName(); // the current var

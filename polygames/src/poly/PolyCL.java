@@ -46,6 +46,7 @@ import java.util.Map.Entry;
 
 import prism.*;
 import parser.ast.ModulesFile;
+import parser.ast.UncertainUpdates;
 import common.StackTraceHelper;
 import csv.CsvFormatException;
 import parser.Values;
@@ -53,6 +54,7 @@ import parser.ast.Expression;
 import parser.ast.ExpressionReward;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
+import parser.visitor.ASTElementSearcherVisitor;
 import parser.visitor.ASTElementWithArraysReplacerVisitor;
 import parser.visitor.ASTTraverseModify;
 import parser.visitor.ASTUncertainVisitor;
@@ -725,18 +727,28 @@ public class PolyCL implements PrismModelListener
 				//for (ASTTraverseModify visitor : visitors) {
 				//	modulesFile = (ModulesFile) visitor.visit(modulesFile);
 				//}
+				
+				// the
+				
 				// we replace the constants and variables for their possible values, this allows us
 				// to deal with arrays
+				ASTElementSearcherVisitor searcher = new ASTElementSearcherVisitor(UncertainUpdates.class);
 				ReplaceFormulas replacerFormulas = new ReplaceFormulas(modulesFile);
 				ReplaceConstants replacerConstant = new ReplaceConstants(modulesFile.getConstantList());
 				ReplaceVariables replacerVariables = new ReplaceVariables();
 				ReplaceFuncArrays replacerArrays = new ReplaceFuncArrays(modulesFile);
 				ASTUncertainVisitor visitor = new ASTUncertainVisitor();
+				ArrayList<UncertainUpdates> updates = (ArrayList<UncertainUpdates>) searcher.visit(modulesFile);
+				// all the equations are instatiated
+				for (UncertainUpdates up : updates) {
+					up.instatiateEquationSystem(modulesFile);
+				}
+				System.out.println(modulesFile);
 				modulesFile = (ModulesFile) replacerFormulas.visit(modulesFile);
 				modulesFile = (ModulesFile) replacerConstant.visit(modulesFile); // we replace all constants
 				modulesFile = (ModulesFile) replacerVariables.visit(modulesFile); // we replace all variables
 				modulesFile = (ModulesFile) replacerArrays.visit(modulesFile); // we replace arrays and maxmins	
-				modulesFile                 = visitor.copy(modulesFile);
+				modulesFile = visitor.copy(modulesFile);
 				modulesFile.tidyUp();
 				
 				// if polydebug is one we print out the model to a file

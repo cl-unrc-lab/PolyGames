@@ -455,6 +455,7 @@ TOKEN :
 |	< DOUBLE:			"double" >
 |	< DTMC:				"dtmc" >
 |	< E:				"E" >
+|   < ENDEQUATION:      "endequation">     
 |	< ENDINIT:			"endinit" >
 |	< ENDINVARIANT:		"endinvariant" >
 |	< ENDMODULE:		"endmodule" >
@@ -462,6 +463,7 @@ TOKEN :
 |	< ENDPLAYER:		"endplayer" >
 |	< ENDREWARDS:		"endrewards" >
 |	< ENDSYSTEM:		"endsystem" >
+|   < EQUATION:         "equation" >
 |	< FALSE:			"false" >
 |	< FORMULA:			"formula" >
 |	< FILTER:			"filter" >
@@ -475,6 +477,7 @@ TOKEN :
 |	< INIT:				"init" >
 |	< INVARIANT:	"invariant" >
 |	< I:				  "I" >
+|   < INSTANCE:         "instance" >
 |	< INT:				"int" >
 |	< LABEL:			"label" >
 |	< MAXMAX:			"maxmax" >
@@ -491,7 +494,9 @@ TOKEN :
 |	< OBSERVABLES:		"observables" >
 | < OTHERWISE : "otherwise" >
 |   < UNCERTAIN:        "uncertain" >
+|   < UNCERTAINS:        "uncertains" >
 //|	< OF:				"of" >
+|   < PARAMETERS:       "parameters">
 |	< PMAXMAX:			"Pmaxmax" >
 |	< PMAXMIN:			"Pmaxmin" >
 |	< PMAX:				"Pmax" >
@@ -597,6 +602,7 @@ ModulesFile ModulesFile() throws PrismLangException :
 	Player player = null;
 	ModulesFile mf = new ModulesFile();
 	Token begin = null;
+	EquationSystem eqs = null;
 }
 {
 	( { begin = getToken(1); }
@@ -620,7 +626,9 @@ ModulesFile ModulesFile() throws PrismLangException :
 	// System definition ("system...endsystem" construct)
 	SystemEndsystem(mf) |
 	// Player definition
-	player = Player() { mf.addPlayer(player); }
+	player = Player() { mf.addPlayer(player); } |
+	// Equation definitions
+	eqs = EquationSystem() {mf.addEquationSystem(eqs);} 
 	)* <EOF>
 	{
 		// Check for multiple instances of some items
@@ -640,6 +648,24 @@ ModulesFile ModulesFile() throws PrismLangException :
 		mf.setPosition(begin != null? begin: getToken(0), getToken(0));
 		return mf;
 	}
+}
+
+EquationSystem EquationSystem()  throws PrismLangException :
+{
+  EquationSystem eqs = new EquationSystem();
+  UncertainExpression un;
+  String n;
+  String par;
+  int i = 0;
+}
+{
+ <EQUATION> n = Identifier() { eqs.setName(n); }
+ (<PARAMETERS> <COLON>  par = Identifier() {eqs.addParameter(new ExpressionIdent(par));} (<COMMA> par = Identifier() {eqs.addParameter(new ExpressionIdent(par));}))? <SEMICOLON>
+ (<UNCERTAINS> <COLON>  un = UncertainExpression() {eqs.addUncertain(un);} (<COMMA> un = UncertainExpression() {eqs.addUncertain(un);}))? <SEMICOLON>
+ eqs = Equation(eqs, i) ( { i++; } <COMMA> eqs = Equation(eqs, i) )*
+ 
+ <ENDEQUATION>
+ {eqs.initializeConstraintSystem();return eqs;}
 }
 
 // Properties file
@@ -1097,7 +1123,11 @@ CommandWithArrays Command() throws PrismLangException :
 	    (
 	         <RARROW>   updates = Updates()
 	       | <URARROW>  updates = UncertainUpdates()
-	    ) { comm.setUpdates(updates);}
+	    ) {
+
+			  comm.setUpdates(updates);
+ 
+	      }
 	    <SEMICOLON>
 	)
 	{ comm.setPosition(begin, getToken(0)); return comm; }
@@ -1109,19 +1139,47 @@ UncertainUpdates UncertainUpdates() throws PrismLangException :
     Expression uncertain;
     Update update;
     UncertainUpdates updates = new UncertainUpdates();
+    EquationSystem eqs = updates.getEquationSystem();
     int i = 0;
 }
 {
              uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); }
     ( <PLUS> uncertain = UncertainExpression() <COLON> update = Update() { updates.addUpdate(uncertain, update); } )*
-		{ updates.initializeConstraintSystem(); }
-    <LBRACE>
-			updates = Equation(updates, i) ( { i++; } <COMMA> updates = Equation(updates, i) )*
+		{
+		  //updates.initializeConstraintSystem();
+		  eqs.initializeConstraintSystem();
+		  //updates.setEquationSystem(eqs);
+		}
+    (    <LBRACE>
+			//updates = Equation(updates, i) ( { i++; } <COMMA> updates = Equation(updates, i) )*
+			//updates = Equation(updates, i) ( { i++; } <COMMA> updates = Equation(updates, i) )*
+			eqs = Equation(eqs, i) ( { i++; } <COMMA> eqs = Equation(eqs, i) )*
     <RBRACE>
-    { return updates; }
+    { updates.setEquationSystem(eqs); return updates; }
+     |
+     <INSTANCE> updates = equationInstance(updates) { return updates; } <SEMICOLON>
+    ) 
 }
 
-UncertainUpdates Equation(UncertainUpdates updates, int i) throws PrismLangException :
+UncertainUpdates equationInstance(UncertainUpdates updates) throws PrismLangException :
+{
+  String s;
+  Expression par;
+}
+{
+ 
+ 	s = Identifier()      { updates.setEquationSystemReference(s);  } // we set the name
+	
+	<LPARENTH>
+		// and we set the actual parameters
+		par = ConstantExpression() { updates.addActualParameter(par);} (<COMMA> par = ConstantExpression() { updates.addActualParameter(par);})*
+	<RPARENTH>
+	{return updates;}		
+}
+
+
+//UncertainUpdates Equation(UncertainUpdates updates, int i) throws PrismLangException :
+EquationSystem Equation(EquationSystem updates, int i) throws PrismLangException :
 {
 	Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
 	Token relationSymbol;
@@ -1143,7 +1201,8 @@ UncertainUpdates Equation(UncertainUpdates updates, int i) throws PrismLangExcep
 }
 
 
-void UncertainEquationSide(UncertainUpdates updates, int i, boolean isInLeftSide) throws PrismLangException :
+//void UncertainEquationSide(UncertainUpdates updates, int i, boolean isInLeftSide) throws PrismLangException :
+void UncertainEquationSide(EquationSystem updates, int i, boolean isInLeftSide) throws PrismLangException :
 {
  
 }
@@ -1154,7 +1213,7 @@ void UncertainEquationSide(UncertainUpdates updates, int i, boolean isInLeftSide
 
 
 // A basic rule for the terms of an inequation in uncertains 
-void initUncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide) throws PrismLangException :
+void initUncertainEquationTerm(EquationSystem updates, int i, boolean isInLeftSide) throws PrismLangException :
 {
 	Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
 	Expression ONE  = new ExpressionLiteral(TypeDouble.getInstance(), 1.0);
@@ -1193,7 +1252,7 @@ void initUncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeft
 
 
 // A basic rule for the terms of an inequation in uncertains 
-void UncertainEquationTerm(UncertainUpdates updates, int i, boolean isInLeftSide) throws PrismLangException :
+void UncertainEquationTerm(EquationSystem updates, int i, boolean isInLeftSide) throws PrismLangException :
 {
 	Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
 	Expression ONE  = new ExpressionLiteral(TypeDouble.getInstance(), 1.0);

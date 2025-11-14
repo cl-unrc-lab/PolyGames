@@ -20,6 +20,7 @@ import parma_polyhedra_library.Variable;
 import parser.type.TypeDouble;
 import parser.visitor.ASTVisitor;
 import parser.visitor.DeepCopy;
+import parser.visitor.ReplaceVariable;
 import prism.PrismException;
 import prism.PrismLangException;
 
@@ -46,7 +47,7 @@ import prism.PrismLangException;
  */
 public class EquationSystem extends ASTElement {
 
-	
+	private String name;
 	private ArrayList<ExpressionIdent> parameters;  // a list of formal parameters
 	private ArrayList<Expression> uncertains; // the list of uncertains
 	private HashMap<String, HashMap<Integer, Expression>> coefficients; 
@@ -59,14 +60,36 @@ public class EquationSystem extends ASTElement {
 	boolean converted = false;
 	
 	
+	
 	/**
 	 * Basic constructor
 	 */
 	public EquationSystem() {
+		this.uncertains = new ArrayList<Expression>();
 		this.parameters = new ArrayList<ExpressionIdent>();
 		this.coefficients = new HashMap<String, HashMap<Integer, Expression>>();
 		this.constants = new ArrayList<Expression>();
 		this.relationSymbols = new ArrayList<Relation_Symbol>();
+	}
+	
+	/**
+	 * Constructor that takes a name
+	 */
+	public EquationSystem(String name) {
+		this.name = name;
+		this.parameters = new ArrayList<ExpressionIdent>();
+		this.coefficients = new HashMap<String, HashMap<Integer, Expression>>();
+		this.constants = new ArrayList<Expression>();
+		this.relationSymbols = new ArrayList<Relation_Symbol>();
+	}
+	
+	
+	public ArrayList<ExpressionIdent> getParameters(){
+		return this.parameters;
+	}
+	
+	public String getName() {
+		return this.name;
 	}
 	
 	/**
@@ -75,6 +98,18 @@ public class EquationSystem extends ASTElement {
 	 */
 	public ArrayList<ExpressionIdent> parameters(){
 		return this.parameters;
+	}
+	
+	public void addParameter(ExpressionIdent p) {
+		this.parameters.add(p);
+	}
+	
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	public void setParameter(int i, ExpressionIdent p) {
+		this.parameters.set(i, p);
 	}
 	
 	/**
@@ -142,6 +177,12 @@ public class EquationSystem extends ASTElement {
 		this.uncertains.set(i, un);
 	}
 
+	
+	public void addUncertain(Expression un) {
+		this.uncertains.add(un);
+	}
+	
+	
 	/**
 	 * @param i
 	 * @return the ith uncertain
@@ -151,7 +192,6 @@ public class EquationSystem extends ASTElement {
 	}
 	
 	/**
-	 * @deprecated
 	 * @return the coefficients of the system
 	 */
 	public HashMap<String, HashMap<Integer, Expression>> getCoefficients(){
@@ -184,7 +224,7 @@ public class EquationSystem extends ASTElement {
 	
 	/**
 	 * 
-	 * @return the names of all the incertains
+	 * @return the names of all the uncertains
 	 */
 	public Set<String> getUncertainNames(){
 		return coefficients.keySet();
@@ -314,6 +354,7 @@ public class EquationSystem extends ASTElement {
 	@Override
 	public String toString() {
 		String result = "";
+		result += this.coefficients.toString();
 		result += "{";
 		for (int row = 0; row < constants.size(); row++) {
 			for (int col = 0; col < uncertains.size(); col++) {
@@ -336,8 +377,9 @@ public class EquationSystem extends ASTElement {
 	@Override
 	public EquationSystem deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		EquationSystem result = new EquationSystem();
 		
+		EquationSystem result = new EquationSystem();
+		result.setName(this.name);
 		ArrayList<Expression> newuncertains = (ArrayList<Expression>) copier.copyAll(this.uncertains);
 		ArrayList<Expression> newconstants  = (ArrayList<Expression>) copier.copyAll(this.constants);
 		
@@ -366,7 +408,6 @@ public class EquationSystem extends ASTElement {
 		}
 		//this.coefficients = coefficients_new;
 		result.getRelations().addAll(this.getRelations());
-		
 		return result;
 	}
 	
@@ -490,6 +531,20 @@ public class EquationSystem extends ASTElement {
 		}
 	}
 
+	
+	public EquationSystem instantiateSystem(ArrayList<Expression> actualPars) throws PrismLangException{
+		EquationSystem result = this;
+		if (actualPars.size() != this.parameters.size())
+			throw new PrismLangException("Error instatiating equation system:"+this.name);
+		
+		for (int i = 0; i < actualPars.size(); i++) {
+			ReplaceVariable replacer = new ReplaceVariable(this.parameters.get(i).getName(), actualPars.get(i));
+			result = (EquationSystem) replacer.visit(result);
+		}	
+		return result;
+	}
+	
+	
 	/**
 	 * Private method to load the PPL library
 	 */
@@ -501,5 +556,7 @@ public class EquationSystem extends ASTElement {
 			System.err.println("Error loading Parma Polyhedra Library:");
 		}
 	}
+	
+	
 
 }

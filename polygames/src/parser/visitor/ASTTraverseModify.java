@@ -286,29 +286,70 @@ public class ASTTraverseModify implements ASTVisitor
 	{
 		
 		visitPre(e);
-		// we set the uncertains
-		for (int i = 0; i < e.getNumberUncertains(); i++) {
-			e.setUncertain(i,(Expression) e.getUncertain(i).accept(this));
+		int i, n;
+		n = e.getNumUpdates();
+		for (i = 0; i < n; i++) {
+			if (e.getProbability(i) != null) e.setProbability(i, (Expression)(e.getProbability(i).accept(this)));
+			if (e.getUpdate(i) != null) e.setUpdate(i, (Update)(e.getUpdate(i).accept(this)));
 		}
+		e.setEquationSystem((EquationSystem) e.getEquationSystem().accept(this));
+		// we set the uncertains
+		//for (int i = 0; i < e.getNumberUncertains(); i++) {
+		//	e.setUncertain(i,(Expression) e.getUncertain(i).accept(this));
+		//}
 		
 		// we set the constants
-		for (int i = 0; i<e.getNumberConstants(); i++) {
-			e.setConstant(i,(Expression) e.constant(i).accept(this));
-		}
+		//for (int i = 0; i<e.getNumberConstants(); i++) {
+		//	e.setConstant(i,(Expression) e.constant(i).accept(this));
+		//}
 		
 		// we recursively deal with the coefficients
-		for (String k : e.getUncertainNames()) {
-			for (int i = 0;  i < e.getNumberConstants(); i++) {
-			e.setCoefficient(k, i , (Expression) e.getCoefficient(k,i).accept(this));
-			}
-		}	
+		//for (String k : e.getUncertainNames()) {
+		//	for (int i = 0;  i < e.getNumberConstants(); i++) {
+		//	e.setCoefficient(k, i , (Expression) e.getCoefficient(k,i).accept(this));
+		//	}
+		//}	
 		
+		visitPost(e);
 		return e;
 	}
 		
 		
 	public void visitPost(UncertainUpdates e) throws PrismLangException { defaultVisitPost(e); }
 	
+	// -----------------------------------------------------------------------------------
+	public void visitPre(EquationSystem e) throws PrismLangException { defaultVisitPre(e); }
+	
+	public Object visit(EquationSystem e) throws PrismLangException
+	{
+	
+		visitPre(e);
+		// we set the uncertains
+		for (int i = 0; i < e.getNumberUncertains(); i++) {
+			e.setUncertain(i,(Expression) e.getUncertain(i).accept(this));
+		}
+				
+		// we set the constants
+		for (int i = 0; i<e.getNumberConstants(); i++) {
+			e.setConstant(i,(Expression) e.constant(i).accept(this));
+		}
+				
+		// we recursively deal with the coefficients
+		for (String k : e.getUncertainNames()) {
+			for (int i = 0;  i < e.getNumberConstants(); i++) {
+				e.setCoefficient(k, i , (Expression) e.getCoefficient(k,i).accept(this));
+			}
+		}	
+		
+		// we recursively deal with the parameters
+		for (int i=0;i<e.getParameters().size();i++) {
+			e.setParameter(i, (ExpressionIdent) e.getParameters().get(i).accept(this));
+		}
+		
+		visitPost(e);
+		return e;
+	}
+	public void visitPost(EquationSystem e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
 	public void visitPre(Update e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(Update e) throws PrismLangException

@@ -93,6 +93,7 @@ public class ModulesFile extends ASTElement implements ModelInfo, RewardGenerato
 	private ArrayList<String> observableNames;
 	private ArrayList<Type> observableTypes;
 	private ArrayList<String> observableVars;
+	private ArrayList<EquationSystem> eqs; // the equation systems defined in the spec
 
 	// Copy of the evaluation context used to defined undefined constants (null if none)
 	private EvaluateContext ecUndefined;
@@ -134,6 +135,7 @@ public class ModulesFile extends ASTElement implements ModelInfo, RewardGenerato
 		ecUndefined = null;
 		constantValues = null;
 		ec = EvaluateContext.create();
+		eqs = new ArrayList<EquationSystem>();
 	}
 
 	// Set methods
@@ -174,6 +176,11 @@ public class ModulesFile extends ASTElement implements ModelInfo, RewardGenerato
 		modelType = t;
 	}
 
+	
+	public void addEquationSystem(EquationSystem eq) {
+		this.eqs.add(eq);
+	}
+	
 	public void addGlobal(Declaration d)
 	{
 		globals.add(d);
@@ -339,6 +346,20 @@ public class ModulesFile extends ASTElement implements ModelInfo, RewardGenerato
 	}
 
 	// Get methods
+	
+	/**
+	 * 
+	 * @return an equation system by its name
+	 */
+	public EquationSystem getEquationSystemByName(String name) throws PrismLangException{
+		for (EquationSystem eq : this.eqs) {
+			if (eq.getName().equals(name)) {
+				return eq;
+			}
+		}
+		// otherwise an exception is raised
+		throw new PrismLangException("Equation System: "+name+" not found.");
+	}
 
 	public FormulaList getFormulaList()
 	{

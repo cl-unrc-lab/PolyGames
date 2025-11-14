@@ -26,6 +26,9 @@
 
 package parser.visitor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import parser.ast.*;
 import prism.PrismLangException;
 
@@ -262,11 +265,47 @@ public class ASTTraverse implements ASTVisitor
 	public void visitPre(UncertainUpdates e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(UncertainUpdates e) throws PrismLangException
 	{
-		//TBD
-		//visitPost(e);
+		visitPre(e);
+		int i, n;
+		n = e.getNumUpdates();
+		for (i = 0; i < n; i++) {
+			if (e.getProbability(i) != null) e.getProbability(i).accept(this);
+			if (e.getUpdate(i) != null) e.getUpdate(i).accept(this);
+		}
+		e.getEquationSystem().accept(this);
+		visitPost(e);
 		return null;
 	}
 	public void visitPost(UncertainUpdates e) throws PrismLangException { defaultVisitPost(e); }
+	//-----------------------------------------------------------------------------------
+	public void visitPre(EquationSystem e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(EquationSystem e) throws PrismLangException{
+		visitPre(e);
+		
+		for (ExpressionIdent exp : e.getParameters()) {
+			e.accept(this);
+		}
+		
+		for (Expression exp : e.getUncertains()) {
+			exp.accept(this);
+		}
+		
+		for (Expression cons : e.constants()) {
+			cons.accept(this);
+		}
+		
+		for (String key : e.getCoefficients().keySet()) {
+			HashMap<Integer, Expression> coeff = e.getCoefficients().get(key);
+			for (Integer i : coeff.keySet()) {
+				coeff.get(i).accept(this);
+			}
+				
+		}
+		visitPost(e);
+		return null;
+	}
+	
+	public void visitPost(EquationSystem e) throws PrismLangException { defaultVisitPre(e); }
 	// -----------------------------------------------------------------------------------
 	public void visitPre(Update e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(Update e) throws PrismLangException

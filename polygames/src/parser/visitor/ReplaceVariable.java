@@ -36,17 +36,22 @@ import parser.ast.ForLoop;
 
 /**
  * Replaces the occurrence of a variable by a given literal, this should be only applied to expressions, otherwise it only copies the structure
- * @author pablo
+ * @author Pablo
  *
  */
 public class ReplaceVariable extends DeepCopy{
 	private String vname;
-	private ExpressionLiteral literal;
+	//private ExpressionLiteral literal;
+	private Expression target;
 	
-	public ReplaceVariable(String vname, ExpressionLiteral literal)
+	
+	//public ReplaceVariable(String vname, ExpressionLiteral literal)
+	public ReplaceVariable(String vname, Expression target)
 	{
 		this.vname = vname;
-		this.literal = literal;
+		//this.literal = literal;
+		this.target = target;
+		
 	}
 	
 	/**
@@ -56,7 +61,9 @@ public class ReplaceVariable extends DeepCopy{
 	{
 		
 		if (v.getName().equals(this.vname)) {
-			return this.visit(this.literal);
+			//return this.visit(this.literal);
+			//return super.visit(this.target);
+			return this.target.accept(this);
 		}
 		// otherwise we leave it unchanged
 		return super.visit(v);
@@ -70,7 +77,8 @@ public class ReplaceVariable extends DeepCopy{
 		
 		// if the name of the identifier is the same as the variable
 		if (e.getName().equals(this.vname)){
-			return this.visit(this.literal);
+			//return this.visit(this.literal);
+			return this.target.accept(this);
 		}
 		// Otherwise, leave it unchanged
 		return super.visit(e);
