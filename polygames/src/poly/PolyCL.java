@@ -743,7 +743,6 @@ public class PolyCL implements PrismModelListener
 				for (UncertainUpdates up : updates) {
 					up.instatiateEquationSystem(modulesFile);
 				}
-				System.out.println(modulesFile);
 				modulesFile = (ModulesFile) replacerFormulas.visit(modulesFile);
 				modulesFile = (ModulesFile) replacerConstant.visit(modulesFile); // we replace all constants
 				modulesFile = (ModulesFile) replacerVariables.visit(modulesFile); // we replace all variables

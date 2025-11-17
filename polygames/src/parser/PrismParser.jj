@@ -660,8 +660,8 @@ EquationSystem EquationSystem()  throws PrismLangException :
 }
 {
  <EQUATION> n = Identifier() { eqs.setName(n); }
- (<PARAMETERS> <COLON>  par = Identifier() {eqs.addParameter(new ExpressionIdent(par));} (<COMMA> par = Identifier() {eqs.addParameter(new ExpressionIdent(par));}))? <SEMICOLON>
- (<UNCERTAINS> <COLON>  un = UncertainExpression() {eqs.addUncertain(un);} (<COMMA> un = UncertainExpression() {eqs.addUncertain(un);}))? <SEMICOLON>
+ <PARAMETERS> <COLON>  par = Identifier() {eqs.addParameter(new ExpressionIdent(par));} (<COMMA> par = Identifier() {eqs.addParameter(new ExpressionIdent(par));})* <SEMICOLON>
+ <UNCERTAIN> <COLON>  un = UncertainExpression() {eqs.addUncertain(un);} (<COMMA> un = UncertainExpression() {eqs.addUncertain(un);})* <SEMICOLON>
  eqs = Equation(eqs, i) ( { i++; } <COMMA> eqs = Equation(eqs, i) )*
  
  <ENDEQUATION>
