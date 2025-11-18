@@ -65,6 +65,7 @@ import parser.visitor.ReplaceConstants;
 import parser.visitor.ReplaceFuncArrays;
 import parser.visitor.ReplaceVariables;
 import parser.visitor.ReplaceFormulas;
+import parser.visitor.ReplaceExpressionITE;
 import strat.StrategyExportOptions;
 import prism.ResultsExporter.ResultsExportShape;
 import prism.ResultsImporter.RawResultsCollection;
@@ -737,16 +738,18 @@ public class PolyCL implements PrismModelListener
 				ReplaceConstants replacerConstant = new ReplaceConstants(modulesFile.getConstantList());
 				ReplaceVariables replacerVariables = new ReplaceVariables();
 				ReplaceFuncArrays replacerArrays = new ReplaceFuncArrays(modulesFile);
+				ReplaceExpressionITE replacerITE = new ReplaceExpressionITE(modulesFile);
 				ASTUncertainVisitor visitor = new ASTUncertainVisitor();
 				ArrayList<UncertainUpdates> updates = (ArrayList<UncertainUpdates>) searcher.visit(modulesFile);
-				// all the equations are instatiated
+				// all the equations are instantiated
 				for (UncertainUpdates up : updates) {
-					up.instatiateEquationSystem(modulesFile);
+					up.instantiateEquationSystem(modulesFile);
 				}
 				modulesFile = (ModulesFile) replacerFormulas.visit(modulesFile);
 				modulesFile = (ModulesFile) replacerConstant.visit(modulesFile); // we replace all constants
 				modulesFile = (ModulesFile) replacerVariables.visit(modulesFile); // we replace all variables
 				modulesFile = (ModulesFile) replacerArrays.visit(modulesFile); // we replace arrays and maxmins	
+				modulesFile = (ModulesFile) replacerITE.visit(modulesFile); // all the conditional expressions are replaced
 				modulesFile = visitor.copy(modulesFile);
 				modulesFile.tidyUp();
 				

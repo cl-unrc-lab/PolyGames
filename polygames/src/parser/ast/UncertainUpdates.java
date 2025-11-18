@@ -457,9 +457,11 @@ public class UncertainUpdates extends Updates {
 	 * Instanciates a equation system replacing formal parameters by actual ones
 	 * @param mf
 	 */
-	public void instatiateEquationSystem(ModulesFile mf) throws PrismLangException {
-		EquationSystem eqs = mf.getEquationSystemByName(this.equationSystemReference);
-		this.eqs = eqs.instantiateSystem(this.actualParameters);
+	public void instantiateEquationSystem(ModulesFile mf) throws PrismLangException {
+		if (this.equationSystemReference != null) {
+			EquationSystem eqs = mf.getEquationSystemByName(this.equationSystemReference);
+			this.eqs = eqs.instantiateSystem(this.actualParameters);
+		}
 	}
 	
 	
