@@ -12,9 +12,9 @@ player p3
   vs, ftr, rnd, agr, rdr, agf
 endplayer
 
-const int maxTime;
-const int max_succ_attacks;
-const int attacker_latency;
+const int maxTime=2;
+const int max_succ_attacks=2;
+const int attacker_latency=2;
 
 global turn : [0..2] init 0;
 global time : [0..maxTime] init 0;

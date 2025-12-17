@@ -313,7 +313,6 @@ public class ASTElementSearcherVisitor implements ASTVisitor {
 	@Override
 	public Object visit(UncertainUpdates e) throws PrismLangException {
 		addASTElementIfIsInstance(e);
-
 		int i, n;
 		n = e.getNumUpdates();
 		for (i = 0; i < n; i++) {
@@ -332,7 +331,6 @@ public class ASTElementSearcherVisitor implements ASTVisitor {
 	
 	public Object visit(EquationSystem e) throws PrismLangException{
 		addASTElementIfIsInstance(e);
-		
 		for (Map.Entry<String, HashMap<Integer, Expression>> entry : e.coefficients().entrySet()) {
 			for (Map.Entry<Integer, Expression> row : entry.getValue().entrySet()) {
 				row.getValue().accept(this);
@@ -350,7 +348,6 @@ public class ASTElementSearcherVisitor implements ASTVisitor {
 		for (Expression un : e.getUncertains()) {
 			un.accept(this);
 		}
-
 		return elements;
 	}
 
@@ -876,7 +873,8 @@ public class ASTElementSearcherVisitor implements ASTVisitor {
 	@Override
 	public Object visit(ExpressionArray e) throws PrismLangException {
 		addASTElementIfIsInstance(e);
-
+		e.getI().accept(this);
+		e.getJ().accept(this);
 		return elements;
 	}
 

@@ -57,11 +57,12 @@ public class ExpressionFunc extends Expression
 	public static final int NOT = 12; // negation
 	public static final int IMPL = 13; // implication
 	public static final int EQUIV = 14; // double implication
+	public static final int SIN = 15; // Sine function
 	// Built-in function names
-	public static final String names[] = { "min", "max", "floor", "ceil", "round", "pow", "mod", "log", "multi", "comp", "or", "and", "not", "impl", "equiv" };
+	public static final String names[] = { "min", "max", "floor", "ceil", "round", "pow", "mod", "log", "multi", "comp", "or", "and", "not", "impl", "equiv", "sin" };
 	// Min/max function arities
-	public static final int minArities[] = { 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2 };
-	public static final int maxArities[] = { -1, -1, 1, 1, 1, 2, 2, 2, -1, -1, -1, -1, 1, 2, 2 };
+	public static final int minArities[] = { 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1 };
+	public static final int maxArities[] = { -1, -1, 1, 1, 1, 2, 2, 2, -1, -1, -1, -1, 1, 2, 2, 1 };
 
 	// Function name
 	private String name = "";
@@ -237,6 +238,8 @@ public class ExpressionFunc extends Expression
 			return applyMod(eval[0], eval[1], evalMode);
 		case LOG:
 			return applyLog(eval[0], eval[1], evalMode);
+		case SIN:
+			return applySin(eval[0], evalMode);
 		case MULTI:
 			throw new PrismLangException("Cannot evaluate \"multi\" function.", this);
 		case OR:
@@ -267,6 +270,8 @@ public class ExpressionFunc extends Expression
 			return applyCeil(eval, evalMode);
 		case ROUND:
 			return applyRound(eval, evalMode);
+		case SIN:
+			return applySin(eval, evalMode);
 		}
 		throw new PrismLangException("Unknown unary function \"" + name + "\"", this);
 	}
@@ -628,6 +633,26 @@ public class ExpressionFunc extends Expression
 		}
 	}
 
+	
+	/**
+	 * Apply this (sin) function instance to the arguments provided.
+	 * The arguments are assumed to be the correct kinds of Objects for their type
+	 * (as returned by {@link Type#castValueTo(Object, EvalMode)}).
+	 */
+	private Object applySin(Object eval1, EvalMode evalMode) throws PrismLangException
+	{
+		// Double arguments so may need to cast to double first
+		Object x = TypeDouble.getInstance().castValueTo(eval1, evalMode);
+		switch (evalMode) {
+		case FP:
+			// Type will be double; so evaluate both operands and cast to doubles
+			return Math.sin((double) x);
+		case EXACT:
+			throw new PrismLangException("Currently, can not compute sin exactly", this);
+		default:
+			throw new PrismLangException("Unknown evaluation mode " + evalMode);
+		}
+	}
 	@Override
 	public boolean returnsSingleValue()
 	{

@@ -43,6 +43,10 @@ public class GetAllVars extends ASTTraverse
 		this.v = v;
 	}
 	
+	public List<String> getList(){
+		return this.v;
+	}
+	
 	public void visitPost(ExpressionVar e) throws PrismLangException
 	{
 		if (!v.contains(e.getName())) {

@@ -22,7 +22,10 @@ endequation
 
 module host
 	h : [0..2] init 0;
-	[send1] h=0 -> (h'=1);	// send message 1
+	[send1] h=0 -U-> &p1 : (h'=1) + &p2 : (h'=2){
+		&p1+a[h] >= 0.25,
+		&p2 >= 0.25
+	}; // send message 1
 	[send2] h=0 -> (h'=2);  // send message 2
 	[] c=0 -> (h'=0); // restart
 endmodule

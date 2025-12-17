@@ -15,6 +15,7 @@ endplayer
 
 module host
 	h : [0..2] init 0;
+	c : [0..2] init 0;
 	[send1] h=0 -> (h'=1);	// send message 1
 	[send2] h=0 -> (h'=2);  // send message 2
 	[] c=0 -> (h'=0); // restart

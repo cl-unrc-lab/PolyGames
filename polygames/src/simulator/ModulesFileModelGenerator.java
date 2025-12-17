@@ -13,6 +13,8 @@ import parser.EvaluateContextState;
 import parser.State;
 import parser.Values;
 import parser.VarList;
+import parser.ast.Command;
+import parser.ast.CommandWithArrays;
 import parser.ast.ConstantList;
 import parser.ast.DeclarationType;
 import parser.ast.Expression;
@@ -23,6 +25,7 @@ import parser.ast.ModulesFile;
 import parser.ast.RewardStruct;
 import parser.type.Type;
 import parser.type.TypeClock;
+import parser.visitor.ASTElementSearcherVisitor;
 import parser.visitor.ASTTraverseModify;
 import prism.Evaluator;
 import prism.ModelGenerator;
@@ -89,6 +92,7 @@ public class ModulesFileModelGenerator<Value> implements ModelGenerator<Value>, 
 	 */
 	public static ModulesFileModelGenerator<?> create(ModulesFile modulesFile, PrismComponent parent) throws PrismException
 	{
+		
 		return create(modulesFile, false, parent);
 	}
 	

@@ -7,16 +7,16 @@ import prism.PrismLangException;
 public class CommandWithArrays extends Command {
 
   public CommandWithArrays() {
-    super();
+	super();
   }
 
   @Override
   public Object accept(ASTVisitor v) throws PrismLangException {
 		return v.visit(this);
-	}
+  }
 
   @Override
-	public Command deepCopy(DeepCopy copier) throws PrismLangException {
+  public Command deepCopy(DeepCopy copier) throws PrismLangException {
     Command command = new Command();
     command.setSynchs(
       getSynchs()
@@ -30,6 +30,6 @@ public class CommandWithArrays extends Command {
       copier.copy(getUpdates())
     );
 
-		return command;
-	}
+	return command;
+ }
 }

@@ -15,6 +15,7 @@ import parser.ast.ExpressionFilter;
 import parser.ast.ExpressionForAll;
 import parser.ast.ExpressionFormula;
 import parser.ast.ExpressionFunc;
+import parser.ast.ExpressionITE;
 import parser.ast.ExpressionIdent;
 import parser.ast.ExpressionInterval;
 import parser.ast.ExpressionLabel;
@@ -33,6 +34,7 @@ import parser.ast.ExpressionUnaryOp;
 import parser.ast.ExpressionVar;
 import parser.ast.Filter;
 import parser.ast.ForLoop;
+import parser.ast.FormulaList;
 
 /**
  * Replaces the occurrence of a variable by a given literal, this should be only applied to expressions, otherwise it only copies the structure
@@ -89,7 +91,7 @@ public class ReplaceVariable extends DeepCopy{
 	 */
 	@Override
 	public Object visit(ExpressionBinaryOp e) throws PrismLangException
-	{
+	{	
 		return new ExpressionBinaryOp(e.getOperator(), this.copy(e.getOperand1()), this.copy(e.getOperand2()));
 	}
 
@@ -105,7 +107,7 @@ public class ReplaceVariable extends DeepCopy{
 		ExpressionFunc result = new ExpressionFunc();
 		result.setName(e.getName());
 		for (int i = 0; i < e.getNumOperands(); i++) {
-			result.addOperand(this.copy(e.getOperand(i)));
+			result.addOperand((Expression) e.getOperand(i).accept(this));
 		}
 		result.setOldStyle(e.getOldStyle());
 		return result;
@@ -136,7 +138,23 @@ public class ReplaceVariable extends DeepCopy{
 		return m;
 	}
 
-
+	@Override
+	public Object visit(ExpressionITE e) throws PrismLangException {
+		ExpressionITE newExp = new ExpressionITE((Expression) e.getOperand1().accept(this), (Expression) e.getOperand2().accept(this), (Expression) e.getOperand3().accept(this));
+		
+		return newExp;
+	}
+	
+	public Object visit(FormulaList fl) throws PrismLangException {
+		
+		FormulaList result = new FormulaList();
+		for (int i = 0; i < fl.getAllFormulas().size(); i++) {
+			result.addFormula(fl.getFormulaNameIdent(i), (Expression) fl.getFormula(i).accept(this));
+		}
+		return result;
+	}
+	
+	
 }
 	
 	

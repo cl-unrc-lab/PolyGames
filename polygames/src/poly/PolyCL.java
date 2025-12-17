@@ -52,6 +52,8 @@ import csv.CsvFormatException;
 import parser.Values;
 import parser.ast.Expression;
 import parser.ast.ExpressionReward;
+import parser.ast.Command;
+import parser.ast.CommandWithArrays;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
 import parser.visitor.ASTElementSearcherVisitor;
@@ -714,6 +716,7 @@ public class PolyCL implements PrismModelListener
 				mainLog.print("\nPoly: Parsing model file \"" + modelFilename + "\"...\n");
 
 				modulesFile = prism.parseModelFile(new File(modelFilename), typeOverride);
+				
 
 				modulesFile = resolveConstants(modulesFile);
 
@@ -742,22 +745,46 @@ public class PolyCL implements PrismModelListener
 				ASTUncertainVisitor visitor = new ASTUncertainVisitor();
 				ArrayList<UncertainUpdates> updates = (ArrayList<UncertainUpdates>) searcher.visit(modulesFile);
 				// all the equations are instantiated
+				
 				for (UncertainUpdates up : updates) {
 					up.instantiateEquationSystem(modulesFile);
 				}
+				
+				
 				modulesFile = (ModulesFile) replacerFormulas.visit(modulesFile);
-				modulesFile = (ModulesFile) replacerConstant.visit(modulesFile); // we replace all constants
+				
+				
+				modulesFile = (ModulesFile) replacerConstant.visit(modulesFile);  // we replace all constants
+				
+				
+				
+				//System.out.println(modulesFile);
 				modulesFile = (ModulesFile) replacerVariables.visit(modulesFile); // we replace all variables
+				 
+				
 				modulesFile = (ModulesFile) replacerArrays.visit(modulesFile); // we replace arrays and maxmins	
+				
+				
+				// all the conditional expressions are replaced, but this is only for the uncertain equations:
 				modulesFile = (ModulesFile) replacerITE.visit(modulesFile); // all the conditional expressions are replaced
-				modulesFile = visitor.copy(modulesFile);
+				//modulesFile = visitor.copy(modulesFile);
+				//writeModelToFile(modulesFile, "equationsForDebugging.txt");
+				modulesFile = (ModulesFile) visitor.visit(modulesFile);
+				
+				
 				modulesFile.tidyUp();
+				
 				
 				// if polydebug is one we print out the model to a file
 				if (this.polyDebug){
 					writeModelToFile(modulesFile, "modelForDebugging.txt");
 				}
+				
+				
+				
 				prism.loadPRISMModel(modulesFile);
+
+				
 			}
 		} catch (FileNotFoundException e) {
 			errorAndExit("File \"" + modelFilename + "\" not found");

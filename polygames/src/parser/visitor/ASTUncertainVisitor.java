@@ -12,9 +12,12 @@ import explicit.PPLSupport;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ASTUncertainVisitor extends DeepCopy {
+//public class ASTUncertainVisitor extends DeepCopy {
+public class ASTUncertainVisitor extends ASTTraverseModify {
+	
 	@Override
 	public Object visit(Module e) throws PrismLangException {
+		/*
 		Module result = new Module(e.getName());
 		result.setInvariant(this.copy(e.getInvariant()));
 		result.setNameASTElement(this.copy(e.getNameASTElement()));
@@ -30,16 +33,33 @@ public class ASTUncertainVisitor extends DeepCopy {
 		}
 
 		return result;
-	}
+		*/
+		Module result = new Module(e.getName());
+		if (e.getInvariant() != null)
+			result.setInvariant((Expression) e.getInvariant().accept(this));
+		result.setNameASTElement((ExpressionIdent) e.getNameASTElement().accept(this));
+		for (Declaration declaration : e.getDeclarations()) {
+			result.addDeclaration(declaration);
+		}
 
+		for (Command command : e.getCommands()) {
+			for (Command cc : this.visit(command)) {
+				result.addCommand(cc);
+			}
+		}
+
+		return result;
+		
+	}
+	
 	@Override
 	public ArrayList<Command> visit(Command e) throws PrismLangException {
 		ArrayList<Command> result = new ArrayList<Command>();
-
 		// in the case that the update is normal
 
 		if (!(e.getUpdates() instanceof UncertainUpdates)) {
-			result.add(e.clone().deepCopy(this));
+			//result.add(e.clone().deepCopy(this));
+			result.add(e);
 
 			return result;
 		}
@@ -50,9 +70,11 @@ public class ASTUncertainVisitor extends DeepCopy {
 			Command command = e.clone();
 
 			command.setParent(e.getParent());
-			command.setGuard(this.copy(command.getGuard()));
+			// command.setGuard(this.copy(command.getGuard()));
+			//command.setGuard(this.copy(command.getGuard()));
+			command.setGuard(command.getGuard().clone());
 			command.setUpdates(update);
-
+	
 			result.add(command);
 		}
 
@@ -76,7 +98,6 @@ public class ASTUncertainVisitor extends DeepCopy {
 
 		NNC_Polyhedron ph   = new NNC_Polyhedron(e.getPPLConstraintSystem());
 		Generator_System gs = ph.generators();
-		
 		for (Generator g : gs) {
 			try {
 				Updates updates       = new Updates();

@@ -280,8 +280,14 @@ public class TypeCheck extends ASTTraverse
 			if (!ok) {
 				if (t1.equals(t2))
 					throw new PrismLangException("Type error: " + e.getOperatorSymbol() + " cannot compare " + t1 + "s", e);
-				else
+				else {
+					System.out.println(e.getOperand1());
+					System.out.println(e.getOperand1().getType());
+					System.out.println(e.getOperand2());
+					System.out.println(e.getOperand2().getType());
+					System.out.println("expression:"+e);
 					throw new PrismLangException("Type error: " + e.getOperatorSymbol() + " cannot compare " + t1 + " and " + t2, e);
+				}
 			}
 			e.setType(TypeBool.getInstance());
 			break;
@@ -302,8 +308,15 @@ public class TypeCheck extends ASTTraverse
 			if (!ok) {
 				if (t1.equals(t2))
 					throw new PrismLangException("Type error: " + e.getOperatorSymbol() + " cannot compare " + t1 + "s", e);
-				else
+				else {
+					System.out.println(e.getOperand1());
+					System.out.println(e.getOperand1().getType());
+					System.out.println(e.getOperand2());
+					System.out.println(e.getOperand2().getType());
+					System.out.println("expression:"+e);
 					throw new PrismLangException("Type error: " + e.getOperatorSymbol() + " cannot compare " + t1 + " and " + t2, e);
+					
+				}
 			}
 			e.setType(TypeBool.getInstance());
 			break;
@@ -374,6 +387,7 @@ public class TypeCheck extends ASTTraverse
 		case ExpressionFunc.ROUND:
 		case ExpressionFunc.POW:
 		case ExpressionFunc.LOG:
+		case ExpressionFunc.SIN:
 			// All operands must be ints or doubles
 			for (i = 0; i < n; i++) {
 				if (types[i] instanceof TypeBool) {
@@ -434,6 +448,7 @@ public class TypeCheck extends ASTTraverse
 			e.setType(types[0] instanceof TypeDouble || types[1] instanceof TypeDouble ? TypeDouble.getInstance() : TypeInt.getInstance());
 			break;
 		case ExpressionFunc.LOG:
+		case ExpressionFunc.SIN:
 			// Resulting type is always double
 			e.setType(TypeDouble.getInstance());
 			break;

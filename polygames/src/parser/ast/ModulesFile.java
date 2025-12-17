@@ -640,6 +640,11 @@ public class ModulesFile extends ASTElement implements ModelInfo, RewardGenerato
 		return getRewardStruct(0);
 	}
 
+	
+	public ArrayList<Declaration> getGlobalVars(){
+		return this.globals;
+	}
+	
 	@Override
 	public boolean isRewardLookupSupported(RewardLookup lookup)
 	{

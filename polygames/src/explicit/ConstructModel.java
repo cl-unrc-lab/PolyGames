@@ -38,6 +38,9 @@ import common.Interval;
 import parser.State;
 import parser.Values;
 import parser.VarList;
+import parser.ast.Command;
+import parser.ast.CommandWithArrays;
+import parser.visitor.ASTElementSearcherVisitor;
 import prism.ModelGenerator;
 import prism.ModelType;
 import prism.PlayerInfoOwner;
@@ -163,6 +166,8 @@ public class ConstructModel extends PrismComponent
 	@SuppressWarnings("unchecked")
 	public <Value> Model<Value> constructModel(ModelGenerator<Value> modelGen, boolean justReach) throws PrismException
 	{
+			
+		
 		// Model info
 		ModelType modelType;
 		// State storage

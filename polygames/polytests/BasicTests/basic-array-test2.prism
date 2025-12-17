@@ -3,6 +3,10 @@ smg
 // A simple example to test array expressions in the guards, this tests arrays indexed by variables
 
 const double a[3] = {0.25,0.50,0.75};
+const double b[3] = {0,1,2};
+global e : [0..2] init 0;
+global b : bool init false;
+
 
 player p1
   host, [send1], [send2]
@@ -21,7 +25,12 @@ endmodule
 
 module client
 	c : [0..2] init 0;
-	[send1] a[c]=2 -> 0.85 : (c'=1) + 0.15 : (c'=0); // receive message 1
-	[] c!=0 -> (c'=0); // request another message
+	d : [0..2] init 0;
+	[send1] a[c]=2 -> 0.85 : (c'=result) + 0.15 : (c'=0); // receive message 1
+	[] c!=0  -> (c'=0); // request another message
 	[] c!=0 -> true;   // wait
 endmodule
+
+formula result = mod(e,2);
+formula pi = 3.14;
+formula foo = sin(pi);

@@ -60,12 +60,15 @@ import param.ParamResult;
 import parser.PrismParser;
 import parser.State;
 import parser.Values;
+import parser.ast.Command;
+import parser.ast.CommandWithArrays;
 import parser.ast.Expression;
 import parser.ast.ForLoop;
 import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
+import parser.visitor.ASTElementSearcherVisitor;
 import parser.visitor.ASTElementWithArraysReplacerVisitor;
 import parser.visitor.FindAllConstants;
 import parser.visitor.ASTTraverseModify;
@@ -1640,6 +1643,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		if (modulesFile == null) {
 			clearModel();
 		}
+		
+		
 		// Update model info
 		currentModelSource = ModelSource.PRISM_MODEL;
 		currentModelType = modulesFile.getModelType();
@@ -1662,6 +1667,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			mainLog.println("Observables: " + String.join(" ", currentModulesFile.getObservableNames()));
 		}
 
+		
 		// If required, export parsed PRISM model
 		if (exportPrism) {
 			try {
@@ -1995,6 +2001,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 */
 	public void buildModelIfRequired() throws PrismException
 	{
+
 		chooseEngineForModelBuild();
 		if (!modelIsBuilt())
 			doBuildModel();
@@ -2105,6 +2112,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 					} catch (PrismException e){
 						throw e.prepend("Explicit engine: ");
 					}
+					
 					ConstructModel constructModel = new ConstructModel(this);
 					constructModel.setFixDeadlocks(getFixDeadlocks());
 					currentModelExpl = constructModel.constructModel(currentModelGenerator);
@@ -3172,6 +3180,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			// resolve property references in the property
 			Expression e = (Expression) prop.getExpression().expandPropRefsAndLabels(propertiesFile, null);
 
+			ASTElementSearcherVisitor searcher2 = new ASTElementSearcherVisitor(Command.class);
+			
+			
+			
 			// Build model, if necessary
 			buildModelIfRequired();
 

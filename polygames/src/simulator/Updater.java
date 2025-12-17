@@ -39,12 +39,14 @@ import parser.EvaluateContextState;
 import parser.State;
 import parser.VarList;
 import parser.ast.Command;
+import parser.ast.CommandWithArrays;
 import parser.ast.Expression;
 import parser.ast.Module;
 import parser.ast.ModulesFile;
 import parser.ast.Update;
 import parser.ast.Updates;
 import parser.type.TypeClock;
+import parser.visitor.ASTElementSearcherVisitor;
 import prism.Evaluator;
 import prism.ModelType;
 import prism.PrismComponent;
@@ -116,6 +118,8 @@ public class Updater<Value> extends PrismComponent
 		
 		// Get info from model
 		this.modulesFile = modulesFile;
+		
+		
 		modelType = modulesFile.getModelType();
 		numModules = modulesFile.getNumModules();
 		synchs = modulesFile.getSynchs();
@@ -676,6 +680,8 @@ public class Updater<Value> extends PrismComponent
 	 */
 	protected void calculateUpdatesForModule(int m, State state) throws PrismLangException
 	{
+		
+		
 		Module module = modulesFile.getModule(m);
 		int n = module.getNumCommands();
 		for (int i = 0; i < n; i++) {

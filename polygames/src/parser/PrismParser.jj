@@ -520,6 +520,7 @@ TOKEN :
 |	< RMIN:				"Rmin" >
 |	< R:				"R" >
 |	< S:				"S" >
+|   < SIN:              "sin">
 |	< STOCHASTIC:		"stochastic" >
 |	< STPG:				"stpg" >
 |	< SMG:				"smg" >
@@ -660,7 +661,7 @@ EquationSystem EquationSystem()  throws PrismLangException :
 }
 {
  <EQUATION> n = Identifier() { eqs.setName(n); }
- <PARAMETERS> <COLON>  par = Identifier() {eqs.addParameter(new ExpressionIdent(par));} (<COMMA> par = Identifier() {eqs.addParameter(new ExpressionIdent(par));})* <SEMICOLON>
+ (<PARAMETERS> <COLON>  par = Identifier() {eqs.addParameter(new ExpressionIdent(par));} (<COMMA> par = Identifier() {eqs.addParameter(new ExpressionIdent(par));})* <SEMICOLON>)?
  <UNCERTAIN> <COLON>  un = UncertainExpression() {eqs.addUncertain(un);} (<COMMA> un = UncertainExpression() {eqs.addUncertain(un);})* <SEMICOLON>
  eqs = Equation(eqs, i) ( { i++; } <COMMA> eqs = Equation(eqs, i) )*
  
@@ -910,7 +911,8 @@ JAVACODE
 void addConstantArrayToConstantList(ConstantList constantList, ExpressionIdent name, List<List<Expression>> list, boolean unidimensionalArray) {
 	for (int i = 0; i < list.size(); i++) {
 		for (int j = 0; j < list.get(i).size(); j++) {
-			ExpressionIdent expressionIdent = unidimensionalArray ? new ExpressionIdent(name.getName() + j) : new ExpressionIdent(name.getName() + i + "" + j);
+		  	int index = i * list.size() + j;
+			ExpressionIdent expressionIdent = unidimensionalArray ? new ExpressionIdent(name.getName() + j) : new ExpressionIdent(name.getName() + index);
 			constantList.addConstant(
 				expressionIdent, list.get(i).get(j), TypeDouble.getInstance()
 			);
@@ -1023,7 +1025,6 @@ void ArrayDeclaration(parser.ast.Module module) throws PrismLangException :
 		} else {
 			verifyMatrix(values, i, j);
 		}
-
 		addArrayToModule(module, identifier, values, declarationType, unidimensionalArray);
 	}
 	<SEMICOLON>
@@ -1031,12 +1032,14 @@ void ArrayDeclaration(parser.ast.Module module) throws PrismLangException :
 
 JAVACODE
 void addArrayToModule(parser.ast.Module module, String identifier, List<List<Expression>> values, DeclarationType declarationType, boolean unidimensionalArray) {
+	// the indexes are numbered following  the formula i*N+j
 	Declaration declaration;
-
+	
 	for (int i = 0; i < values.size(); i++) {
 		for (int j = 0; j < values.get(i).size(); j++) {
+		  	int index = i * values.size() + j;
 			declaration =
-				unidimensionalArray ? new Declaration(identifier + j, declarationType) : new Declaration(identifier + i + "" + j, declarationType) ;
+				unidimensionalArray ? new Declaration(identifier + j, declarationType) : new Declaration(identifier + index, declarationType) ;
 
 			if ( !values.isEmpty() ) {
 				declaration.setStart(values.get(i).get(j));
@@ -1172,7 +1175,7 @@ UncertainUpdates equationInstance(UncertainUpdates updates) throws PrismLangExce
 	
 	<LPARENTH>
 		// and we set the actual parameters
-		par = ConstantExpression() { updates.addActualParameter(par);} (<COMMA> par = ConstantExpression() { updates.addActualParameter(par);})*
+		(par = ConstantExpression() { updates.addActualParameter(par);} (<COMMA> par = ConstantExpression() { updates.addActualParameter(par);})*)?
 	<RPARENTH>
 	{return updates;}		
 }
@@ -1228,9 +1231,9 @@ void initUncertainEquationTerm(EquationSystem updates, int i, boolean isInLeftSi
 		(
 			(minus = <MINUS>)?
 
-			uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression()  )?
+			uncertainExpression = UncertainExpression() ( <TIMES> ( <LBRACKET> coefficient = ConstantExpression() <RBRACKET> | coefficient = ConstantExpressionBasic()  ))?
 			// we could use expression instead of constant expressions
-			//uncertainExpression = UncertainExpression() (<TIMES> coefficient = Expression(false, false)  )?
+			// uncertainExpression = UncertainExpression() (<TIMES> coefficient = Expression(false, false)  )?
 			{
 				if (Objects.nonNull(minus)) {
 					coefficient = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, coefficient);
@@ -1241,9 +1244,9 @@ void initUncertainEquationTerm(EquationSystem updates, int i, boolean isInLeftSi
 
 	  )
 	| (
-			constant = ConstantExpression()
+						  constant = ConstantExpression() 
 			// this could be an expression but expression also considers relational operators and then many conflict arise
-			//constant = Expression(false, false)
+			// constant = Expression(false, false)
 			{
 				updates.addConstant(constant, i, isInLeftSide);
 			}
@@ -1269,7 +1272,7 @@ void UncertainEquationTerm(EquationSystem updates, int i, boolean isInLeftSide) 
 		(
 			
 
-			uncertainExpression = UncertainExpression() (<TIMES> coefficient = ConstantExpression()  )?
+			uncertainExpression = UncertainExpression() ( <TIMES> coefficient = ConstantExpression()  )?
 			//uncertainExpression = UncertainExpression() (<TIMES> coefficient = Expression(false, false)  )?
 			{
 				if (Objects.nonNull(minus)) {
@@ -1290,6 +1293,8 @@ void UncertainEquationTerm(EquationSystem updates, int i, boolean isInLeftSide) 
    )
 }
 
+
+/*
 Expression ConstantExpression() throws PrismLangException :
 {
 	Expression constantTerm = null;
@@ -1335,8 +1340,75 @@ Expression ConstantFactor() throws PrismLangException :
 		<MINUS> result = ConstantFactor() { result = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, result); return result; }
 	| result = Basic() { return result;}
 }
+*/
 
-Expression Basic() throws PrismLangException :
+Expression ConstantExpression() throws PrismLangException :
+{
+	Expression constantTerm = null;
+	Expression result       = null;
+}
+{
+	//constantTerm = ConstantTerm() result = ConstantExpression_(constantTerm)
+	constantTerm = ConstantExpressionPlusMinus(false, false)
+	{
+		return constantTerm;
+	}
+}
+
+
+Expression ConstantExpressionPlusMinus(boolean prop, boolean pathprop) throws PrismLangException :
+{
+	Expression ret, expr;
+	int op;
+	Token begin = null;
+}
+{
+	{ begin = getToken(1); } ret = ConstantExpressionTimesDivide(prop, pathprop) 
+	(
+		( <PLUS> { op = ExpressionBinaryOp.PLUS; } | <MINUS> { op = ExpressionBinaryOp.MINUS; } )
+		expr = ConstantExpressionTimesDivide(prop, pathprop) { ret = new ExpressionBinaryOp(op, ret, expr); ret.setPosition(begin, getToken(0)); }
+	)*
+	{ return ret; }
+}
+
+// Expression: times/divide
+
+Expression ConstantExpressionTimesDivide(boolean prop, boolean pathprop) throws PrismLangException :
+{
+	Expression ret, expr;
+	int op;
+	Token begin = null;
+}
+{
+	{ begin = getToken(1); } ret = ConstantExpressionUnaryMinus(prop, pathprop)
+	(
+		( <TIMES> { op = ExpressionBinaryOp.TIMES; } | <DIVIDE> { op = ExpressionBinaryOp.DIVIDE; } )
+		expr = ConstantExpressionUnaryMinus(prop, pathprop) { ret = new ExpressionBinaryOp(op, ret, expr); ret.setPosition(begin, getToken(0)); }
+	)*
+	{ return ret; }
+}
+
+// Expression: unary minus
+
+Expression ConstantExpressionUnaryMinus(boolean prop, boolean pathprop) throws PrismLangException :
+{
+	Expression ret, expr;
+	Token begin = null;
+}
+{
+	(
+		begin = <MINUS> expr = ConstantExpressionUnaryMinus(prop, pathprop)
+		{ ret = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, expr); ret.setPosition(begin, getToken(0)); }
+	|
+		ret = ConstantExpressionBasic()
+	)
+	{ return ret; }
+}
+
+
+
+
+Expression ConstantExpressionBasic() throws PrismLangException :
 {
 	String identifier = null;
 	Expression i      = null;
@@ -2082,7 +2154,7 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	)
 	// If there is, it's a function
 	(
-		  (<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc)ret) <RPARENTH>)
+		  (<LPARENTH> { ret = new ExpressionFunc(s); } ExpressionFuncArgs(prop, pathprop, (ExpressionFunc) ret) <RPARENTH>)
 		| (
 			   <LBRACKET> i = Expression(false, false) { ret = new ExpressionArray(s, ZERO.clone().deepCopy(), i, lineLengths.get(s)); } <RBRACKET>
 				(<LBRACKET> j = Expression(false, false) { ret = new ExpressionArray(s, i, j, lineLengths.get(s)); } <RBRACKET>)?
@@ -2091,7 +2163,7 @@ Expression ExpressionFuncOrIdentOrArrayIndexing(boolean prop, boolean pathprop) 
 	{ ret.setPosition(begin, getToken(0)); return ret; }
 }
 
-// Expression: min/max function (treated differently because min/max are keywords) also abs
+// Expression: min/max function (treated differently because min/max are keywords) also abs and sin
 
 Expression ExpressionFuncMinMax(boolean prop, boolean pathprop) throws PrismLangException :
 {
@@ -2107,6 +2179,9 @@ Expression ExpressionFuncMinMax(boolean prop, boolean pathprop) throws PrismLang
 	|
 	(<ABS> <LPARENTH> arg = Expression(false, false) <RPARENTH>
 	{ func = new ExpressionFunc("max"); func.addOperand(arg); func.addOperand(new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, arg)); return func; }
+	|
+	 <SIN> <LPARENTH> arg = Expression(false, false) <RPARENTH>
+	{ func = new ExpressionFunc("sin"); func.addOperand(arg);  return func; }
 	) 
 }
 

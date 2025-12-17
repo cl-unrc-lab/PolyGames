@@ -95,7 +95,6 @@ public class ASTElementWithArraysReplacerVisitor extends ASTTraverseModify {
 				commands = createASTElementsWithoutExpressionArrayIndex(commands, expression, identifierWithIndexs, astElementReplacer);
 			}
 		}
-		System.out.println(commands);
 		return commands;
 	}
 
