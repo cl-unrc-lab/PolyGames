@@ -151,7 +151,6 @@ public class RewardStruct extends ASTElement
 	public RewardStruct deepCopy(DeepCopy copier) throws PrismLangException
 	{
 		copier.copyAll(items);
-
 		return this;
 	}
 
@@ -161,6 +160,7 @@ public class RewardStruct extends ASTElement
 	{
 		RewardStruct clone = (RewardStruct) super.clone();
 
+		clone.setName(this.name);
 		clone.items = (ArrayList<RewardStructItem>) items.clone();
 
 		return clone;

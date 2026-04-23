@@ -203,6 +203,7 @@ public class ExpressionReward extends ExpressionQuant
 		if (rewardStructNames.size() == 0) {
 			throw new PrismException("Model has no rewards specified");
 		}
+		
 		// Recall: the index is an Object which is either an Integer, denoting the index (starting from 0) directly,
 		// or an expression, which can be evaluated (possibly using the passed in constants) to an index. 
 		int rewStruct = -1;
@@ -222,6 +223,9 @@ public class ExpressionReward extends ExpressionQuant
 			rewStruct = rewardStructNames.indexOf((String) rsi);
 		}
 		if (rewStruct == -1) {
+			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+			    System.out.println(ste + "\n");
+			}
 			throw new PrismException("Invalid reward structure index \"" + rsi + "\"");
 		}
 		return rewStruct;

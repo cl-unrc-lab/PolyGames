@@ -57,12 +57,20 @@ import prism.ModelInfo;
 import parser.visitor.*;
 import prism.ModelType;
 import prism.PrismLangException;
+import parser.Values;
+import prism.UndefinedConstants;
+import java.util.Random;
+
 
 @SuppressWarnings({"unused", "static-access", "serial"})
 public class PrismParser
 {
 	// The model associated with the properties file being parsed
 	private static ModelInfo modelInfo;
+	private static String constSwitch;
+	private static ModulesFile  mf;
+	private static HashMap<String, Integer> undefConsInt; // integer constantsthis is used for the arrays
+	private static HashMap<String, Double> undefConsDouble; // double constants this is used for the arrays
 	
 	// List of keyword strings
 	private static ArrayList<String> keywordList = new ArrayList<String>();
@@ -75,7 +83,9 @@ public class PrismParser
 
 	//
 
-	private static Map<String, Integer> lineLengths = new HashMap<String, Integer>();
+	private static Map<String, Integer> lineLengths = new HashMap<String, Integer>(); // to keep the array dimensions in of the array declarations
+	private static Map<String, String> lineLengthsConstants = new HashMap<String, String>(); // when array dimensions are defined by means of constants
+	
 	private static Expression ZERO = new ExpressionLiteral(TypeInt.getInstance(), 0);
 	
 	//-----------------------------------------------------------------------------------
@@ -184,12 +194,36 @@ public class PrismParser
 	
 	// Parse modules file
 	
-	public ModulesFile parseModulesFile(InputStream str) throws PrismLangException { return parseModulesFile(str, null); }
+	public ModulesFile parseModulesFile(InputStream str) throws PrismLangException { return parseModulesFile(str, null, ""); }
 	
-	public ModulesFile parseModulesFile(InputStream str, ModelType typeOverride) throws PrismLangException
+	public ModulesFile parseModulesFile(InputStream str, ModelType typeOverride, String constSwitch) throws PrismLangException
 	{
-		ModulesFile mf = null;
-		
+		this.mf = new ModulesFile();		
+		this.constSwitch = constSwitch;
+		this.undefConsInt = new HashMap<String, Integer>();
+		this.undefConsDouble = new HashMap<String, Double>();
+		String[] pairs = constSwitch.split(",");
+
+        for (String pair : pairs) {
+            // Split each pair by the '=' sign
+            String[] entry = pair.split("=");
+            
+            // Put the key and the parsed integer value into the map
+            if (entry.length == 2) {
+              	try {
+              	  	Integer arg = Integer.parseInt(entry[1]);
+                	undefConsInt.put(entry[0], arg);
+                }
+                catch(NumberFormatException e) { }
+                try {
+              	  	Double arg = Double.parseDouble(entry[1]);
+                	undefConsDouble.put(entry[0], arg);
+                }
+                catch(NumberFormatException e) {
+					throw new PrismLangException("Error reading the constant parameters.");
+                }
+            }
+        }		
 		// (Re)start parser
 		ReInit(str);
 		// Parse
@@ -488,6 +522,7 @@ TOKEN :
 |	< MINMIN:			"minmin" >
 |	< MIN:				"min" >
 |	< MODULE:			"module" >
+|   < NORMAL:           "normal">
 |	< X:				"X" >
 |	< NONDETERMINISTIC:	"nondeterministic" >
 |	< OBSERVABLE:		"observable" >
@@ -528,6 +563,7 @@ TOKEN :
 |	< TPTG:				"tptg" >
 |	< TRUE:				"true" >
 |	< U:				"U" >
+|   < UNIFORM:          "uniform">
 |	< W:				"W" >
 |   < ABS:              "abs"> 
 	// Punctuation, etc.
@@ -601,11 +637,12 @@ ModulesFile ModulesFile() throws PrismLangException :
 	int initCount = 0;
 	Expression initDupe = null;
 	Player player = null;
-	ModulesFile mf = new ModulesFile();
+	//ModulesFile mf = new ModulesFile();
 	Token begin = null;
 	EquationSystem eqs = null;
 }
 {
+
 	( { begin = getToken(1); }
 	// Model type
 	( type=ModulesFileType() { typeCount++; if (typeCount == 2) typeDupe = getToken(0); } ) |
@@ -844,7 +881,7 @@ void LabelDef(LabelList labelList) throws PrismLangException :
 }
 
 // Constant definition
-
+/*
 void ConstantDef(ConstantList constantList) throws PrismLangException :
 {
 	Type type = TypeInt.getInstance();
@@ -906,6 +943,267 @@ void ConstantDef(ConstantList constantList) throws PrismLangException :
 	<SEMICOLON>
 }
 
+*/
+
+void ConstantDef(ConstantList constantList) throws PrismLangException :
+{
+	Type type = TypeInt.getInstance();
+	ExpressionIdent name = null;
+	ExpressionIdent rowConstant = null;
+	ExpressionIdent colConstant = null;
+	ExpressionIdent intervalConstant1 = null;
+	ExpressionIdent intervalConstant2 = null;
+	Expression expr = null;
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	int cols = 0;
+	int rows = 0;
+	Expression lowerLimit = null;
+	Expression upperLimit = null;
+	Expression value;
+	List<List<Expression>> values = new ArrayList<List<Expression>>();
+	boolean unidimensionalArray   = true;
+	double uniformLow = 0;
+	double uniformUp = 0;
+	double normalMean = 0;
+	double normalSD = 0;
+	Token minus = null;
+}
+{
+	(
+		(
+			<CONST>
+			(
+				// const double array[N] = { v0, ..., vN-1 } or const int var (= expr)?;
+				(	<DOUBLE> name = IdentifierExpression() { type = TypeDouble.getInstance(); }
+						(
+							(
+								 <LBRACKET>(
+									token = <REG_INT> {  i = Integer.parseInt(token.image); lineLengths.put(name.getName(), i);}
+									|
+									rowConstant = IdentifierExpression()
+									{  
+											int index = constantList.getConstantIndex(rowConstant.getName());
+						
+											if (index == -1) {
+													throw new PrismLangException("Undefined Constant in array definition.");
+											}
+											if (constantList.getConstant(index) == null) {
+												if (undefConsInt.containsKey(rowConstant.getName())) {
+													i = undefConsInt.get(rowConstant.getName());
+												}
+												else {
+													throw new PrismLangException("Undefined Constant in array definition.");
+												}		
+											}
+											else {
+												try {
+													ExpressionLiteral consExp = (ExpressionLiteral) constantList.getConstant(index);
+												    i = (Integer) consExp.getValue();
+										        }
+										        catch(Exception e) {
+										          throw new PrismLangException("Undefined Constant in array definition.");
+										        }
+											}
+											lineLengths.put(name.getName(), i);
+									}
+									)
+								 <RBRACKET> { initializeList(values, 1, i); }
+								(<LBRACKET> ( token = <REG_INT> 
+											{
+								
+								  				j = Integer.parseInt(token.image);
+								  				lineLengths.put(name.getName(), j);
+											}
+								     |
+  								    	   colConstant = IdentifierExpression()
+  								    	   {
+											int index = constantList.getConstantIndex(rowConstant.getName());
+						
+											if (index == -1) {
+													throw new PrismLangException("Undefined Constant in array definition.");
+											}
+											if (constantList.getConstant(index) == null) {
+												if (undefConsInt.containsKey(rowConstant.getName())) {
+													j = undefConsInt.get(rowConstant.getName());
+												}
+												else {
+													throw new PrismLangException("Undefined Constant in array definition.");
+												}		
+											}
+											else {
+												try {
+													ExpressionLiteral consExp = (ExpressionLiteral) constantList.getConstant(index);
+												    j = (Integer) consExp.getValue();
+										        }
+										        catch(Exception e) {
+										          throw new PrismLangException("Undefined Constant in array definition.");
+										        }
+											}
+											lineLengths.put(name.getName(), j);
+  								    	   }
+  								    )
+  								    
+								  <RBRACKET>
+								 { initializeList(values, i, j); unidimensionalArray = !unidimensionalArray;} )?
+								<EQ>(
+								<LBRACE>
+								(
+									  value = Expression(false, false) { values.get(0).add(value); } (<COMMA> value = Expression(false, false) { values.get(0).add(value); })*
+									| (
+											<LBRACE>
+												value = Expression(false, false) { values.get(k).add(value); } (<COMMA> value = Expression(false, false) { values.get(k).add(value); } )*
+											<RBRACE>
+											{ k++; }
+											(<COMMA> <LBRACE> value = Expression(false, false) { values.get(k).add(value); } (<COMMA> value = Expression(false, false) { values.get(k).add(value); } )* <RBRACE> { k++; })*
+									  )
+								)
+								<RBRACE>
+								{
+								   
+									if (unidimensionalArray) {
+										verifyArray(values.get(0), i);
+									} else {
+										verifyMatrix(values, i, j);
+									}
+
+									addConstantArrayToConstantList(constantList, name, values, unidimensionalArray);
+								}
+								| <UNIFORM> <LPARENTH> ( (minus = <MINUS>)? token =  <REG_DOUBLE> {  uniformLow =  (minus!=null?-1:1) * Double.parseDouble(token.image); minus=null; }
+														 |
+														 intervalConstant1 = IdentifierExpression()
+														 {
+														   uniformLow = getValueByConstantName(intervalConstant1, constantList);
+														 }
+													 )	  	
+								<COMMA> (
+								  		 (minus =<MINUS>)? token = <REG_DOUBLE> { uniformUp = (minus!=null?-1:1) * Double.parseDouble(token.image); }
+								         |  	
+										 intervalConstant2 = IdentifierExpression()
+										 {
+											uniformUp = getValueByConstantName(intervalConstant2, constantList);
+										 }										 	
+										)
+								<RPARENTH>
+								{
+								  if (unidimensionalArray) { 
+									generateUniform(values, i, 0, uniformLow, uniformUp, false);
+                                    verifyArray(values.get(0), i);
+							      }
+								  else { 
+								     generateUniform(values, i, j, uniformLow, uniformUp, true);
+								     verifyMatrix(values, i, j);
+								  }
+								  addConstantArrayToConstantList(constantList, name, values, unidimensionalArray);
+								}
+								| <NORMAL> <LPARENTH> token = <REG_DOUBLE>{ normalMean = Double.parseDouble(token.image); } <COMMA>  token = <REG_DOUBLE> {normalSD = Double.parseDouble(token.image); }  <RPARENTH>
+								{
+									if (unidimensionalArray) { 
+										generateNormal(values, i, j, normalMean, normalSD, false);
+                                    	verifyArray(values.get(0), i);
+							      	}
+								  	else { 
+								     	generateNormal(values, i, j,  normalMean, normalSD, true);
+								     	verifyMatrix(values, i, j);
+								  	}
+								 	 addConstantArrayToConstantList(constantList, name, values, unidimensionalArray);
+								}
+								)
+							)
+							| (<EQ> expr = Expression(false, false) )? { constantList.addConstant(name, expr, type); }
+						))
+				| ( <INT> { type = TypeInt.getInstance(); } | <BOOL> { type = TypeBool.getInstance(); } ) name = IdentifierExpression() (<EQ> expr = Expression(false, false) )? { constantList.addConstant(name, expr, type); }
+			)
+		)
+		|
+		(
+			(<RATE> | <PROB> ) { type = TypeDouble.getInstance(); } name = IdentifierExpression() ( <EQ> expr = Expression(false, false) )? { constantList.addConstant(name, expr, type); }
+		)
+	)
+	<SEMICOLON>
+}
+
+
+JAVACODE
+double getValueByConstantName(ExpressionIdent constant, ConstantList constantList) throws PrismLangException {
+   int index = constantList.getConstantIndex(constant.getName());
+   double result = 0;
+   if (index == -1) {
+		throw new PrismLangException("Undefined Constant in array definition.");
+   }
+   if (constantList.getConstant(index) == null) {
+   		if (undefConsDouble.containsKey(constant.getName())) {
+			result = undefConsDouble.get(constant.getName());
+		}
+		else {
+			throw new PrismLangException("Undefined Constant in array definition.");
+		}		
+	}
+	else {
+		try {
+			ExpressionLiteral consExp = (ExpressionLiteral) constantList.getConstant(index);
+			result = (Double) consExp.getValue();
+		}
+		catch(Exception e) {
+			throw new PrismLangException("Undefined Constant in array definition.");
+		}
+	}
+  return result;
+}
+
+JAVACODE
+// to generate an array filled up of random numbers
+void generateUniform(List<List<Expression>> values, double n, double m, double low, double up, boolean isMatrix) {
+  //values = (List<List<Expression>>) new ArrayList<ArrayList<Expression>>();
+  Random rand = new Random();
+  if (isMatrix) {  
+	  for (int i = 0; i < n; i++) {
+	    for (int j = 0; j < m; j++) {
+	    	// Generate a random double between min (inclusive) and max (exclusive)
+	    	
+	        double randomValue = low + (up - low) * rand.nextDouble(); 
+	        values.get(i).add(j, new ExpressionLiteral(TypeDouble.getInstance(), randomValue));
+	     }
+	   }
+ }
+ else {
+     values.add(new ArrayList<Expression>());
+	 for (int j = 0; j < m; j++) {
+	 // Generate a random double between min (inclusive) and max (exclusive)
+	 	double randomValue = low + (up - low) * rand.nextDouble();
+	    values.get(0).add(j, new ExpressionLiteral(TypeDouble.getInstance(), randomValue));
+	 }
+ }
+}
+
+JAVACODE
+// To generate a matrix/array of random elements with a normal distribution.
+void generateNormal(List<List<Expression>> values, int n, int m, double mean, double stdDev, boolean isMatrix) {
+  Random rand = new Random();	
+  if (isMatrix) {   
+	  for (int i = 0; i < n; i++) {
+	  	List<Expression> row = new ArrayList<>();
+	    for (int j = 0; j < m; j++) {
+	    	// Generate a random double between min (inclusive) and max (exclusive)
+	        double randomValue = rand.nextGaussian();
+	        double scaledValue = randomValue * stdDev + mean;
+	        row.add(new ExpressionLiteral(TypeDouble.getInstance(), scaledValue));
+	     }
+	      values.add(row);
+	   }
+ }
+ else {
+     values.add(new ArrayList<Expression>());
+	 for (int j = 0; j < m; j++) {
+	 // Generate a random double between min (inclusive) and max (exclusive)
+	 	double randomValue = rand.nextGaussian();
+	    double scaledValue = randomValue * stdDev + mean;
+	    values.get(0).add(new ExpressionLiteral(TypeDouble.getInstance(), scaledValue));
+	 }
+ }
+}
+
 JAVACODE
 // To add constant arrays to constant lists
 void addConstantArrayToConstantList(ConstantList constantList, ExpressionIdent name, List<List<Expression>> list, boolean unidimensionalArray) {
@@ -921,7 +1219,6 @@ void addConstantArrayToConstantList(ConstantList constantList, ExpressionIdent n
 }
 
 // Global variable declaration
-
 Declaration GlobalDecl() throws PrismLangException :
 {
 	Declaration decl = null;

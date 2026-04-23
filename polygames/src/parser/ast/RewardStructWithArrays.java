@@ -20,7 +20,7 @@ public class RewardStructWithArrays extends RewardStruct {
 	@Override
 	public RewardStruct deepCopy(DeepCopy copier) throws PrismLangException {
 		RewardStruct rewardStruct = new RewardStruct();
-    
+		rewardStruct.setName(this.getName());
 		for (RewardStructItem rewardStructItem : copier.copyAll(items))
 			rewardStruct.addItem(rewardStructItem);
 

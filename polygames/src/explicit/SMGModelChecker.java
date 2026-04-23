@@ -916,8 +916,7 @@ public class SMGModelChecker extends ProbModelChecker
 
 		// Get reward structures from expression
 		
-		
-		RewardStruct reward_struct = modulesFile.getRewardStruct(exprReward.getRewardStructIndexByIndexObject(modulesFile.getRewardStructNames(), constantValues));
+		RewardStruct reward_struct = modulesFile.getRewardStruct(exprReward.getRewardStructIndexByIndexObject(modulesFile.getRewardStructNames(), constantValues));		
 		SMGRewardsSimple<Double> reward = constructSMGRewards((SMG<Double>) model, reward_struct);
 		params.reward_names.add(reward_struct.getName());
 		int divisor_struct_index = exprReward.getRewardStructDivIndexByIndexObject(modulesFile.getRewardStructNames(), constantValues);

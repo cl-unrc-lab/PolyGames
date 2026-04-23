@@ -1,7 +1,0 @@
-//<<p1>>R{"received_bogus"}max=? [ F (time=maxTime) ]
-
-//<<p1>>R{"received_legal"}min=?[ Fc (time=maxTime) ]
-
-<<p2>>R{"received_legal"}max=?[F(time=maxTime)]
-
-//<<p2>>Pmin=?[F(time=maxTime)]

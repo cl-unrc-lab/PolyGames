@@ -246,12 +246,14 @@ public class PolyCL implements PrismModelListener
 	private String[] paramNames = null;
 
 	private boolean exactConstants = false;
+	
+	public static int maxVerticesNumber = 0; // a variable to keep track of the maximum number of vertices obtained when the model is constructed
+	public static double timeSolvingEqs = 0; // time spent solving equations in seconds
 
 	/**
 	 * Entry point: call run method, catch CuddOutOfMemoryException
 	 */
 	public void go(String[] args) {
-		System.out.println("entro");
 		try {
 			run(args);
 		} catch (jdd.JDD.CuddOutOfMemoryException e) {
@@ -715,7 +717,7 @@ public class PolyCL implements PrismModelListener
 				// Load the game and compute the vertices of the polytopes (main modification to PrismCL)
 				mainLog.print("\nPoly: Parsing model file \"" + modelFilename + "\"...\n");
 
-				modulesFile = prism.parseModelFile(new File(modelFilename), typeOverride);
+				modulesFile = prism.parseModelFile(new File(modelFilename), typeOverride, constSwitch);
 				
 
 				modulesFile = resolveConstants(modulesFile);
@@ -738,7 +740,7 @@ public class PolyCL implements PrismModelListener
 				// to deal with arrays
 				ASTElementSearcherVisitor searcher = new ASTElementSearcherVisitor(UncertainUpdates.class);
 				ReplaceFormulas replacerFormulas = new ReplaceFormulas(modulesFile);
-				ReplaceConstants replacerConstant = new ReplaceConstants(modulesFile.getConstantList());
+				ReplaceConstants replacerConstant = new ReplaceConstants(modulesFile.getConstantList(), constSwitch);
 				ReplaceVariables replacerVariables = new ReplaceVariables();
 				ReplaceFuncArrays replacerArrays = new ReplaceFuncArrays(modulesFile);
 				ReplaceExpressionITE replacerITE = new ReplaceExpressionITE(modulesFile);
@@ -771,20 +773,20 @@ public class PolyCL implements PrismModelListener
 				//writeModelToFile(modulesFile, "equationsForDebugging.txt");
 				modulesFile = (ModulesFile) visitor.visit(modulesFile);
 				
+				mainLog.print("\nTime for solving linear equations: "+ PolyCL.timeSolvingEqs + " seconds.");
+				mainLog.print("\nMax number of vertices processed: "+ PolyCL.maxVerticesNumber);
+				
 				
 				modulesFile.tidyUp();
 				
 				
-				// if polydebug is one we print out the model to a file
+				// if polydebug is one, we print out the model to a file
 				if (this.polyDebug){
 					writeModelToFile(modulesFile, "modelForDebugging.txt");
 				}
 				
-				
-				
 				prism.loadPRISMModel(modulesFile);
 
-				
 			}
 		} catch (FileNotFoundException e) {
 			errorAndExit("File \"" + modelFilename + "\" not found");

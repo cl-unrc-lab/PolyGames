@@ -207,8 +207,6 @@ public class ReplaceVariables extends ASTTraverseModify {
 						
 						
 						CheckInconsistency checker = new CheckInconsistency(); 
-						System.out.println("Note:"+new_guard);
-						System.out.println("Note:"+new_guard.accept(checker));
 						// if the guard is inconsistent then pass
 						if ((Boolean) new_guard.accept(checker)) {
 							continue;

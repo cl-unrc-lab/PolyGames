@@ -248,6 +248,7 @@ public class ModulesFileModelGenerator<Value> implements ModelGenerator<Value>, 
 			}
 			
 		});
+		
 		// Optimise arithmetic expressions (not in exact mode: can create some round-off issues)
 		if (!eval.exact()) {
 			modulesFile = (ModulesFile) modulesFile.simplify();

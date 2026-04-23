@@ -1269,7 +1269,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 */
 	public ModulesFile parseModelFile(File file) throws FileNotFoundException, PrismLangException
 	{
-		return parseModelFile(file, null);
+		return parseModelFile(file, null, "");
 	}
 
 	/**
@@ -1277,7 +1277,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * @param file File to read in
 	 * @param typeOverride Optionally, override model type here (null if unused)
 	 */
-	public ModulesFile parseModelFile(File file, ModelType typeOverride) throws FileNotFoundException, PrismLangException
+	public ModulesFile parseModelFile(File file, ModelType typeOverride, String constSwitch) throws FileNotFoundException, PrismLangException
 	{
 		FileInputStream strModel;
 		PrismParser prismParser;
@@ -1292,7 +1292,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			prismParser = getPrismParser();
 			try {
 				// parse file
-				modulesFile = prismParser.parseModulesFile(strModel, typeOverride);
+				modulesFile = prismParser.parseModulesFile(strModel, typeOverride, constSwitch);
 			} finally {
 				// release prism parser
 				releasePrismParser();
@@ -1333,7 +1333,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			prismParser = getPrismParser();
 			try {
 				// parse string
-				modulesFile = prismParser.parseModulesFile(new ByteArrayInputStream(s.getBytes()), typeOverride);
+				modulesFile = prismParser.parseModulesFile(new ByteArrayInputStream(s.getBytes()), typeOverride, "");
 			} finally {
 				// release prism parser
 				releasePrismParser();
@@ -1644,7 +1644,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			clearModel();
 		}
 		
-		
 		// Update model info
 		currentModelSource = ModelSource.PRISM_MODEL;
 		currentModelType = modulesFile.getModelType();
@@ -1666,8 +1665,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		if (currentModulesFile.getModelType().partiallyObservable()) {
 			mainLog.println("Observables: " + String.join(" ", currentModulesFile.getObservableNames()));
 		}
-
-		
 		// If required, export parsed PRISM model
 		if (exportPrism) {
 			try {

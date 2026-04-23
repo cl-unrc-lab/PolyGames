@@ -1284,7 +1284,6 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
 		MinMax minMax = opInfo.getMinMax(model.getModelType(), forAll, coalition);
-
 		// Build rewards
 		int r = expr.getRewardStructIndexByIndexObject(rewardGen, constantValues);
 		mainLog.println("Building reward structure...");

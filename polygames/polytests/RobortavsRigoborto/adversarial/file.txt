@@ -1,7 +1,0 @@
-digraph SMG {
-node [label="",shape="box"];
-0 [label="0\n(0,0,0,2,2,0,0)",shape="diamond"];
-0 -> n0_0  [label="0",arrowhead="none"];
-n0_0 [ shape=point,width=0.1,height=0.1,label="" ];
-n0_0 -> 0  [label="1"];
-}

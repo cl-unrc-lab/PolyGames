@@ -38,7 +38,7 @@ public class ReplaceFormulas extends ASTTraverseModify{
 		// we get the index of the formula, -1 if this does not exist
 		int formulaIndex = flist.getFormulaIndex(e.getName());
 		if (formulaIndex > -1) { // if defined
-			result = flist.getFormula(formulaIndex);
+			result = new ExpressionUnaryOp(ExpressionUnaryOp.PARENTH,flist.getFormula(formulaIndex));
 		}
 		return result;
 	}

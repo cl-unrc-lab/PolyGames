@@ -53,7 +53,7 @@ public class EquationSystem extends ASTElement {
 	private HashMap<String, HashMap<Integer, Expression>> coefficients; 
 	// coefficients contains, for each uncertain, the corresponding column of coefficients
     // for instance, coefficients.get(uncertain).get(i) returns the coefficient corresponding to row i, null if none
-	private ArrayList<Expression> constants; // constains the columns of constants in the equations
+	private ArrayList<Expression> constants; // contains the columns of constants in the equations
 	private List<Relation_Symbol> relationSymbols;
 	int div = 1; 	     // the divisor allows us to move the decimal point, PPL only allows for integers.
 	int precision = 6; // this is the precision, after that we truncate the number
@@ -410,6 +410,9 @@ public class EquationSystem extends ASTElement {
 		}
 		//this.coefficients = coefficients_new;
 		result.getRelations().addAll(this.getRelations());
+		System.out.println(this);
+		System.out.println("---");
+		System.out.println("result");
 		return result;
 	}
 	
@@ -524,13 +527,15 @@ public class EquationSystem extends ASTElement {
 	public void initializeConstraintSystem() {
 		Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
 		for (int i = 0; i < this.uncertains.size(); i++) {
+		//for (int i = 0; i < this.constants.size(); i++) {
 			UncertainExpression uncertain = ((UncertainExpression) this.uncertains.get(i));
-			for (int j = 0; j < this.uncertains.size(); j++) {
-				addCoefficient(
-					ZERO.clone().deepCopy(), j, uncertain, true
-				);
+			
+			//for (int j = 0; j < this.uncertains.size(); j++) {
+			for (int j = 0; j < this.constants.size(); j++) {
+				addCoefficient(ZERO.clone().deepCopy(), j, uncertain, true);
 			}
 		}
+		System.out.println(this);
 	}
 
 	

@@ -3,6 +3,7 @@ package parser.visitor;
 import parser.ast.*;
 import parser.ast.Module;
 import parser.type.TypeDouble;
+import poly.PolyCL;
 import prism.PrismLangException;
 import parma_polyhedra_library.NNC_Polyhedron;
 
@@ -94,10 +95,20 @@ public class ASTUncertainVisitor extends ASTTraverseModify {
 		} catch (Exception exception) {
 			System.err.println("Error loading Parma Polyhedra Library:");
 		}
+		// starts to measuring time to solve equations
+		long startTime = System.nanoTime();
+		
 		e.convertToInt();
 
 		NNC_Polyhedron ph   = new NNC_Polyhedron(e.getPPLConstraintSystem());
 		Generator_System gs = ph.generators();
+		
+		// end of measuring to solve equations
+		long endTime = System.nanoTime();
+		
+		// this is counted in seconds
+		PolyCL.timeSolvingEqs += (endTime - startTime) / 1_000_000_000.0;
+		
 		for (Generator g : gs) {
 			try {
 				Updates updates       = new Updates();
@@ -116,6 +127,9 @@ public class ASTUncertainVisitor extends ASTTraverseModify {
 				throw new PrismLangException("Error computing the vertices of the equations");
 			}
 		}
+		
+		// we update the maximum number of vertices
+		PolyCL.maxVerticesNumber = Math.max(PolyCL.maxVerticesNumber, gs.size());
 
 		return result;
 	}
