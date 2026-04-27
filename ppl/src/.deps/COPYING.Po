@@ -1,3 +1,0 @@
-COPYING.o: COPYING.cc COPYING.hh
-
-COPYING.hh:
