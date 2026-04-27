@@ -1,0 +1,9 @@
+<<p2>>R{"received_bogus"}min=? [ F (time=maxTime) ]
+
+//<<p1>>R{"received_legal"}min=?[ Fc (time=maxTime) ]
+
+//<<p1>>R{"payoff1"}max=?[F(time=maxTime)]
+
+
+//<<p2,p3>> Pmax=?[F bogus_packet_received]
+//<<p2>>Pmin=?[F(time=maxTime)]

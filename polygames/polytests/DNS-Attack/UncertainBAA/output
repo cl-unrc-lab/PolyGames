@@ -1,0 +1,11 @@
+entro
+PolyGames Tool
+==============
+
+Version: 1.0 (based on PRISM 4.8.dev)
+Date: Thu Dec 11 15:53:32 GMT-03:00 2025
+Hostname: Pablos-MacBook-Air.local
+Memory limits: cudd=1g, java(heap)=6g
+Command line: prism-games -javamaxmem 6g uncertain-baa.prism
+
+Poly: Parsing model file "uncertain-baa.prism"...
