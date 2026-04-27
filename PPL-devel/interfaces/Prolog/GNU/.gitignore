@@ -1,0 +1,16 @@
+*.clpq
+*.la
+check_script3
+gp_clpq
+gp_clpq2
+obtained
+obtained2
+obtained3
+obtained_clpq
+obtained_clpq2
+obtained_pchk
+obtained_pgt
+ppl_gprolog
+ppl_gprolog.pl
+script_pchk
+script_pgt
