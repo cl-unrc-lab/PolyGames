@@ -44,7 +44,7 @@ if arg == "robustness" :
         for m in mimicry_factor :
             row = {}  # a row corresponding to this instance 
             print(f"running instance:  network uncertainty:{n} - mimicry factor{m}")
-            result = subprocess.run(['../../bin/polygames', "uncertainBAA/uncertain-baa.prism", 'uncertainBAA/attacker.props', '-const', f'network_unreliability={n},mimicry_capability={m},maxTime=15,nofix=1,ftr=1,rnd=1,agr=1,agf=1,rdr=1', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
+            result = subprocess.run(['../../bin/polygames', "UncertainBAA/uncertain-baa.prism", 'UncertainBAA/attacker.props', '-const', f'network_unreliability={n},mimicry_capability={m},maxTime=15,nofix=1,ftr=1,rnd=1,agr=1,agf=1,rdr=1', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
             #print(result)
             #row["size"] = instance
             row = {}
@@ -125,7 +125,7 @@ if arg == "strategy_robustness_uncertainty" :
         for nofix, ftr, rnd, agr, agf, rdr in [(1,0,0,0,0,0),(0,1,0,0,0,0),(0,0,1,0,0,0),(0,0,0,1,0,0),(0,0,0,0,1,0), (0,0,0,0,0,1)] :
             row = {}  # a row corresponding to this instance 
             print(f"running instance:  network uncertainty:{n} - strat:{nofix,ftr,rnd,agr,agf,rdr}")
-            result = subprocess.run(['../../bin/polygames', "uncertainBAA/uncertain-baa.prism", 'uncertainBAA/attacker.props', '-const', f'network_unreliability={n},mimicry_capability={0.1},maxTime=15,nofix={nofix},ftr={ftr},rnd={rnd},agr={agr},agf={agf},rdr={rdr}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
+            result = subprocess.run(['../../bin/polygames', "UncertainBAA/uncertain-baa.prism", 'UncertainBAA/attacker.props', '-const', f'network_unreliability={n},mimicry_capability={0.1},maxTime=15,nofix={nofix},ftr={ftr},rnd={rnd},agr={agr},agf={agf},rdr={rdr}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
             #print(result)
             #row["size"] = instance
             row = {}
@@ -182,7 +182,7 @@ if arg == "strategy_mimicry_robustness" :
         for nofix, ftr, rnd, agr, agf, rdr in [(1,0,0,0,0,0),(0,1,0,0,0,0),(0,0,1,0,0,0),(0,0,0,1,0,0),(0,0,0,0,1,0), (0,0,0,0,0,1)] :
             row = {}  # a row corresponding to this instance 
             print(f"running instance:  mimicry:{m} - strat:{nofix,ftr,rnd,agr,agf,rdr}")
-            result = subprocess.run(['../../bin/polygames', "uncertainBAA/uncertain-baa.prism", 'uncertainBAA/attacker.props', '-const', f'network_unreliability={0.1},mimicry_capability={m},maxTime=15,nofix={nofix},ftr={ftr},rnd={rnd},agr={agr},agf={agf},rdr={rdr}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
+            result = subprocess.run(['../../bin/polygames', "UncertainBAA/uncertain-baa.prism", 'UncertainBAA/attacker.props', '-const', f'network_unreliability={0.1},mimicry_capability={m},maxTime=15,nofix={nofix},ftr={ftr},rnd={rnd},agr={agr},agf={agf},rdr={rdr}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
             #print(result)
             #row["size"] = instance
             for line in result.splitlines() : 
@@ -367,7 +367,7 @@ if arg == "poly_vs_prism" :
     # the standard case
     for i in instances :
         print(f"running instance:{i}x{i}")
-        result = subprocess.run(['../../bin/polygames', "BAA/baa.prism", 'uncertainBAA/attacker.props', '-const', f'maxTime={i}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
+        result = subprocess.run(['../../bin/polygames', "BAA/baa.prism", 'UncertainBAA/attacker.props', '-const', f'maxTime={i}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
         row = {}  # a row corresponding to this instance 
         #print(result)
         row["size"] = i
@@ -503,7 +503,7 @@ if arg == "subset" :
     # the standard case
     for i in instances :
         print(f"running instance: {i}")
-        result = subprocess.run(['../../bin/polygames', "BAA/baa.prism", 'uncertainBAA/attacker.props', '-const', f'maxTime={i}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
+        result = subprocess.run(['../../bin/polygames', "BAA/baa.prism", 'UncertainBAA/attacker.props', '-const', f'maxTime={i}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
         row = {}  # a row corresponding to this instance 
         #print(result)
         row["size"] = i
@@ -533,7 +533,7 @@ if arg == "subset" :
             dict_writer.writeheader()
             dict_writer.writerows(results)
         row = {}  # a row corresponding to this instance 
-        result = subprocess.run(['../../bin/polygames', "uncertainBAA/uncertain-baa.prism", 'uncertainBAA/attacker.props', '-const', f'network_unreliability=0.5,mimicry_capability=0.5,maxTime={i},nofix=1,ftr=1,rnd=1,agr=1,agf=1,rdr=1', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
+        result = subprocess.run(['../../bin/polygames', "UncertainBAA/uncertain-baa.prism", 'UncertainBAA/attacker.props', '-const', f'network_unreliability=0.5,mimicry_capability=0.5,maxTime={i},nofix=1,ftr=1,rnd=1,agr=1,agf=1,rdr=1', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
         #print(result)
         row["size"] = i
         row["version"] = "poly"

@@ -127,7 +127,7 @@ if arg == "terrain" :
     for x,y in pairs :
             print(f"Running interval: [{y},{x}]")
             row = {}  # a row corresponding to this instance 
-            result = subprocess.run(['../../../bin/polygames', "roborta-plain.prims",'-pf','<<p2>>Pmax=?[F Rigwins]','-const', f'length={10},width={10},lowerb={y},upperb={x}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
+            result = subprocess.run(['../../bin/polygames', "roborta-plain.prims",'-pf','<<p2>>Pmax=?[F Rigwins]','-const', f'length={10},width={10},lowerb={y},upperb={x}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
             #print(result.stdout)
             #row["size"] = instance
             for line in result.splitlines() : 
