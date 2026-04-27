@@ -1,4 +1,2 @@
 *.la
-ppl_java_classes.cc
-ppl_java_[A-Z]*.cc
 ppl_java_implementation_domains.cc.stamp

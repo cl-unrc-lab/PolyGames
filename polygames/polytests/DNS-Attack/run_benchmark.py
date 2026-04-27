@@ -11,12 +11,12 @@ import numpy as np
 rewards = False
 try :
    arg = sys.argv[1] 
-   assert arg in ["subset","model_verification_time_plot","robustness","plot_robustness","poly_vs_prism","strategy_robustness", "strategy_robustness_uncertainty", "strategy_robustness_uncertainty_plot", "strategy_robustness_uncertainty_baseline", "strategy_mimicry_robustness", "strategy_robustness_uncertainty_plot_mimicry", "model_construction_time_plot"]
+   assert arg in ["all","subset","model_verification_time_plot","robustness","plot_robustness","poly_vs_prism","strategy_robustness", "strategy_robustness_uncertainty", "strategy_robustness_uncertainty_plot", "strategy_robustness_uncertainty_baseline", "strategy_mimicry_robustness", "strategy_robustness_uncertainty_plot_mimicry", "model_construction_time_plot"]
 except : 
    print("""
     error reading the parameter.
     Usage: python gen_bench <option> 
-    where <option> in ["model_verification_time_plot","robustness","plot_robustness","poly_vs_prism","strategy_robustness", "strategy_robustness_uncertainty", "strategy_robustness_uncertainty_plot"]
+    where <option> in ["all","model_verification_time_plot","robustness","plot_robustness","poly_vs_prism","strategy_robustness", "strategy_robustness_uncertainty", "strategy_robustness_uncertainty_plot"]
         
     "robustness" option runs the tool with the robustness property, and produces csv for uncertain and standard model      
     "poly_vs_prism" option runs the model checker comparing polygames and prism on this examples, the result are saved in a .csv file
@@ -563,3 +563,11 @@ if arg == "subset" :
         dict_writer.writeheader()
         dict_writer.writerows(results)
         print("Results saved to results-prism-vs-poly-subset.csv file.")
+
+if arg == "all" :
+    subprocess.run(['python', 'run_benchmark.py', 'robustness'], capture_output=False)
+    subprocess.run(['python', 'run_benchmark.py', 'poly_vs_prism'], capture_output=False)
+    subprocess.run(['python', 'run_benchmark.py', 'strategy_mimicry_robustness'], capture_output=False) 
+    subprocess.run(['python', 'run_benchmark.py', 'strategy_robustness_uncertainty'], capture_output=False)   
+
+    

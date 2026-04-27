@@ -10,7 +10,7 @@ from mpl_toolkits.mplot3d import Axes3D
 rewards = False
 try :
    arg = sys.argv[1] 
-   assert arg in ["bounded","plot_bounded", "terrain", "plot_terrain", "subset"]
+   assert arg in ["all", "bounded","plot_bounded", "terrain", "plot_terrain", "subset"]
    if len(sys.argv) > 2 :
       assert sys.argv[2] == "rewards"
       rewards = True 
@@ -18,7 +18,7 @@ except :
    print("""
    error reading the parameter.
    Usage: python gen_bench <option> 
-   where <option> in [bounded,terrain,plot_bounded, plot_terrain, subset]
+   where <option> in [all, bounded,terrain,plot_bounded, plot_terrain, subset]
     
    The "bounded" option check the properties RobortavsRigoborto.props, for different number of steps.
    The "terrain" property checks the property <<p2>>Pmax=?[F Rigwins]with diferent instances of terrains, as explained in the paper
@@ -244,3 +244,7 @@ if arg == "subset" :
         dict_writer.writeheader()
         print("Results saved to results-subset.csv file.")
         dict_writer.writerows(results)
+
+if arg == "all" :
+    subprocess.run(['python', 'run_benchmark.py', 'bounded'], capture_output=False)
+    subprocess.run(['python', 'run_benchmark.py', 'terrain'], capture_output=False)

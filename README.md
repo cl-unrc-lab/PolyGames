@@ -16,12 +16,6 @@ To compile the tool you will need the following:
 * Java > 17
 * PPL, this is the Polyhedral Pharma Library (PPL). 
 
-#### Installing PPL
-
-The PPL source code is also distributed with the tool, you can find the sources in the folder `ppl/`, or you can download the sources from `https://www.bugseng.com/ppl/`. You will find the instructions to build PPL from `INSTALL.txt`. After compiling you need the following files: `libppl_java.jnilib`and `ppl_java.jar` typically located in folder `/usr/local/lib/ppl/` or similar. You need to copy them to `polygames/lib`.
-
-Some linux distributions (e.g., Fedora) provide PPL as a package.
-
 ### Compiling the tool
 
 To compile the tool just execute:
@@ -29,6 +23,23 @@ To compile the tool just execute:
 `make`
 
 from the folder `polygames/` this will create the binaries in `polygames/bin`
+
+The last section of this README explains how to install PPL.
+
+#### Running the tool
+
+The tool can be executed with the command, tipically:
+
+```
+bin/polygames <Model> <Properties>
+```
+
+For instance:
+
+```
+../../bin/polygames roborta-plain.prims RobortavsRigoborto.props -const length=5,width=5,lowerb=0,upperb=0.5
+```
+model checks one of the examples.
 
 ## Benchmarks
 
@@ -99,6 +110,35 @@ python run_benchmark.py
 `  
 
 will show several options for benchmarking using the BAA example.
+
+#### Installing PPL
+
+The PPL source code is also distributed with the tool, you can find the sources in the folder `ppl/`, or you can download the sources from `https://www.bugseng.com/ppl/`. You will find the instructions to build PPL from `INSTALL.txt`. 
+
+To install PPL you will need Java 1.8 (newer version wont work as it needs javah). Then, typically you have to execute:
+
+```
+autoreconf -i
+./configure --enable-interfaces=java --with-java=/usr/lib/jvm/java-8-openjdk-arm64
+```
+
+this will create the Makefiles, and then:
+
+```
+make
+```
+
+The needed libraries will be placed in the folder `interfaces/Java/jni/`, you have to copy the corresponding library, then from the polygames root folder execute:
+
+```
+cp PPL-dev/interfaces/Java/jni/libppl_java.so polygames/lib/
+```
+
+The names of the libraries depend on your system.
+
+Some linux distributions (e.g., Fedora) provide PPL as a package.
+
+
 
 
 
