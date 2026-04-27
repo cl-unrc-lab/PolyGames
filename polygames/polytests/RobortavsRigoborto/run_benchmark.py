@@ -79,10 +79,11 @@ if arg == "bounded" :
     keys = results[0].keys()
 
     # the results are saved in a file
-    with open(f'results-{inputdir}.csv', 'w', newline='') as output_file:
+    with open(f'results-bounded.csv', 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
+        print("Results saved to result result-bounded.cvs file.")
 
 if arg == "plot_bounded" :
     # Load the data
@@ -162,6 +163,7 @@ if arg == "terrain" :
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
+        print("Results saved to result results-terrain.csv file.")
 
 if arg == "plot_terrain" :
 
@@ -237,8 +239,8 @@ if arg == "subset" :
     keys = results[0].keys()
 
     # the results are saved in a file
-    with open(f'csv/results-subset.csv', 'w', newline='') as output_file:
+    with open(f'results-subset.csv', 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
-        print("Results saved to csv/results-subset.csv file.")
+        print("Results saved to results-subset.csv file.")
         dict_writer.writerows(results)

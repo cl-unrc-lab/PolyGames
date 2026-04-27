@@ -11,7 +11,7 @@ import numpy as np
 rewards = False
 try :
    arg = sys.argv[1] 
-   assert arg in ["model_verification_time_plot","robustness","plot_robustness","poly_vs_prism","strategy_robustness", "strategy_robustness_uncertainty", "strategy_robustness_uncertainty_plot", "strategy_robustness_uncertainty_baseline", "strategy_mimicry_robustness", "strategy_robustness_uncertainty_plot_mimicry", "model_construction_time_plot"]
+   assert arg in ["subset","model_verification_time_plot","robustness","plot_robustness","poly_vs_prism","strategy_robustness", "strategy_robustness_uncertainty", "strategy_robustness_uncertainty_plot", "strategy_robustness_uncertainty_baseline", "strategy_mimicry_robustness", "strategy_robustness_uncertainty_plot_mimicry", "model_construction_time_plot"]
 except : 
    print("""
     error reading the parameter.
@@ -80,6 +80,7 @@ if arg == "robustness" :
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
+        print("Results saved to results-uncertain-robustness.csv file.")
 
 if arg == "plot_robustness" :
     # Load the data
@@ -171,6 +172,7 @@ if arg == "strategy_robustness_uncertainty" :
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
+        print("Result saved to results-strategy-robustness-uncertainty.csv")
 
 # we measure for each strategy its robustness wrt network mimicry 
 if arg == "strategy_mimicry_robustness" :
@@ -424,6 +426,7 @@ if arg == "poly_vs_prism" :
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
+        print("Result saved to results-prism-vs-poly.csv file.")
 
 
 if arg == "model_construction_time_plot" :
@@ -495,11 +498,11 @@ if arg == "model_verification_time_plot" :
     plt.savefig('ModelVerification.png')
 
 if arg == "subset" :
-    instances = [5,6,7,8,9,10]
+    instances = [5,6,7]
     results = []
     # the standard case
     for i in instances :
-        print(f"running instance:{i}x{i}")
+        print(f"running instance: {i}")
         result = subprocess.run(['../../bin/polygames', "BAA/baa.prism", 'uncertainBAA/attacker.props', '-const', f'maxTime={i}', '-javamaxmem', '4g'], capture_output=True).stdout.decode()
         row = {}  # a row corresponding to this instance 
         #print(result)
@@ -559,3 +562,4 @@ if arg == "subset" :
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
+        print("Results saved to results-prism-vs-poly-subset.csv file.")

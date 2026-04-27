@@ -2556,7 +2556,7 @@ public class PolyCL implements PrismModelListener
 	{
 		String s;
 		int i;
-		mainLog.print("Command line: " + Prism.getCommandLineName());
+		mainLog.print("Command line: polygames");
 		// Print out the command-line arguments
 		for (i = 0; i < args.length; i++) {
 			s = args[i];
@@ -2600,8 +2600,8 @@ public class PolyCL implements PrismModelListener
 
 		// make sure a model file is specified
 		if (modelFilename == null) {
-			mainLog.println("Usage: " + Prism.getCommandLineName() + " [options] <model-file> [<properties-file>] [more-options]");
-			mainLog.println("\nFor more information, type: prism -help");
+			mainLog.println("Usage: polygames [options] <model-file> [<properties-file>] [more-options]");
+			mainLog.println("\nFor more information, type: polygames -help");
 			exit();
 		}
 
