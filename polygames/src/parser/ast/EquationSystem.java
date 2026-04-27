@@ -240,8 +240,8 @@ public class EquationSystem extends ASTElement {
 	public Expression getCoefficient(String uncertain, int row) throws PrismLangException {
 		Expression result = this.coefficients.get(uncertain).get(row);
 		if (result == null) {
-			System.out.println(uncertain);
-			System.out.println(row);
+			//System.out.println(uncertain);
+			//System.out.println(row);
 			throw new PrismLangException("Error: null coefficient.");
 		}
 		return result;
@@ -410,9 +410,6 @@ public class EquationSystem extends ASTElement {
 		}
 		//this.coefficients = coefficients_new;
 		result.getRelations().addAll(this.getRelations());
-		System.out.println(this);
-		System.out.println("---");
-		System.out.println("result");
 		return result;
 	}
 	
@@ -535,7 +532,6 @@ public class EquationSystem extends ASTElement {
 				addCoefficient(ZERO.clone().deepCopy(), j, uncertain, true);
 			}
 		}
-		System.out.println(this);
 	}
 
 	
