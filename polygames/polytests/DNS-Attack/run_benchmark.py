@@ -221,10 +221,11 @@ if arg == "strategy_mimicry_robustness" :
     keys = results[0].keys()
 
     # the results are saved in a file
-    with open(f'csv/results-strategy-robustness-mimicry.csv', 'w', newline='') as output_file:
+    with open(f'results-strategy-robustness-mimicry.csv', 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
+        print("results saved to results-strategy-robustness-mimicry.csv file.")
 
 if arg == "strategy_robustness_uncertainty_plot" :
     # Load CSV
