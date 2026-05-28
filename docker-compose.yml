@@ -10,7 +10,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Force x86_64 on Apple Silicon to avoid arm64 PPL compatibility issues.
+      # Remove this line on Intel Macs or Linux — it causes emulation overhead.
+      platform: linux/amd64
     image: polygames:latest
+    platform: linux/amd64
     volumes:
       - ./models:/models
 
@@ -22,17 +26,20 @@ services:
 
   coins:
     image: polygames:latest
+    platform: linux/amd64
     command:
       - /polygames/polytests/coins/coins-basic.prism
       - /polygames/polytests/coins/coins.props
 
   investor:
     image: polygames:latest
+    platform: linux/amd64
     command:
       - /polygames/polytests/Investor/investor.prism
 
   roborta:
     image: polygames:latest
+    platform: linux/amd64
     command:
       - /polygames/polytests/RobortavsRigoborto/V1/RobortavsRigoborto.prism
       - /polygames/polytests/RobortavsRigoborto/V1/RobortavsRigoborto.props

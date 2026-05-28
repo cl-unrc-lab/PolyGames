@@ -11,7 +11,7 @@
 # Shell:  docker run --rm -it --entrypoint bash polygames
 
 # ── builder ───────────────────────────────────────────────────────────────────
-FROM ubuntu:22.04 AS builder
+FROM --platform=linux/amd64 ubuntu:22.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -52,7 +52,7 @@ RUN cd polygames && \
     make JAVA_DIR="$JAVA_HOME"
 
 # ── runtime ───────────────────────────────────────────────────────────────────
-FROM ubuntu:22.04
+FROM --platform=linux/amd64 ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
