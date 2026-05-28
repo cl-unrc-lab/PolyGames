@@ -1,0 +1,38 @@
+services:
+
+  # ── Base service ────────────────────────────────────────────────────────────
+  # Use this to run any model by mounting a directory with your .prism and .props files.
+  #
+  # Example:
+  #   docker compose run --rm polygames /models/mymodel.prism /models/mymodel.props
+  #
+  polygames:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: polygames:latest
+    volumes:
+      - ./models:/models
+
+  # ── Built-in examples ───────────────────────────────────────────────────────
+  # These run directly against the models bundled inside the image.
+  # Usage: docker compose run --rm <service-name>
+  #
+  # The image must be built first: docker compose build
+
+  coins:
+    image: polygames:latest
+    command:
+      - /polygames/polytests/coins/coins-basic.prism
+      - /polygames/polytests/coins/coins.props
+
+  investor:
+    image: polygames:latest
+    command:
+      - /polygames/polytests/Investor/investor.prism
+
+  roborta:
+    image: polygames:latest
+    command:
+      - /polygames/polytests/RobortavsRigoborto/V1/RobortavsRigoborto.prism
+      - /polygames/polytests/RobortavsRigoborto/V1/RobortavsRigoborto.props
