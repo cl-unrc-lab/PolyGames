@@ -1,0 +1,639 @@
+
+        smg
+
+        player p1
+            attacker
+        endplayer
+
+        player p2
+            defender
+        endplayer
+
+        player p3
+            vs, ftr, rnd, agr, rdr, agf
+        endplayer
+
+        const int maxTime;
+        const int max_succ_attacks;
+        const int attacker_latency;
+        const double lb;
+        const double ub;
+
+        global turn : [0..2] init 0;
+        global time : [0..maxTime] init 0;
+        global parameters_selection : bool init false;
+
+        global retries : [2..6] init 2;
+
+        global dfr_index : [0..2] init 0;
+        global fpf_index : [0..2] init 0;
+        global rdf_index : [0..2] init 0;
+    
+        module attacker
+            zombies : [0..100] init 0;
+            current_succ_attacks : [0..10] init 0;
+            wait_time : [0..3] init 0;
+    
+            [] turn = 0 & time < maxTime & current_succ_attacks = 10 & wait_time = 3 -> (current_succ_attacks'=0) & (wait_time'=0);
+            [] turn = 0 & time < maxTime & current_succ_attacks = 10 & wait_time < 3 -> (zombies'=0) & (wait_time'=wait_time+1);
+    
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=10)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=20)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=30)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=40)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=50)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=60)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=70)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=80)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=90)   & (current_succ_attacks'=0) & (turn'=1);
+        
+            [] turn = 0 & time < maxTime & current_succ_attacks < 10 -> (zombies'=100)   & (current_succ_attacks'=0) & (turn'=1);
+        endmodule
+        module defender
+            countermeasure : [0..5] init 0;
+
+            [] turn = 1 & time < maxTime -> (countermeasure'= 0) & (turn'= 2);
+            [] turn = 1 & time < maxTime -> (countermeasure'= 1) & (parameters_selection'= true) & (turn'= 2);
+            [] turn = 1 & time < maxTime -> (countermeasure'= 2) & (parameters_selection'= true) & (turn'= 2);
+            [] turn = 1 & time < maxTime -> (countermeasure'= 3) & (parameters_selection'= true) & (turn'= 2);
+            [] turn = 1 & time < maxTime -> (countermeasure'= 4) & (parameters_selection'= true) & (turn'= 2);
+            [] turn = 1 & time < maxTime -> (countermeasure'= 5) & (parameters_selection'= true) & (turn'= 2);
+        endmodule
+    
+        module ftr
+            // FTR uncertainty: dfr and fpf are continuously uncertain.
+            // Parameter selection just clears the flag; the -U-> transitions
+            // in the vs module carry the polytope constraints.
+            [ftr] ftr_selected & parameters_selection -> (parameters_selection' = false);
+        endmodule
+
+        module rnd
+            [rnd] rnd_selected & parameters_selection ->  (parameters_selection' = false);
+        endmodule
+
+        module agr
+            [agr] agr_selected & parameters_selection -> (retries' = 2) & (parameters_selection' = false);
+            [agr] agr_selected & parameters_selection -> (retries' = 4) & (parameters_selection' = false);
+            [agr] agr_selected & parameters_selection -> (retries' = 6) & (parameters_selection' = false);
+        endmodule
+
+        module rdr
+            rdr_step : [0..1] init 0;
+
+            [rdr] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 0) & (rdr_step' = 1);
+            [rdr] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 1) & (rdr_step' = 1);
+            [rdr] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 2) & (rdr_step' = 1);
+
+            [rdr] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 2) & (parameters_selection' = false) & (rdr_step' = 0);
+            [rdr] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 4) & (parameters_selection' = false) & (rdr_step' = 0);
+            [rdr] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 6) & (parameters_selection' = false) & (rdr_step' = 0);
+        endmodule
+
+        module agf
+            agf_step : [0..2] init 0;
+
+            [agf] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 0) & (agf_step' = 1);
+            [agf] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 1) & (agf_step' = 1);
+            [agf] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 2) & (agf_step' = 1);
+
+            [agf] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 0) & (agf_step' = 2);
+            [agf] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 1) & (agf_step' = 2);
+            [agf] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 2) & (agf_step' = 2);
+
+            [agf] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 2) & (parameters_selection' = false) & (agf_step' = 0);
+            [agf] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 4) & (parameters_selection' = false) & (agf_step' = 0);
+            [agf] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 6) & (parameters_selection' = false) & (agf_step' = 0);
+        endmodule
+    
+    module vs
+        vs_step : [0..1] init 0;
+        packet_status : [0..4] init 0; // 0:default 1:bogus_received 2:bogus_dropped 3:legit_received 4:legit_dropped
+
+            // Default: all countermeasures except rnd and ftr (uses PRISM formulas)
+            [] turn = 2 & time < maxTime & !parameters_selection & !rnd_selected & !ftr_selected & vs_step = 0 -> p_b_receive : (packet_status'=1) & (vs_step'=1)
+                                                                      + p_b_drop    : (packet_status'=2) & (vs_step'=1)
+                                                                      + p_l_receive : (packet_status'=3) & (vs_step'=1)
+                                                                      + p_l_drop    : (packet_status'=4) & (vs_step'=1);
+    
+                // RND: zombies > 0 (z=10)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 1631.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    1631.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.07020232985898223,
+                    p_l_receive_rnd = 0.07020232985898221+(- 0.07020232985898221 * rnd),
+                    p_b_drop_rnd =  0.17979767014101777 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.17979767014101777 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=10, non-congested regime)
+                // Polytope: dfr in [0.85,0.95], fpf in [0.05,0.15]
+                // Cross-constraint (sensitivity/specificity): fpf + -dfr*0.5 >= -0.375
+                // Non-congestion: 1531.0*dfr + 100.0*fpf >= 1173.0
+                [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_ftr : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_ftr    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_ftr : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_ftr    : (packet_status'=4) & (vs_step'=1)
+                { // 2D polytope: dfr x fpf with cross-constraint and non-congestion bound
+                    0.85 <= dfr,
+                    dfr <= 0.95,
+                    0.05 <= fpf,
+                    fpf <= 0.15,
+                    fpf + -dfr * 0.5 >= -0.375,
+                    dfr * 1531.0 + fpf * 100.0 >= 1173.0,
+                    p_b_receive_ftr = 0.5 + -dfr * 0.5,
+                    p_b_drop_ftr    = dfr * 0.5,
+                    p_l_receive_ftr = 0.5 + -fpf * 0.5,
+                    p_l_drop_ftr    = fpf * 0.5
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=20)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 3162.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    3162.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.03621125869702721,
+                    p_l_receive_rnd = 0.036211258697027196+(- 0.036211258697027196 * rnd),
+                    p_b_drop_rnd =  0.2137887413029728 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.2137887413029728 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=20, non-congested regime)
+                // Polytope: dfr in [0.85,0.95], fpf in [0.05,0.15]
+                // Cross-constraint (sensitivity/specificity): fpf + -dfr*0.5 >= -0.375
+                // Non-congestion: 3062.0*dfr + 100.0*fpf >= 2704.0
+                [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_ftr : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_ftr    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_ftr : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_ftr    : (packet_status'=4) & (vs_step'=1)
+                { // 2D polytope: dfr x fpf with cross-constraint and non-congestion bound
+                    0.85 <= dfr,
+                    dfr <= 0.95,
+                    0.05 <= fpf,
+                    fpf <= 0.15,
+                    fpf + -dfr * 0.5 >= -0.375,
+                    dfr * 3062.0 + fpf * 100.0 >= 2704.0,
+                    p_b_receive_ftr = 0.5 + -dfr * 0.5,
+                    p_b_drop_ftr    = dfr * 0.5,
+                    p_l_receive_ftr = 0.5 + -fpf * 0.5,
+                    p_l_drop_ftr    = fpf * 0.5
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=30)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 4693.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    4693.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.02439803963349671,
+                    p_l_receive_rnd = 0.024398039633496696+(- 0.024398039633496696 * rnd),
+                    p_b_drop_rnd =  0.2256019603665033 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.2256019603665033 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=30, non-congested regime)
+                // Polytope: dfr in [0.85,0.95], fpf in [0.05,0.15]
+                // Cross-constraint (sensitivity/specificity): fpf + -dfr*0.5 >= -0.375
+                // Non-congestion: 4593.0*dfr + 100.0*fpf >= 4235.0
+                [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_ftr : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_ftr    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_ftr : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_ftr    : (packet_status'=4) & (vs_step'=1)
+                { // 2D polytope: dfr x fpf with cross-constraint and non-congestion bound
+                    0.85 <= dfr,
+                    dfr <= 0.95,
+                    0.05 <= fpf,
+                    fpf <= 0.15,
+                    fpf + -dfr * 0.5 >= -0.375,
+                    dfr * 4593.0 + fpf * 100.0 >= 4235.0,
+                    p_b_receive_ftr = 0.5 + -dfr * 0.5,
+                    p_b_drop_ftr    = dfr * 0.5,
+                    p_l_receive_ftr = 0.5 + -fpf * 0.5,
+                    p_l_drop_ftr    = fpf * 0.5
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=40)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 6224.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    6224.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.018396529562982017,
+                    p_l_receive_rnd = 0.018396529562982007+(- 0.018396529562982007 * rnd),
+                    p_b_drop_rnd =  0.23160347043701798 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.23160347043701798 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=40, non-congested regime)
+                // Polytope: dfr in [0.85,0.95], fpf in [0.05,0.15]
+                // Cross-constraint (sensitivity/specificity): fpf + -dfr*0.5 >= -0.375
+                // Non-congestion: 6124.0*dfr + 100.0*fpf >= 5766.0
+                [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_ftr : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_ftr    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_ftr : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_ftr    : (packet_status'=4) & (vs_step'=1)
+                { // 2D polytope: dfr x fpf with cross-constraint and non-congestion bound
+                    0.85 <= dfr,
+                    dfr <= 0.95,
+                    0.05 <= fpf,
+                    fpf <= 0.15,
+                    fpf + -dfr * 0.5 >= -0.375,
+                    dfr * 6124.0 + fpf * 100.0 >= 5766.0,
+                    p_b_receive_ftr = 0.5 + -dfr * 0.5,
+                    p_b_drop_ftr    = dfr * 0.5,
+                    p_l_receive_ftr = 0.5 + -fpf * 0.5,
+                    p_l_drop_ftr    = fpf * 0.5
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=50)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 7755.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    7755.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.014764667956157329,
+                    p_l_receive_rnd = 0.014764667956157319+(- 0.014764667956157319 * rnd),
+                    p_b_drop_rnd =  0.23523533204384267 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.23523533204384267 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=50) — polytope EMPTY with current bounds.
+                // Non-congestion requires R_b*dfr + R_l*fpf >= 7297.0
+                // but max achievable is 7287.2 < 7297.0.
+                // No -U-> transition generated; FTR is infeasible at this load.
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=60)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 9286.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    9286.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.012330389834158961,
+                    p_l_receive_rnd = 0.01233038983415895+(- 0.01233038983415895 * rnd),
+                    p_b_drop_rnd =  0.23766961016584104 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.23766961016584104 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=60) — polytope EMPTY with current bounds.
+                // Non-congestion requires R_b*dfr + R_l*fpf >= 8828.0
+                // but max achievable is 8741.7 < 8828.0.
+                // No -U-> transition generated; FTR is infeasible at this load.
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=70)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 10817.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    10817.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.01058518997873717,
+                    p_l_receive_rnd = 0.010585189978737173+(- 0.010585189978737173 * rnd),
+                    p_b_drop_rnd =  0.23941481002126283 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.23941481002126283 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=70) — polytope EMPTY with current bounds.
+                // Non-congestion requires R_b*dfr + R_l*fpf >= 10359.0
+                // but max achievable is 10196.1 < 10359.0.
+                // No -U-> transition generated; FTR is infeasible at this load.
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=80)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 12348.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    12348.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.009272756721736303,
+                    p_l_receive_rnd = 0.009272756721736313+(- 0.009272756721736313 * rnd),
+                    p_b_drop_rnd =  0.2407272432782637 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.2407272432782637 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=80) — polytope EMPTY with current bounds.
+                // Non-congestion requires R_b*dfr + R_l*fpf >= 11890.0
+                // but max achievable is 11650.6 < 11890.0.
+                // No -U-> transition generated; FTR is infeasible at this load.
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=90)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 13879.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    13879.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.008249873910224081,
+                    p_l_receive_rnd = 0.00824987391022408+(- 0.00824987391022408 * rnd),
+                    p_b_drop_rnd =  0.24175012608977592 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.24175012608977592 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=90) — polytope EMPTY with current bounds.
+                // Non-congestion requires R_b*dfr + R_l*fpf >= 13421.0
+                // but max achievable is 13105.0 < 13421.0.
+                // No -U-> transition generated; FTR is infeasible at this load.
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // RND: zombies > 0 (z=100)
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // non-congested case
+                    458.0 >= 15410.0 * rnd,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.25 * rnd,
+                    p_l_receive_rnd = 0.25 + (- 0.25*rnd),
+                    p_b_drop_rnd =  0.25+(- 0.25 * rnd)  + 0.25 * rnd,
+                    p_l_drop_rnd = 0.25+ (- 0.25 * rnd) + 0.25 * rnd
+                };
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                { // congested case
+                    15410.0 * rnd  + (-458.0) >= 0,
+                    0.85 <= rnd,
+                    rnd <= 0.95,
+                    p_b_receive_rnd = 0.0074302401038286725,
+                    p_l_receive_rnd = 0.007430240103828683+(- 0.007430240103828683 * rnd),
+                    p_b_drop_rnd =  0.24256975989617133 + 0.25 * rnd,
+                    p_l_drop_rnd = 0.24256975989617133 + 0.25 * rnd
+                };
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            
+                // FTR uncertainty: zombies > 0 (z=100) — polytope EMPTY with current bounds.
+                // Non-congestion requires R_b*dfr + R_l*fpf >= 14952.0
+                // but max achievable is 14559.5 < 14952.0.
+                // No -U-> transition generated; FTR is infeasible at this load.
+
+                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+            endmodule
+                formula AF = 15.31;
+                formula bogus_rate = 10 * AF;
+
+                // The net arrival rate for the bogus DNS packets
+                formula R_b = bogus_rate * zombies;
+
+                // The rate at which the legitimate DNS packets arrive at and flow out of VS
+                formula R_l = 100.0;
+
+                formula BW = 458.0;
+
+                formula R_b_in = {
+                    [] no_fix_selected | agr_selected : R_b,
+                    [] ftr_selected | agf_selected    : R_b * (1 - dfr),
+                    [] otherwise                      : R_b
+                };
+
+                formula R_l_in = {
+                    [] no_fix_selected : R_l,
+                    [] ftr_selected    : R_l * (1 - fpf),
+                    [] rnd_selected    : R_l,
+                    [] agr_selected    : R_l * pow(2, retries),
+                    [] rdr_selected    : R_l * pow(2, retries),
+                    [] otherwise       : R_l * pow(2, retries) * (1 - fpf)
+                };
+
+                // R_b_out, R_l_out: rates at which packets are dropped at the Defender
+                formula R_b_out = {
+                    [] no_fix_selected | agr_selected : 0,
+                    [] ftr_selected | agf_selected    : R_b * dfr,
+                    [] otherwise                      : R_b
+                };
+
+                formula R_l_out = {
+                    [] no_fix_selected | agr_selected : 0,
+                    [] ftr_selected                   : R_l * fpf,
+                    [] rnd_selected                   : R_l,
+                    [] rdr_selected                   : R_l * pow(2, retries) * rdf,
+                    [] otherwise                      : R_l * pow(2, retries) * fpf
+                };
+
+                formula no_fix_selected = (countermeasure = 0);
+                formula ftr_selected    = (countermeasure = 1);
+                formula rnd_selected    = (countermeasure = 2);
+                formula agr_selected    = (countermeasure = 3);
+                formula rdr_selected    = (countermeasure = 4);
+                formula agf_selected    = (countermeasure = 5);
+
+                formula p_b_in  = (zombies > 0) ? R_b_in / (R_b_in + R_b_out) : 0;
+                formula p_l_in  = R_l_in / (R_l_in + R_l_out);
+                formula p_b_out = (zombies > 0) ? R_b_out / (R_b_in + R_b_out) : 1;
+                formula p_l_out = R_l_out / (R_l_in + R_l_out);
+                formula R_in    = R_b_in + R_l_in;
+                formula p_drop  = (BW >= R_in ? 0 : ((R_in - BW) / R_in));
+                formula p_receive = (1 - p_drop);
+                formula p_b_receive = (p_b_in * p_receive)/2;
+                formula p_l_receive = (p_l_in * p_receive)/2;
+                formula p_b_drop    = (p_b_in * p_drop + p_b_out)/2;
+                formula p_l_drop    = (p_l_in * p_drop + p_l_out)/2;
+
+                // Discrete parameter values (used by AGF; FTR now uses -U-> transitions)
+                const double dfr_values[3] = {0.85, 0.90, 0.95};
+                const double fpf_values[3] = {0.05, 0.10, 0.15};
+                const double rdf_values[3] = {0.75, 0.85, 0.95};
+
+                formula dfr = dfr_values[dfr_index];
+                formula fpf = fpf_values[fpf_index];
+                formula rdf = rdf_values[rdf_index];
+
+                rewards "AttackerPayoff_1"
+                turn = 2 & legit_packet_received : 0;
+                turn = 2 & (bogus_packet_dropped | legit_packet_dropped) : 1;
+                turn = 2 & bogus_packet_received : 2;
+                turn = 0 | turn = 1 : 0;
+                endrewards
+
+                formula bogus_packet_received = packet_status = 1;
+                formula bogus_packet_dropped  = packet_status = 2;
+                formula legit_packet_received = packet_status = 3;
+                formula legit_packet_dropped  = packet_status = 4;
