@@ -9,7 +9,7 @@ player p2
 endplayer
 
 player p3
-  vs, ftr, rnd, agr, rdr, agf
+  vs, ftr, rnd, agr, rdr, agf, [ftr], [rnd], [agr], [rdr], [agf]
 endplayer
 
 const int maxTime;
@@ -67,53 +67,53 @@ endmodule
 module ftr
   ftr_step : [0..1] init 0;
   
-  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 0) & (ftr_step'= 1);
-  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 1) & (ftr_step'= 1);
-  [] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 2) & (ftr_step'= 1);
+  [ftr] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 0) & (ftr_step'= 1);
+  [ftr] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 1) & (ftr_step'= 1);
+  [ftr] ftr_selected & parameters_selection & ftr_step= 0 -> (dfr_index'= 2) & (ftr_step'= 1);
 
-  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 0) & (parameters_selection'= false) & (ftr_step'= 0);
-  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 1) & (parameters_selection'= false) & (ftr_step'= 0);
-  [] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 2) & (parameters_selection'= false) & (ftr_step'= 0);
+  [ftr] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 0) & (parameters_selection'= false) & (ftr_step'= 0);
+  [ftr] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 1) & (parameters_selection'= false) & (ftr_step'= 0);
+  [ftr] ftr_selected & parameters_selection & ftr_step= 1 -> (fpf_index'= 2) & (parameters_selection'= false) & (ftr_step'= 0);
 endmodule
 
 module rnd
-  [] rnd_selected & parameters_selection -> (rdf_index' = 0) & (parameters_selection' = false);
-  [] rnd_selected & parameters_selection -> (rdf_index' = 1) & (parameters_selection' = false);
-  [] rnd_selected & parameters_selection -> (rdf_index' = 2) & (parameters_selection' = false);
+  [rnd] rnd_selected & parameters_selection -> (rdf_index' = 0) & (parameters_selection' = false);
+  [rnd] rnd_selected & parameters_selection -> (rdf_index' = 1) & (parameters_selection' = false);
+  [rnd] rnd_selected & parameters_selection -> (rdf_index' = 2) & (parameters_selection' = false);
 endmodule
 
 module agr
-  [] agr_selected & parameters_selection -> (retries' = 2) & (parameters_selection' = false);
-  [] agr_selected & parameters_selection -> (retries' = 4) & (parameters_selection' = false);
-  [] agr_selected & parameters_selection -> (retries' = 6) & (parameters_selection' = false);
+  [agr] agr_selected & parameters_selection -> (retries' = 2) & (parameters_selection' = false);
+  [agr] agr_selected & parameters_selection -> (retries' = 4) & (parameters_selection' = false);
+  [agr] agr_selected & parameters_selection -> (retries' = 6) & (parameters_selection' = false);
 endmodule
 
 module rdr
   rdr_step : [0..1] init 0;
 
-  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 0) & (rdr_step' = 1);
-  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 1) & (rdr_step' = 1);
-  [] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 2) & (rdr_step' = 1);
+  [rdr] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 0) & (rdr_step' = 1);
+  [rdr] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 1) & (rdr_step' = 1);
+  [rdr] rdr_selected & parameters_selection & rdr_step = 0 -> (rdf_index' = 2) & (rdr_step' = 1);
 
-  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 2) & (parameters_selection' = false) & (rdr_step' = 0);
-  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 4) & (parameters_selection' = false) & (rdr_step' = 0);
-  [] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 6) & (parameters_selection' = false) & (rdr_step' = 0);
+  [rdr] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 2) & (parameters_selection' = false) & (rdr_step' = 0);
+  [rdr] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 4) & (parameters_selection' = false) & (rdr_step' = 0);
+  [rdr] rdr_selected & parameters_selection & rdr_step = 1 -> (retries' = 6) & (parameters_selection' = false) & (rdr_step' = 0);
 endmodule
 
 module agf
   agf_step : [0..2] init 0;
 
-  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 0) & (agf_step' = 1);
-  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 1) & (agf_step' = 1);
-  [] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 2) & (agf_step' = 1);
+  [agf] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 0) & (agf_step' = 1);
+  [agf] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 1) & (agf_step' = 1);
+  [agf] agf_selected & parameters_selection & agf_step = 0 -> (dfr_index' = 2) & (agf_step' = 1);
 
-  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 0) & (agf_step' = 2);
-  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 1) & (agf_step' = 2);
-  [] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 2) & (agf_step' = 2);
+  [agf] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 0) & (agf_step' = 2);
+  [agf] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 1) & (agf_step' = 2);
+  [agf] agf_selected & parameters_selection & agf_step = 1 -> (fpf_index' = 2) & (agf_step' = 2);
 
-  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 2) & (parameters_selection' = false) & (agf_step' = 0);
-  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 4) & (parameters_selection' = false) & (agf_step' = 0);
-  [] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 6) & (parameters_selection' = false) & (agf_step' = 0);
+  [agf] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 2) & (parameters_selection' = false) & (agf_step' = 0);
+  [agf] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 4) & (parameters_selection' = false) & (agf_step' = 0);
+  [agf] agf_selected & parameters_selection & agf_step = 2 -> (retries' = 6) & (parameters_selection' = false) & (agf_step' = 0);
 endmodule
 
 formula AF = 15.31;
@@ -203,16 +203,17 @@ formula p_l_drop = (p_l_in * p_drop + p_l_out)/2;
 
 const double dfr_values[3] = {0.85, 0.90, 0.95}; // Detection fraction parameter values
 const double fpf_values[3] = {0.05, 0.10, 0.15}; // False positive fraction parameter values
-const double rdf_values[3] = {0.75, 0.85, 0.95}; // Random-drop fraction parameter values
+const double rdf_values[3] = {0.81, 0.9, 0.99}; // Random-drop fraction parameter values
 
 formula dfr = dfr_values[dfr_index];
 formula fpf = fpf_values[fpf_index];
 formula rdf = rdf_values[rdf_index];
 
 rewards "AttackerPayoff_1"
-  turn = 2 & legit_packet_received : 0;
-  turn = 2 & (bogus_packet_dropped | legit_packet_dropped) : 1;
-  turn = 2 & bogus_packet_received : 2;
+  //turn = 2 & legit_packet_received : 0;
+  //turn = 2 & bogus_packet_dropped : 1;
+  //turn = 2 & legit_packet_dropped : 5;
+  turn = 2 & bogus_packet_received : 10;
   turn = 0 | turn = 1 : 0;
 endrewards
 
