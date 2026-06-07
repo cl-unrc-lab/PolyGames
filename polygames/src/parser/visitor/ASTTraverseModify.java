@@ -301,7 +301,7 @@ public class ASTTraverseModify implements ASTVisitor
 			for (int i = 0;  i < e.getNumberConstants(); i++) {
 			e.setCoefficient(k, i , (Expression) e.getCoefficient(k,i).accept(this));
 			}
-		}	
+		}
 		
 		return e;
 	}

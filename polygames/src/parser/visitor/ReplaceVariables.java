@@ -101,6 +101,17 @@ public class ReplaceVariables extends DeepCopy {
 	@Override
 	public ArrayList<Command> visit(Command e) throws PrismLangException {
 
+		// Only unroll uncertain commands.  Regular PRISM commands are handled
+		// symbolically by the model checker; unrolling them causes an exponential
+		// blowup proportional to the product of all variable ranges.
+		if (!(e.getUpdates() instanceof UncertainUpdates)) {
+			ArrayList<Command> result = new ArrayList<Command>();
+			result.add((Command) this.copy(e));
+			return result;
+		}
+
+		UncertainUpdates uu = (UncertainUpdates) e.getUpdates();
+
 		// the declarations are stored since we need to iterate over them
 		ArrayList<Declaration> decls = new ArrayList<Declaration>(m.getDeclarations());
 
@@ -108,14 +119,35 @@ public class ReplaceVariables extends DeepCopy {
 		for (int i = 0; i < mf.getNumGlobals(); i++) {
 			decls.add(mf.getGlobal(i));
 		}
-		
+
+		// Filter to only the declarations whose variable appears in the constraint
+		// expressions.  All others can be skipped; the model checker evaluates guards
+		// symbolically, so there is no need to pre-ground them.
+		ArrayList<Declaration> constraintDecls = new ArrayList<Declaration>();
+		for (Declaration decl : decls) {
+			if (constraintReferencesVar(uu, decl.getName())) {
+				constraintDecls.add(decl);
+			}
+		}
+
+		// If no declaration is referenced in the constraints, return a single deep copy
+		// without any substitution.  This avoids the exponential blowup entirely for
+		// commands whose constraint expressions are already fully grounded (all literals).
+		if (constraintDecls.isEmpty()) {
+			ArrayList<Command> result = new ArrayList<Command>();
+			result.add((Command) this.copy(e));
+			return result;
+		}
+
 		// a list to store the resulting commands
 		ArrayList<Command> resultingCommands= new ArrayList<Command>();
 		// we add the actual command to the list (this will be updated later)
 		resultingCommands.add(e);
-		// for each var declaration  we need to create the corresponding collection of updates
-		for (Declaration decl : decls) {
+		// for each var declaration that appears in constraints, unroll the command
+		for (Declaration decl : constraintDecls) {
 			this.currentVar = decl.getName(); // the current var
+
+
 			Expression new_guard = null; // var to store the new guards
 			Updates new_updates = null; // var to store the curren updates
 
@@ -129,21 +161,21 @@ public class ReplaceVariables extends DeepCopy {
 					Integer low = (Integer) declInt.getLow().evaluate(this.mf.getEvaluateContext());
 					// the higher value
 					Integer high = (Integer) declInt.getHigh().evaluate(this.mf.getEvaluateContext());
-					
+
 					// for any value in the interval we replace the variable for its value
 					for (int i = low; i <= high; i++) {
 						this.currentVal = new ExpressionLiteral(TypeInt.getInstance(), i);
-						
+
 						// for a variable x, we generate the equality x=v for the given value v,
 						// this will be part of the guard
 						Expression actualValue = new ExpressionBinaryOp(ExpressionBinaryOp.EQ,
 								new ExpressionIdent(this.currentVar), new ExpressionLiteral(TypeInt.getInstance(), i));
-						
+
 						// we replace the var in the guard
 						ReplaceVariable replacer = new ReplaceVariable(this.currentVar, this.currentVal);
 						new_guard = (Expression) c.getGuard().accept(replacer);
 						new_guard = new ExpressionBinaryOp(ExpressionBinaryOp.AND, actualValue, new_guard);
-	
+
 						// we visit the updates
 						new_updates = this.copy(c.getUpdates());
 						// and we add the command
@@ -153,13 +185,13 @@ public class ReplaceVariables extends DeepCopy {
 						command.setGuard(new_guard);
 						command.setUpdates(new_updates);
 						tempCommands.add(command);
-	
+
 					}
 				}
 				// if boolean, the procedure is similar but we iterate over {false,true}
 				if (decl.getDeclType() instanceof DeclarationBool) {
 					DeclarationBool declBool = (DeclarationBool) decl.getDeclType();
-	
+
 					ArrayList<Boolean> bs = new ArrayList<Boolean>();
 					bs.add(true);
 					bs.add(false);
@@ -169,10 +201,10 @@ public class ReplaceVariables extends DeepCopy {
 								new ExpressionIdent(this.currentVar), new ExpressionLiteral(TypeInt.getInstance(), b));
 						new_guard = (Expression) c.getGuard().accept(this);
 						new_guard = new ExpressionBinaryOp(ExpressionBinaryOp.AND, actualValue, new_guard);
-	
+
 						// we visit the updates
-						new_updates = (Updates) c.getUpdates().accept(this);	
-						
+						new_updates = (Updates) c.getUpdates().accept(this);
+
 						// and we add the command
 						Command command = new Command();
 						new_updates.setParent(command);
@@ -184,7 +216,9 @@ public class ReplaceVariables extends DeepCopy {
 					}//endfor
 				}//endif
 			}//endfor
-			resultingCommands = tempCommands; // we update the resulting commands
+			if (!tempCommands.isEmpty()) {
+				resultingCommands = tempCommands; // we update the resulting commands
+			}
 		}// endfor
 		return resultingCommands;
 		
@@ -288,7 +322,27 @@ public class ReplaceVariables extends DeepCopy {
 		
 		
 	}
-	
+	/**
+	 * Returns true if the given variable name appears in any coefficient or constant
+	 * expression of the UncertainUpdates.  Variables that appear only in the guard
+	 * (or not at all) do not need pre-grounding; the model checker evaluates guards
+	 * symbolically.
+	 *
+	 * The check is conservative: a toString() substring match may produce false
+	 * positives (unnecessary extra unrolling) but never false negatives (missing a
+	 * needed substitution).
+	 */
+	private boolean constraintReferencesVar(UncertainUpdates uu, String varName) {
+		for (java.util.HashMap<Integer, parser.ast.Expression> coeffMap : uu.getCoefficients().values()) {
+			for (parser.ast.Expression coeff : coeffMap.values()) {
+				if (coeff.toString().contains(varName)) return true;
+			}
+		}
+		for (parser.ast.Expression constant : uu.constants()) {
+			if (constant.toString().contains(varName)) return true;
+		}
+		return false;
+	}
 
-	
+
 }

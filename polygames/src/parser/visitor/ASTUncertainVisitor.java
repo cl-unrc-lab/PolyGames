@@ -76,12 +76,17 @@ public class ASTUncertainVisitor extends DeepCopy {
 
 		NNC_Polyhedron ph   = new NNC_Polyhedron(e.getPPLConstraintSystem());
 		Generator_System gs = ph.generators();
-		
+
 		for (Generator g : gs) {
 			try {
-				Updates updates       = new Updates();
-				List<Double> vertices = PPLSupport.getGeneratorAsVector(g, e.getNumberUncertains());
-				for (int i = 0; i < vertices.size(); i++) {
+				Updates updates  = new Updates();
+				int numProbs     = e.getNumberUncertains();    // probability variables only
+				int numAll       = e.getNumberAllUncertains(); // probability + auxiliary variables
+				// Request a vector covering all dimensions so auxiliary variable coordinates
+				// are included in the generator representation. We then read only the first
+				// numProbs entries, which correspond to the probability variables.
+				List<Double> vertices = PPLSupport.getGeneratorAsVector(g, numAll);
+				for (int i = 0; i < numProbs; i++) {
 					if (vertices.get(i) != 0) {
 						updates.addUpdate(
 							new ExpressionLiteral(TypeDouble.getInstance(), vertices.get(i), vertices.get(i).toString()), e.getUpdate(i)
