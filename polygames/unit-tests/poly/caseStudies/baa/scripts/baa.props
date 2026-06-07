@@ -1,1 +1,5 @@
+// Maximum expected attacker payoff under the attacker's best strategy
 <<p1>> R{"AttackerPayoff_1"}max=? [ F time=maxTime ]
+
+// Minimum expected attacker payoff under the defender's best strategy
+<<p2>> R{"AttackerPayoff_1"}min=? [ F time=maxTime ]

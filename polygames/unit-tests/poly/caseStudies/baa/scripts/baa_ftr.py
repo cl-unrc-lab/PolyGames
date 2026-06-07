@@ -15,60 +15,77 @@
 #     (high dfr, low fpf) is cut, capturing the real constraint that a more
 #     aggressive filter inevitably produces more false positives.
 #
-# FTR probability expressions (non-congested case, zombies > 0):
-#   p_b_in  = (1 - dfr)   →   p_b_receive = (1-dfr)/2,  p_b_drop = dfr/2
-#   p_l_in  = (1 - fpf)   →   p_l_receive = (1-fpf)/2,  p_l_drop = fpf/2
-# These are purely linear in dfr and fpf (no dependence on zombie count).
+# --- Zombie pool / depletion mechanic (new) ---
+#   global pool : [0..10] init 10  (pool*10 = zombies currently available)
 #
-# Non-congestion constraint: R_b*(1-dfr) + R_l*(1-fpf) <= BW
-# Rewritten as a linear lower bound: R_b*dfr + R_l*fpf >= R_b + R_l - BW
-# For z in [10..40] this bound intersects the polytope; for z >= 50 the
-# polytope becomes empty (network is congested even at peak filtering).
-# FTR uncertain transitions are only generated for z where the polytope is
-# non-empty (checked by ftr_polytope_feasible below).
+#   Attacker can only deploy z <= pool*10 each round.
+#
+#   After each round (vs_step=1), player 3 applies depletion:
+#     FTR:  adversarial dep in [floor(z*lb_dfr/10), floor(z*ub_dfr/10)]
+#     AGF:  deterministic dep = floor(z * dfr_val[dfr_index] / 10)
+#     others (no_fix, RND, AGR, RDR): no depletion
+#
+#   Detected zombies are blocked permanently (no recovery).
+#
+# FTR probability expressions (non-congested case, zombies > 0):
+#   p_b_in  = (1 - dfr)   →  p_b_receive = (1-dfr)/2,  p_b_drop = dfr/2
+#   p_l_in  = (1 - fpf)   →  p_l_receive = (1-fpf)/2,  p_l_drop = fpf/2
 
 # ── global parameters ──────────────────────────────────────────────────────────
-AF        = 15.31
+AF         = 15.31
 bogus_rate = 10 * AF
-R_l       = 100.0
-BW        = 458.0
+R_l        = 100.0
+BW         = 458.0
 
-# RND bounds (bug-fixed: lb < ub)
+# RND bounds
 lb = 0.85
 ub = 0.95
 
 # FTR uncertainty bounds
-lb_dfr = 0.85   # minimum detection fraction
-ub_dfr = 0.95   # maximum detection fraction
-lb_fpf = 0.05   # minimum false-positive fraction
-ub_fpf = 0.15   # maximum false-positive fraction
+lb_dfr = 0.85
+ub_dfr = 0.95
+lb_fpf = 0.05
+ub_fpf = 0.15
 
 # Cross-constraint slope: fpf >= lb_fpf + k_ftr*(dfr - lb_dfr)
-# k_ftr = 0.5 gives a trapezoid (4 vertices, bottom-right corner cut).
-# k_ftr = 1.0 gives a triangle (3 vertices, full diagonal cut).
-k_ftr = 0.5
+k_ftr     = 0.5
+cross_rhs = lb_fpf - k_ftr * lb_dfr   # = -0.375
 
-# Cross-constraint RHS constant: lb_fpf - k_ftr * lb_dfr
-cross_rhs = lb_fpf - k_ftr * lb_dfr   # = 0.05 - 0.5*0.85 = -0.375
+# AGF discrete dfr values (indexed 0..2)
+AGF_DFR = {0: 0.85, 1: 0.90, 2: 0.95}
 
 
 def R_b_for_z(z):
     return 153.1 * z
 
 
-def ftr_polytope_feasible(z):
-    """
-    Return True if the FTR non-congested polytope is non-empty for this z.
+def zeros(all_vars, present_vars):
+    missing = [v for v in all_vars if v not in present_vars]
+    return ''.join(f' + &{v} * 0' for v in missing)
 
-    The non-congestion constraint requires R_b*dfr + R_l*fpf >= R_b + R_l - BW.
-    The polytope is non-empty iff the most favourable corner (ub_dfr, ub_fpf)
-    satisfies this bound.  We also verify the cross-constraint is satisfiable
-    (always true for k_ftr <= (ub_fpf-lb_fpf)/(ub_dfr-lb_dfr)).
-    """
-    R_b = R_b_for_z(z)
+
+def ftr_polytope_feasible(z):
+    R_b      = R_b_for_z(z)
     required = R_b + R_l - BW
     best     = R_b * ub_dfr + R_l * ub_fpf
     return best >= required
+
+
+def ftr_cong_feasible(z):
+    R_b       = R_b_for_z(z)
+    threshold = R_b + R_l - BW
+    worst     = R_b * lb_dfr + R_l * lb_fpf
+    return worst <= threshold
+
+
+def ftr_depletion_range(z):
+    """Return (lb_dep, ub_dep) for FTR zombie depletion at zombie count z.
+
+    dep is in pool units (1 unit = 10 zombies).
+    lb_dep = floor(z * lb_dfr / 10)
+    ub_dep = floor(z * ub_dfr / 10)
+    """
+    return int(z * lb_dfr / 10), int(z * ub_dfr / 10)
 
 
 # ── model sections ─────────────────────────────────────────────────────────────
@@ -87,14 +104,12 @@ def gen_main(fileName):
         endplayer
 
         player p3
-            vs, ftr, rnd, agr, rdr, agf
+            vs, ftr, rnd, agr, rdr, agf, [ftr], [rnd], [agr], [rdr], [agf]
         endplayer
 
         const int maxTime;
         const int max_succ_attacks;
         const int attacker_latency;
-        const double lb;
-        const double ub;
 
         global turn : [0..2] init 0;
         global time : [0..maxTime] init 0;
@@ -105,28 +120,36 @@ def gen_main(fileName):
         global dfr_index : [0..2] init 0;
         global fpf_index : [0..2] init 0;
         global rdf_index : [0..2] init 0;
+
+        // Zombie pool: pool*10 = zombies available to the attacker.
+        // Depleted each round by FTR/AGF detection; no recovery.
+        global pool : [0..10] init 10;
     """
     )
     mFile.close()
 
 
-def gen_attacker(fileName, zombiesList, max_succ_attacks, attacker_latency):
+def gen_attacker(fileName, zombiesList):
+    """Attacker module with pool-bounded deployment.
+
+    The attacker can deploy z zombies only if pool >= z/10.
+    When pool=0 the attacker is forced to pass (zombies=0).
+    current_succ_attacks / wait_time mechanics removed (were unused).
+    """
     mFile = open(fileName, "a")
     mFile.write(f"""
         module attacker
             zombies : [0..{zombiesList[-1]}] init 0;
-            current_succ_attacks : [0..{max_succ_attacks}] init 0;
-            wait_time : [0..{attacker_latency}] init 0;
-    """)
-    mFile.write(f"""
-            [] turn = 0 & time < maxTime & current_succ_attacks = {max_succ_attacks} & wait_time = {attacker_latency} -> (current_succ_attacks'=0) & (wait_time'=0);
-            [] turn = 0 & time < maxTime & current_succ_attacks = {max_succ_attacks} & wait_time < {attacker_latency} -> (zombies'=0) & (wait_time'=wait_time+1);
+
+            // Forced pass when pool is exhausted
+            [] turn = 0 & time < maxTime & pool = 0 -> (zombies' = 0) & (turn' = 1);
     """)
     for z in zombiesList:
+        k = z // 10  # pool units required
         mFile.write(f"""
-            [] turn = 0 & time < maxTime & current_succ_attacks < {max_succ_attacks} -> (zombies'={z})   & (current_succ_attacks'=0) & (turn'=1);
+            [] turn = 0 & time < maxTime & pool >= {k} -> (zombies' = {z}) & (turn' = 1);
         """)
-    mFile.write("endmodule")
+    mFile.write("        endmodule\n")
     mFile.close()
 
 
@@ -148,19 +171,9 @@ def gen_defender(fileName):
 
 
 def gen_mods(fileName):
-    """Generate countermeasure parameter-selection modules.
-
-    FTR is now uncertain: no discrete dfr/fpf index selection.
-    The ftr module simply clears parameters_selection (like rnd),
-    deferring all probability computation to the -U-> transitions in vs.
-    AGF still uses discrete dfr/fpf index selection (unchanged).
-    """
     mFile = open(fileName, "a")
     mFile.write("""
         module ftr
-            // FTR uncertainty: dfr and fpf are continuously uncertain.
-            // Parameter selection just clears the flag; the -U-> transitions
-            // in the vs module carry the polytope constraints.
             [ftr] ftr_selected & parameters_selection -> (parameters_selection' = false);
         endmodule
 
@@ -206,14 +219,12 @@ def gen_mods(fileName):
 
 
 def gen_vs(fileName, zombiesList):
-    """Generate the victim server (vs) module.
+    """Generate the vs module with packet-outcome transitions AND depletion transitions.
 
-    Differences from baa.py:
-      1. Default transition guard adds !ftr_selected, so the formula-based
-         transition no longer fires for FTR.
-      2. New -U-> transitions handle ftr_selected with linear probability
-         expressions in dfr and fpf.
-      3. RND lb/ub are corrected (lb=0.85 < ub=0.95).
+    Flow per round:
+      vs_step=0  packet outcome (-U-> for FTR/RND, formula-based otherwise)
+      vs_step=1  depletion step (player 3 adversarially removes zombies from pool)
+                 then: time++, turn=0, vs_step=0
     """
     mFile = open(fileName, "a")
     mFile.write("""
@@ -228,167 +239,131 @@ def gen_vs(fileName, zombiesList):
                                                                       + p_l_drop    : (packet_status'=4) & (vs_step'=1);
     """)
 
+    # ── Packet-outcome transitions (vs_step=0) ────────────────────────────────
     for z in zombiesList:
-        R_b     = R_b_for_z(z)
-        R_in    = R_b + R_l          # unfiltered total rate
-        R_b_in  = R_b                # RND: no pre-filter
-        R_l_in  = R_l
-        R_b_out = R_b
-        R_l_out = R_l
+        R_b = R_b_for_z(z)
 
-        p_b_in  = R_b_in / (R_b_in + R_b_out) if z > 0 else 0
-        p_l_in  = R_l_in / (R_l_in + R_l_out)
-        p_b_out = R_b_out / (R_b_in + R_b_out) if z > 0 else 1
-        p_l_out = R_l_out / (R_l_in + R_l_out)
+        # RND uncertain transitions
+        R_total          = R_b + R_l
+        rnd_threshold    = R_total - BW
+        p_b_cong_rnd     = BW / (2 * R_total)
+        p_dr_cong_rnd    = (R_total - BW) / (2 * R_total)
 
-        p_drop        = 0 if BW >= R_in else (R_in - BW) / R_in
-        p_receive     = 1 - p_drop
-        p_b_drop_in   = p_b_in * p_drop / 2
-        p_b_drop_out  = p_b_out / 2
-        p_b_drop_in_limit = p_b_in / 2
-        p_l_drop_in   = p_l_in * p_drop / 2
-        p_l_drop_out  = p_l_out / 2
-        p_l_drop_in_limit = p_l_in / 2
-
-        # ── RND uncertain transitions (identical logic to baa.py, lb/ub fixed) ──
-        if z == 0:
-            mFile.write(f"""
-            // RND: zombies = 0
-            [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies = 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
-                                                                      + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
-                                                                      + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
-                                                                      + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
-            {{ // non-congested case (zombies=0 means no bogus traffic)
-                {BW} >= rnd * {R_in},
-                {lb} <= rnd,
-                rnd <= {ub},
-                p_b_receive_rnd = 0,
-                p_l_receive_rnd  =  {p_l_in/2} + (- {p_l_in/2}*rnd),
-                p_b_drop_rnd = 1/2,
-                p_l_drop_rnd = {p_l_out/2} * rnd
-            }};
-            [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies = 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
-                                                                      + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
-                                                                      + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
-                                                                      + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
-            {{ // congested case (zombies=0)
-                {R_in} * rnd  + (-{BW}) >= 0,
-                {lb} <= rnd,
-                rnd <= {ub},
-                p_b_receive_rnd = 0,
-                p_l_receive_rnd = {p_l_in/2 * (BW / R_in)} + ( -  {p_l_in/2 * (BW / R_in)}* rnd),
-                p_b_drop_rnd = 1/2,
-                p_l_drop_rnd = {p_l_out/2} * rnd
-            }};
-            """)
-        else:
-            p_b_in_nz = R_b_in / (R_b_in + R_b_out)
-            mFile.write(f"""
-                // RND: zombies > 0 (z={z})
-                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
-                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
-                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
-                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
-                {{ // non-congested case
-                    {BW} >= {R_in} * rnd,
-                    {lb} <= rnd,
-                    rnd <= {ub},
-                    p_b_receive_rnd = {p_b_in_nz/2} * rnd,
-                    p_l_receive_rnd = {p_l_in/2} + (- {p_l_in/2}*rnd),
-                    p_b_drop_rnd =  {p_b_drop_in_limit}+(- {p_b_drop_in_limit} * rnd)  + {p_b_drop_out} * rnd,
-                    p_l_drop_rnd = {p_l_drop_in_limit}+ (- {p_l_drop_in_limit} * rnd) + {p_l_drop_out} * rnd
+        mFile.write(f"""
+                // RND: zombies = {z}
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies = {z} & vs_step = 0 -U-> &p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + &p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + &p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + &p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                {{ // non-congested: rnd*(R_b+R_l) >= (R_b+R_l-BW)
+                    &rnd * {R_total} + (-{rnd_threshold}) >= 0,
+                    {lb} <= &rnd,
+                    &rnd <= {ub},
+                    &p_b_receive_rnd = 0.5 + - &rnd * 0.5,
+                    &p_l_receive_rnd = 0.5 + - &rnd * 0.5,
+                    &p_b_drop_rnd = &rnd * 0.5,
+                    &p_l_drop_rnd = &rnd * 0.5
                 }};
-                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
-                                                                        + p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
-                                                                        + p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
-                                                                        + p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
-                {{ // congested case
-                    {R_in} * rnd  + (-{BW}) >= 0,
-                    {lb} <= rnd,
-                    rnd <= {ub},
-                    p_b_receive_rnd = {(p_b_in_nz * p_receive)/2},
-                    p_l_receive_rnd = {p_l_in/2 * (BW / R_in)}+(- {p_l_in/2 * (BW / R_in)} * rnd),
-                    p_b_drop_rnd =  {p_b_drop_in} + {p_b_drop_out} * rnd,
-                    p_l_drop_rnd = {p_l_drop_in} + {p_l_drop_out} * rnd
+                [] turn = 2 & time < maxTime & !parameters_selection & rnd_selected & zombies = {z} & vs_step = 0 -U-> &p_b_receive_rnd : (packet_status'=1) & (vs_step'=1)
+                                                                        + &p_b_drop_rnd    : (packet_status'=2) & (vs_step'=1)
+                                                                        + &p_l_receive_rnd : (packet_status'=3) & (vs_step'=1)
+                                                                        + &p_l_drop_rnd    : (packet_status'=4) & (vs_step'=1)
+                {{ // congested: rnd*(R_b+R_l) < (R_b+R_l-BW)
+                    {rnd_threshold} >= &rnd * {R_total},
+                    {lb} <= &rnd,
+                    &rnd <= {ub},
+                    &p_b_receive_rnd = {p_b_cong_rnd} + &rnd * 0,
+                    &p_l_receive_rnd = {p_b_cong_rnd} + &rnd * 0,
+                    &p_b_drop_rnd = {p_dr_cong_rnd} + &rnd * 0,
+                    &p_l_drop_rnd = {p_dr_cong_rnd} + &rnd * 0
                 }};
+        """)
 
-                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
-            """)
-
-        # ── FTR uncertain transitions ──────────────────────────────────────────
-        # Probabilities for FTR (non-congested regime):
-        #   p_b_in  = 1 - dfr   →  p_b_receive = (1-dfr)/2,  p_b_drop = dfr/2
-        #   p_l_in  = 1 - fpf   →  p_l_receive = (1-fpf)/2,  p_l_drop = fpf/2
-        # These are purely linear in dfr and fpf.
-        #
-        # Non-congestion constraint: R_b*(1-dfr) + R_l*(1-fpf) <= BW
-        # Equivalent linear form:   R_b*dfr + R_l*fpf >= R_b + R_l - BW
-        #
-        # Cross-constraint (sensitivity/specificity trade-off):
-        #   fpf >= lb_fpf + k_ftr*(dfr - lb_dfr)
-        # Equivalent: fpf + -dfr*k_ftr >= lb_fpf - k_ftr*lb_dfr
-
-        if z == 0:
-            # No bogus traffic: p_b_receive=0, p_b_drop=0.5 (fixed), legit is uncertain
-            mFile.write(f"""
-            // FTR uncertainty: zombies = 0 (no bogus traffic)
-            [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies = 0 & vs_step = 0 -U-> p_b_receive_ftr : (packet_status'=1) & (vs_step'=1)
-                                                                      + p_b_drop_ftr    : (packet_status'=2) & (vs_step'=1)
-                                                                      + p_l_receive_ftr : (packet_status'=3) & (vs_step'=1)
-                                                                      + p_l_drop_ftr    : (packet_status'=4) & (vs_step'=1)
-            {{ // fpf uncertain in [{lb_fpf}, {ub_fpf}]; dfr bounds included for polytope completeness
-                {lb_dfr} <= dfr,
-                dfr <= {ub_dfr},
-                {lb_fpf} <= fpf,
-                fpf <= {ub_fpf},
-                fpf + -dfr * {k_ftr} >= {cross_rhs},
-                p_b_receive_ftr = 0,
-                p_b_drop_ftr = 0.5,
-                p_l_receive_ftr = 0.5 + -fpf * 0.5,
-                p_l_drop_ftr = fpf * 0.5
-            }};
-            """)
-        elif ftr_polytope_feasible(z):
-            # zombies > 0: full 2D polytope, non-congestion constraint active
+        # FTR uncertain transitions
+        if ftr_polytope_feasible(z):
             noncong_rhs = R_b + R_l - BW
             mFile.write(f"""
-                // FTR uncertainty: zombies > 0 (z={z}, non-congested regime)
-                // Polytope: dfr in [{lb_dfr},{ub_dfr}], fpf in [{lb_fpf},{ub_fpf}]
-                // Cross-constraint (sensitivity/specificity): fpf + -dfr*{k_ftr} >= {cross_rhs}
-                // Non-congestion: {R_b}*dfr + {R_l}*fpf >= {noncong_rhs:.1f}
-                [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies > 0 & vs_step = 0 -U-> p_b_receive_ftr : (packet_status'=1) & (vs_step'=1)
-                                                                        + p_b_drop_ftr    : (packet_status'=2) & (vs_step'=1)
-                                                                        + p_l_receive_ftr : (packet_status'=3) & (vs_step'=1)
-                                                                        + p_l_drop_ftr    : (packet_status'=4) & (vs_step'=1)
-                {{ // 2D polytope: dfr x fpf with cross-constraint and non-congestion bound
-                    {lb_dfr} <= dfr,
-                    dfr <= {ub_dfr},
-                    {lb_fpf} <= fpf,
-                    fpf <= {ub_fpf},
-                    fpf + -dfr * {k_ftr} >= {cross_rhs},
-                    dfr * {R_b} + fpf * {R_l} >= {noncong_rhs:.1f},
-                    p_b_receive_ftr = 0.5 + -dfr * 0.5,
-                    p_b_drop_ftr    = dfr * 0.5,
-                    p_l_receive_ftr = 0.5 + -fpf * 0.5,
-                    p_l_drop_ftr    = fpf * 0.5
+                // FTR uncertainty: zombies = {z} (non-congested regime)
+                [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies = {z} & vs_step = 0 -U-> &p_b_receive_ftr : (packet_status'=1) & (vs_step'=1)
+                                                                        + &p_b_drop_ftr    : (packet_status'=2) & (vs_step'=1)
+                                                                        + &p_l_receive_ftr : (packet_status'=3) & (vs_step'=1)
+                                                                        + &p_l_drop_ftr    : (packet_status'=4) & (vs_step'=1)
+                {{ // non-congested: dfr x fpf with cross-constraint and non-congestion bound
+                    {lb_dfr} <= &dfr,
+                    &dfr <= {ub_dfr},
+                    {lb_fpf} <= &fpf,
+                    &fpf <= {ub_fpf},
+                    &fpf + -&dfr * {k_ftr} >= {cross_rhs},
+                    &dfr * {R_b} + &fpf * {R_l} >= {noncong_rhs:.1f},
+                    &p_b_receive_ftr = 0.5 + -&dfr * 0.5,
+                    &p_b_drop_ftr    = &dfr * 0.5,
+                    &p_l_receive_ftr = 0.5 + -&fpf * 0.5,
+                    &p_l_drop_ftr    = &fpf * 0.5
                 }};
-
-                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
             """)
-        else:
-            # z too large: even max filtering cannot prevent congestion with these bounds.
-            # No FTR uncertain transition is generated; the defender should choose
-            # a different countermeasure for this zombie count.
+
+        if ftr_cong_feasible(z):
+            R_in_base      = R_b + R_l
+            p_receive_base = BW / R_in_base
+            p_drop_base    = (R_in_base - BW) / R_in_base
+            cong_rhs       = BW - R_b - R_l
             mFile.write(f"""
-                // FTR uncertainty: zombies > 0 (z={z}) — polytope EMPTY with current bounds.
-                // Non-congestion requires R_b*dfr + R_l*fpf >= {R_b + R_l - BW:.1f}
-                // but max achievable is {R_b*ub_dfr + R_l*ub_fpf:.1f} < {R_b + R_l - BW:.1f}.
-                // No -U-> transition generated; FTR is infeasible at this load.
-
-                [] turn = 2 & time < maxTime & !parameters_selection & vs_step = 1 -> (vs_step'=0) & (packet_status'=0) & (time'=time+1) & (turn'= 0);
+                // FTR uncertainty: zombies = {z} (congested regime)
+                [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies = {z} & vs_step = 0 -U-> &p_b_receive_ftr : (packet_status'=1) & (vs_step'=1)
+                                                                        + &p_b_drop_ftr    : (packet_status'=2) & (vs_step'=1)
+                                                                        + &p_l_receive_ftr : (packet_status'=3) & (vs_step'=1)
+                                                                        + &p_l_drop_ftr    : (packet_status'=4) & (vs_step'=1)
+                {{ // congested: dfr x fpf with cross-constraint and congestion bound
+                    {lb_dfr} <= &dfr,
+                    &dfr <= {ub_dfr},
+                    {lb_fpf} <= &fpf,
+                    &fpf <= {ub_fpf},
+                    &fpf + -&dfr * {k_ftr} >= {cross_rhs},
+                    -&dfr * {R_b} + -&fpf * {R_l} >= {cong_rhs:.1f},
+                    &p_b_receive_ftr = {p_receive_base * 0.5:.10f} + -&dfr * {p_receive_base * 0.5:.10f},
+                    &p_b_drop_ftr    = {p_drop_base * 0.5:.10f}    +  &dfr * {p_receive_base * 0.5:.10f},
+                    &p_l_receive_ftr = {p_receive_base * 0.5:.10f} + -&fpf * {p_receive_base * 0.5:.10f},
+                    &p_l_drop_ftr    = {p_drop_base * 0.5:.10f}    +  &fpf * {p_receive_base * 0.5:.10f}
+                }};
             """)
 
-    mFile.write("""endmodule""")
+    # ── Depletion transitions (vs_step=1) ─────────────────────────────────────
+    #
+    # Player 3 adversarially selects how many pool units are removed.
+    # FTR: range [lb_dep, ub_dep] gives player 3 a genuine nondeterministic choice
+    #      for z=70,80,90,100; deterministic for smaller z.
+    # AGF: deterministic per dfr_index (already chosen during parameter selection).
+    # Others: no depletion.
+    # z=0 (pool exhausted): all dep=0 regardless of CM.
+
+    all_z = [0] + zombiesList   # include 0 for pool=0 forced-pass case
+
+    mFile.write("""
+        // ── FTR depletion (adversarial within dfr detection range) ──────────
+    """)
+    for z in all_z:
+        lb_dep, ub_dep = ftr_depletion_range(z)
+        for dep in range(lb_dep, ub_dep + 1):
+            mFile.write(f"""
+        [] turn = 2 & time < maxTime & !parameters_selection & ftr_selected & zombies = {z} & vs_step = 1 -> (pool' = pool - {dep}) & (vs_step' = 0) & (packet_status' = 0) & (time' = time + 1) & (turn' = 0);""")
+    mFile.write("\n")
+
+    mFile.write("""
+        // ── AGF depletion (deterministic, based on dfr_index chosen by player 3) ──
+    """)
+    for z in all_z:
+        for dfr_i, dfr_val in AGF_DFR.items():
+            dep = int(z * dfr_val / 10)
+            mFile.write(f"""
+        [] turn = 2 & time < maxTime & !parameters_selection & agf_selected & zombies = {z} & dfr_index = {dfr_i} & vs_step = 1 -> (pool' = pool - {dep}) & (vs_step' = 0) & (packet_status' = 0) & (time' = time + 1) & (turn' = 0);""")
+    mFile.write("\n")
+
+    mFile.write("""
+        // ── No depletion: no_fix, RND, AGR, RDR ────────────────────────────
+        [] turn = 2 & time < maxTime & !parameters_selection & !ftr_selected & !agf_selected & vs_step = 1 -> (vs_step' = 0) & (packet_status' = 0) & (time' = time + 1) & (turn' = 0);
+    """)
+
+    mFile.write("    endmodule\n")
     mFile.close()
 
 
@@ -397,7 +372,7 @@ zombiesList = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 fileName    = "baa_ftr.sgm"
 
 gen_main(fileName)
-gen_attacker(fileName, zombiesList, 10, 3)
+gen_attacker(fileName, zombiesList)
 gen_defender(fileName)
 gen_mods(fileName)
 gen_vs(fileName, zombiesList)
@@ -408,13 +383,9 @@ mFile.write(f"""
                 formula AF = 15.31;
                 formula bogus_rate = 10 * AF;
 
-                // The net arrival rate for the bogus DNS packets
                 formula R_b = bogus_rate * zombies;
-
-                // The rate at which the legitimate DNS packets arrive at and flow out of VS
                 formula R_l = 100.0;
-
-                formula BW = 458.0;
+                formula BW  = 458.0;
 
                 formula R_b_in = {{
                     [] no_fix_selected | agr_selected : R_b,
@@ -422,16 +393,17 @@ mFile.write(f"""
                     [] otherwise                      : R_b
                 }};
 
+                formula retries_multiplier = (retries=2 ? 4 : retries=4 ? 16 : 64);
+
                 formula R_l_in = {{
                     [] no_fix_selected : R_l,
                     [] ftr_selected    : R_l * (1 - fpf),
                     [] rnd_selected    : R_l,
-                    [] agr_selected    : R_l * pow(2, retries),
-                    [] rdr_selected    : R_l * pow(2, retries),
-                    [] otherwise       : R_l * pow(2, retries) * (1 - fpf)
+                    [] agr_selected    : R_l * retries_multiplier,
+                    [] rdr_selected    : R_l * retries_multiplier,
+                    [] otherwise       : R_l * retries_multiplier * (1 - fpf)
                 }};
 
-                // R_b_out, R_l_out: rates at which packets are dropped at the Defender
                 formula R_b_out = {{
                     [] no_fix_selected | agr_selected : 0,
                     [] ftr_selected | agf_selected    : R_b * dfr,
@@ -442,8 +414,8 @@ mFile.write(f"""
                     [] no_fix_selected | agr_selected : 0,
                     [] ftr_selected                   : R_l * fpf,
                     [] rnd_selected                   : R_l,
-                    [] rdr_selected                   : R_l * pow(2, retries) * rdf,
-                    [] otherwise                      : R_l * pow(2, retries) * fpf
+                    [] rdr_selected                   : R_l * retries_multiplier * rdf,
+                    [] otherwise                      : R_l * retries_multiplier * fpf
                 }};
 
                 formula no_fix_selected = (countermeasure = 0);
@@ -465,14 +437,9 @@ mFile.write(f"""
                 formula p_b_drop    = (p_b_in * p_drop + p_b_out)/2;
                 formula p_l_drop    = (p_l_in * p_drop + p_l_out)/2;
 
-                // Discrete parameter values (used by AGF; FTR now uses -U-> transitions)
-                const double dfr_values[3] = {{0.85, 0.90, 0.95}};
-                const double fpf_values[3] = {{0.05, 0.10, 0.15}};
-                const double rdf_values[3] = {{0.75, 0.85, 0.95}};
-
-                formula dfr = dfr_values[dfr_index];
-                formula fpf = fpf_values[fpf_index];
-                formula rdf = rdf_values[rdf_index];
+                formula dfr = (dfr_index=0) ? 0.85 : (dfr_index=1) ? 0.90 : 0.95;
+                formula fpf = (fpf_index=0) ? 0.05 : (fpf_index=1) ? 0.10 : 0.15;
+                formula rdf = (rdf_index=0) ? 0.75 : (rdf_index=1) ? 0.85 : 0.95;
 
                 rewards "AttackerPayoff_1"
                 turn = 2 & legit_packet_received : 0;
@@ -490,7 +457,15 @@ mFile.close()
 
 print(f"Generated {fileName}")
 print(f"FTR uncertainty: dfr in [{lb_dfr}, {ub_dfr}], fpf in [{lb_fpf}, {ub_fpf}]")
-print(f"Cross-constraint slope k_ftr = {k_ftr}  (fpf >= {lb_fpf} + {k_ftr}*(dfr - {lb_dfr}))")
-print(f"Polytope shape: {'trapezoid (4 vertices)' if k_ftr < (ub_fpf-lb_fpf)/(ub_dfr-lb_dfr) else 'triangle (3 vertices)'}")
-print(f"FTR transitions generated for z in: {[z for z in zombiesList if ftr_polytope_feasible(z)]}")
-print(f"FTR infeasible (congested) for z in: {[z for z in zombiesList if not ftr_polytope_feasible(z)]}")
+print(f"Cross-constraint slope k_ftr = {k_ftr}")
+print()
+print("FTR depletion per zombie count (pool units lost, in dfr range):")
+for z in zombiesList:
+    lb_dep, ub_dep = ftr_depletion_range(z)
+    adv = " (adversarial)" if lb_dep < ub_dep else ""
+    print(f"  z={z:>3}: dep in [{lb_dep}, {ub_dep}]{adv}")
+print()
+print("AGF depletion per zombie count (pool units lost, by dfr_index):")
+for z in zombiesList:
+    deps = [int(z * v / 10) for v in AGF_DFR.values()]
+    print(f"  z={z:>3}: dep in {deps}  (dfr_index 0/1/2)")
