@@ -10,10 +10,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # Force x86_64 on Apple Silicon to avoid arm64 PPL compatibility issues.
-      # Remove this line on Intel Macs or Linux — it causes emulation overhead.
-      platform: linux/amd64
     image: polygames:latest
+    # Force x86_64 on Apple Silicon to avoid arm64 PPL compatibility issues.
+    # Remove this line on Intel Macs or Linux — it causes emulation overhead.
     platform: linux/amd64
     volumes:
       - ./models:/models

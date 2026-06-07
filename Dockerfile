@@ -68,10 +68,16 @@ COPY --from=builder /build/polygames/lib/        ./lib/
 COPY --from=builder /build/polygames/etc/        ./etc/
 COPY --from=builder /build/polygames/dtds/       ./dtds/
 COPY --from=builder /build/polygames/images/     ./images/
-COPY --from=builder /build/polygames/polytests/  ./polytests/
+COPY --from=builder /build/polygames/polytests/   ./polytests/
+COPY --from=builder /build/polygames/unit-tests/  ./unit-tests/
 
-# PPL main shared library (copied here for LD_LIBRARY_PATH to pick it up)
-COPY --from=builder /usr/local/lib/libppl.so.*   ./lib/
+# PPL shared libraries: main lib + JNI bridge (libppl_java) required by PolyGames
+# PPL installs the Java JNI bridge to /usr/local/lib/ppl/ (not /usr/local/lib/)
+# libgmpxx (GMP C++ bindings) is a transitive dependency of libppl_java
+COPY --from=builder /usr/local/lib/libppl.so.*                     ./lib/
+COPY --from=builder /usr/local/lib/ppl/libppl_java.so              ./lib/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgmpxx.so.4.6.1   ./lib/
+RUN ln -s libgmpxx.so.4.6.1 lib/libgmpxx.so.4
 
 # Fix the hard-coded build path in the launch script
 RUN sed -i 's|PRISM_DIR=.*|PRISM_DIR="/polygames"|g' bin/polygames bin/prism
