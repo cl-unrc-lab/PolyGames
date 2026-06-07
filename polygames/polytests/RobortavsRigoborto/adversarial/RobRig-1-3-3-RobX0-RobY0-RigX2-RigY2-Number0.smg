@@ -1,0 +1,1220 @@
+//Since PRISM does not support arrays we use directly the constants as defined below:
+// Terrain quality:
+                    // Q_TERRAIN is a constant (WIDTH x LENGTH) matrix of floats in the interval [0,0.5]
+                    // where 0 means "optimal quality" while 0.5 corresponds to the worst quality)
+                // const Q_TERRAIN_0_0 = 0.11084583313651752;
+// const Q_TERRAIN_0_1 = 0.21894379682528603;
+// const Q_TERRAIN_0_2 = 0.24790612069092532;
+// const Q_TERRAIN_1_0 = 0.11654222512878631;
+// const Q_TERRAIN_1_1 = 0.11543327077049215;
+// const Q_TERRAIN_1_2 = 0.1093905186688443;
+// const Q_TERRAIN_2_0 = 0.2298017328688668;
+// const Q_TERRAIN_2_1 = 0.14489080729524279;
+// const Q_TERRAIN_2_2 = 0.010744852632954438;
+
+                // F_SLOPE is a constant (WIDTH x LENGTH) matrix of floats in the interval [-1,1]
+                // corresponding to the frontal inclination where 0 indicats that the terrain has no frontal inclination,
+                // -1 is the maximum descending inclination, and 1 is the maximum ascending inclination.
+                 //F_SLOPE_0_0 =  0.6751559513251457;
+ //F_SLOPE_0_1 =  0.11290864530486688;
+ //F_SLOPE_0_2 =  0.28458872586489115;
+ //F_SLOPE_1_0 =  -0.6281874682105646;
+ //F_SLOPE_1_1 =  0.9850868243521302;
+ //F_SLOPE_1_2 =  0.7198930575905798;
+ //F_SLOPE_2_0 =  -0.7582200803883872;
+ //F_SLOPE_2_1 =  -0.3346096292797418;
+ //F_SLOPE_2_2 =  0.44296881516653674;
+
+                // L_SLOPE is a constant (WIDTH x LENGTH) matrix of floats in the interval [-1,1]
+                // corresponding to the lateral inclination where 0 indicats that the terrain has no lateral inclination,
+                // -1 is the maximum inclination towards the left, and 1 is the maximum inclination towards the right.
+                //L_SLOPE_0_0   =  0.4223835393905593;
+//L_SLOPE_0_1   =  0.8728811735989193;
+//L_SLOPE_0_2   =  -0.15578600007716958;
+//L_SLOPE_1_0   =  0.660071386548654;
+//L_SLOPE_1_1   =  0.34061113282814204;
+//L_SLOPE_1_2   =  -0.3932629781341648;
+//L_SLOPE_2_0   =  0.1751612122871189;
+//L_SLOPE_2_1   =  0.7649580016637154;
+//L_SLOPE_2_2   =  0.6923948368566255;
+smg
+player p1
+   roborta, [robl], [robr], [robf], [robb], [rigl_u], [rigr_u], [rigf_u], [rigb_u] 
+endplayer
+
+player p2
+  rigoborto, [rigl], [rigr], [rigf], [rigb], [robl_u], [robr_u], [robf_u], [robb_u]
+endplayer
+
+const int LENGTH = 3;
+global sched : [0..3] init 0;
+global robcol : [0..2] init 0; 
+                    global robrow : [0..3] init 0;
+global rigcol : [0..2] init 2;
+                    global rigrow : [0..3] init 2;
+            global robact : [0..3];
+global rigact : [0..3];
+
+// In this case Roborta is a minimizer she wants to reach the exit asap
+// on the other hand Rigoborto wants to maximize, that is to stop Roborta.
+rewards "r0"
+    Collision : 10;
+    !Collision & robrow < LENGTH : 1;
+    !Collision & robrow = LENGTH : 0;
+endrewards
+                  
+// Roborta and Rigoborto occupy the same cell producing a collision
+    formula Collision = (robcol = rigcol) & (robrow = rigrow);
+
+// Roborta reached the end fo the grid
+    formula Robwins =  (robrow = LENGTH);
+                
+// Roborta reached the end fo the grid
+    formula Rigwins =  (Collision);
+                
+// end of game 
+    formula end = Collision | Robwins;
+
+// Module for Roborta, in case a collision the games finishes
+module roborta
+    // robcol : [0..2] init 0;
+    // robrow : [0..3] init 0;
+    [robl] (sched = 0) & !end  -> (sched'=1)&(robact'=0); 
+    [robr] (sched = 0) & !end  -> (sched'=1)&(robact'=1); 
+    [robb] (sched = 0) & !end  -> (sched'=1)&(robact'=2); 
+    [robf] (sched = 0) & !end  -> (sched'=1)&(robact'=3); 
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 0) & (robcol = 0) & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 0) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.4829718016862876,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.5135900827998208 * pr) >= 0,
+            0.5776164606094407 * pr + (- 0.8891541668634825 * pl) >= 0,
+            0.3248440486748543 * pf + (- 0.8891541668634825 * pb) >= 0,
+            1 * pb + (- 0.2888364394600506 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 0 & robcol = 0 & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 1) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.4829718016862876,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.5135900827998208 * pr) >= 0,
+            0.5776164606094407 * pr + (- 0.8891541668634825 * pl) >= 0,
+            0.3248440486748543 * pf + (- 0.8891541668634825 * pb) >= 0,
+            1 * pb + (- 0.2888364394600506 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 0) & (robcol = 0)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 1) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.4829718016862876,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.5135900827998208 * pr) >= 0,
+            0.5776164606094407 * pr + (-0.8891541668634825 * pl) >= 0,
+            0.3248440486748543 * pf + (-0.8891541668634825 * pb) >= 0,
+            1 * pb + (-0.2888364394600506 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 0) & (robcol = 0)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 0) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.4829718016862876,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.5135900827998208 * pr) >= 0,
+            0.5776164606094407 * pr + (- 0.8891541668634825 * pl) >= 0,
+            0.3248440486748543 * pf + (- 0.8891541668634825 * pb) >= 0,
+            1 * pb + (- 0.2888364394600506 * pf) >= 0
+            };
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 0) & (robcol = 1) & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 0) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.33743920913440906,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.09928694790085371 * pr) >= 0,
+            0.12711882640108074 * pr + (- 0.7810562031747139 * pl) >= 0,
+            0.8870913546951331 * pf + (- 0.7810562031747139 * pb) >= 0,
+            1 * pb + (- 0.6928682053672941 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 0 & robcol = 1 & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 2) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.33743920913440906,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.09928694790085371 * pr) >= 0,
+            0.12711882640108074 * pr + (- 0.7810562031747139 * pl) >= 0,
+            0.8870913546951331 * pf + (- 0.7810562031747139 * pb) >= 0,
+            1 * pb + (- 0.6928682053672941 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 0) & (robcol = 1)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 1) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.33743920913440906,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.09928694790085371 * pr) >= 0,
+            0.12711882640108074 * pr + (-0.7810562031747139 * pl) >= 0,
+            0.8870913546951331 * pf + (-0.7810562031747139 * pb) >= 0,
+            1 * pb + (-0.6928682053672941 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 0) & (robcol = 1)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 0) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.33743920913440906,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.09928694790085371 * pr) >= 0,
+            0.12711882640108074 * pr + (- 0.7810562031747139 * pl) >= 0,
+            0.8870913546951331 * pf + (- 0.7810562031747139 * pb) >= 0,
+            1 * pb + (- 0.6928682053672941 * pf) >= 0
+            };
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 0) & (robcol = 2) & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 1) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.5540739859728191,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            0.8442139999228304 * pl + (- 0.7520938793090747 * pr) >= 0,
+            1 * pr + (- 0.6349281821689924 * pl) >= 0,
+            0.7154112741351089 * pf + (- 0.7520938793090747 * pb) >= 0,
+            1 * pb + (- 0.5380564404657219 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 0 & robcol = 2 & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 2) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.5540739859728191,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            0.8442139999228304 * pl + (- 0.7520938793090747 * pr) >= 0,
+            1 * pr + (- 0.6349281821689924 * pl) >= 0,
+            0.7154112741351089 * pf + (- 0.7520938793090747 * pb) >= 0,
+            1 * pb + (- 0.5380564404657219 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 0) & (robcol = 2)  & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 1) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.5540739859728191,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            0.8442139999228304 * pl + (- 0.7520938793090747 * pr) >= 0,
+            1 * pr + (-0.6349281821689924 * pl) >= 0,
+            0.7154112741351089 * pf + (-0.7520938793090747 * pb) >= 0,
+            1 * pb + (-0.5380564404657219 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 0) & (robcol = 2)  & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 1) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 0) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.5540739859728191,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            0.8442139999228304 * pl + (- 0.7520938793090747 * pr) >= 0,
+            1 * pr + (- 0.6349281821689924 * pl) >= 0,
+            0.7154112741351089 * pf + (- 0.7520938793090747 * pb) >= 0,
+            1 * pb + (- 0.5380564404657219 * pf) >= 0
+            };
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 1) & (robcol = 0) & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 0) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.44665263406872224,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.300312576454783 * pr) >= 0,
+            0.33992861345134595 * pr + (- 0.8834577748712137 * pl) >= 0,
+            1 * pf + (- 0.328480672003927 * pb) >= 0,
+            0.3718125317894354 * pb + (- 0.8834577748712137 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 1 & robcol = 0 & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 1) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.44665263406872224,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.300312576454783 * pr) >= 0,
+            0.33992861345134595 * pr + (- 0.8834577748712137 * pl) >= 0,
+            1 * pf + (- 0.328480672003927 * pb) >= 0,
+            0.3718125317894354 * pb + (- 1.4384348777385003 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 1) & (robcol = 0)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 2) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.44665263406872224,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.300312576454783 * pr) >= 0,
+            0.33992861345134595 * pr + (-0.8834577748712137 * pl) >= 0,
+            1 * pf + (-0.328480672003927 * pb) >= 0,
+            0.3718125317894354 * pb + (-0.8834577748712137 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 1) & (robcol = 0)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 0) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.44665263406872224,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.300312576454783 * pr) >= 0,
+            0.33992861345134595 * pr + (- 0.8834577748712137 * pl) >= 0,
+            1 * pf + (- 0.328480672003927 * pb) >= 0,
+            0.3718125317894354 * pb + (- 0.8834577748712137 * pf) >= 0
+            };
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 1) & (robcol = 1) & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 0) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.3894835202276997,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.5832734535245608 * pr) >= 0,
+            0.659388867171858 * pr + (- 0.8845667292295079 * pl) >= 0,
+            0.014913175647869759 * pf + (- 0.8845667292295079 * pb) >= 0,
+            1 * pb + (- 0.0131916990052613 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 1 & robcol = 1 & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 2) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.3894835202276997,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.5832734535245608 * pr) >= 0,
+            0.659388867171858 * pr + (- 0.8845667292295079 * pl) >= 0,
+            0.014913175647869759 * pf + (- 0.8845667292295079 * pb) >= 0,
+            1 * pb + (- 0.0131916990052613 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 1) & (robcol = 1)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 2) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.3894835202276997,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.5832734535245608 * pr) >= 0,
+            0.659388867171858 * pr + (-0.8845667292295079 * pl) >= 0,
+            0.014913175647869759 * pf + (-0.8845667292295079 * pb) >= 0,
+            1 * pb + (-0.0131916990052613 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 1) & (robcol = 1)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 0) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.3894835202276997,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.5832734535245608 * pr) >= 0,
+            0.659388867171858 * pr + (- 0.8845667292295079 * pl) >= 0,
+            0.014913175647869759 * pf + (- 0.8845667292295079 * pb) >= 0,
+            1 * pb + (- 0.0131916990052613 * pf) >= 0
+            };
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 1) & (robcol = 2) & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 1) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.475585107351874,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            0.6067370218658352 * pl + (- 0.8906094813311557 * pr) >= 0,
+            1 * pr + (- 0.5403657443483416 * pl) >= 0,
+            0.28010694240942025 * pf + (- 0.8906094813311557 * pb) >= 0,
+            1 * pb + (- 0.24946589869650967 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 1 & robcol = 2 & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robcol' = 2) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.475585107351874,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            0.6067370218658352 * pl + (- 0.8906094813311557 * pr) >= 0,
+            1 * pr + (- 0.5403657443483416 * pl) >= 0,
+            0.28010694240942025 * pf + (- 0.8906094813311557 * pb) >= 0,
+            1 * pb + (- 0.24946589869650967 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 1) & (robcol = 2)  & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 2) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.475585107351874,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            0.6067370218658352 * pl + (- 0.8906094813311557 * pr) >= 0,
+            1 * pr + (-0.5403657443483416 * pl) >= 0,
+            0.28010694240942025 * pf + (-0.8906094813311557 * pb) >= 0,
+            1 * pb + (-0.24946589869650967 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 1) & (robcol = 2)  & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 2) & (sched' = 2) +
+            pb : (robrow' = 0) & (sched' = 2) +
+            pm : (robrow' = 0) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.475585107351874,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            0.6067370218658352 * pl + (- 0.8906094813311557 * pr) >= 0,
+            1 * pr + (- 0.5403657443483416 * pl) >= 0,
+            0.28010694240942025 * pf + (- 0.8906094813311557 * pb) >= 0,
+            1 * pb + (- 0.24946589869650967 * pf) >= 0
+            };
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 2) & (robcol = 0) & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robcol' = 0) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.3699129950240134,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.6352894049590057 * pr) >= 0,
+            0.8248387877128811 * pr + (- 0.7701982671311332 * pl) >= 0,
+            1 * pf + (- 0.18621847511196887 * pb) >= 0,
+            0.24177991961161283 * pb + (- 0.7701982671311332 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 2 & robcol = 0 & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robcol' = 1) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.3699129950240134,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.6352894049590057 * pr) >= 0,
+            0.8248387877128811 * pr + (- 0.7701982671311332 * pl) >= 0,
+            1 * pf + (- 0.18621847511196887 * pb) >= 0,
+            0.24177991961161283 * pb + (- 1.3541780591502974 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 2) & (robcol = 0)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robrow' = 3) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.3699129950240134,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.6352894049590057 * pr) >= 0,
+            0.8248387877128811 * pr + (-0.7701982671311332 * pl) >= 0,
+            1 * pf + (-0.18621847511196887 * pb) >= 0,
+            0.24177991961161283 * pb + (-0.7701982671311332 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 2) & (robcol = 0)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 1) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robrow' = 1) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.3699129950240134,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.6352894049590057 * pr) >= 0,
+            0.8248387877128811 * pr + (- 0.7701982671311332 * pl) >= 0,
+            1 * pf + (- 0.18621847511196887 * pb) >= 0,
+            0.24177991961161283 * pb + (- 0.7701982671311332 * pf) >= 0
+            };
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 2) & (robcol = 1) & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robcol' = 0) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.4333065339086626,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.20098657344905319 * pr) >= 0,
+            0.23504199833628459 * pr + (- 0.8551091927047572 * pl) >= 0,
+            1 * pf + (- 0.5689814227401191 * pb) >= 0,
+            0.6653903707202582 * pb + (- 0.8551091927047572 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 2 & robcol = 1 & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robcol' = 2) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.4333065339086626,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.20098657344905319 * pr) >= 0,
+            0.23504199833628459 * pr + (- 0.8551091927047572 * pl) >= 0,
+            1 * pf + (- 0.5689814227401191 * pb) >= 0,
+            0.6653903707202582 * pb + (- 1.1412369626693952 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 2) & (robcol = 1)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robrow' = 3) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.4333065339086626,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.20098657344905319 * pr) >= 0,
+            0.23504199833628459 * pr + (-0.8551091927047572 * pl) >= 0,
+            1 * pf + (-0.5689814227401191 * pb) >= 0,
+            0.6653903707202582 * pb + (-0.8551091927047572 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 2) & (robcol = 1)  & !end  -U->
+            pl : (robcol' = 0) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robrow' = 1) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.4333065339086626,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.20098657344905319 * pr) >= 0,
+            0.23504199833628459 * pr + (- 0.8551091927047572 * pl) >= 0,
+            1 * pf + (- 0.5689814227401191 * pb) >= 0,
+            0.6653903707202582 * pb + (- 0.8551091927047572 * pf) >= 0
+            };
+    [robl_u] (sched = 1) & (robact=0) & (robrow = 2) & (robcol = 2) & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robcol' = 1) & (sched' = 2)            // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.5749279816103678,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.30429999099626304 * pr) >= 0,
+            0.3076051631433745 * pr + (- 0.9892551473670456 * pl) >= 0,
+            0.5570311848334633 * pf + (- 0.9892551473670456 * pb) >= 0,
+            1 * pb + (- 0.5510459668404677 * pf) >= 0
+            };
+    [robr_u] (sched = 1) & (robact = 1) & robrow = 2 & robcol = 2 & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robcol' = 2) & (sched' = 2)     // Command successful
+            {    
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.5749279816103678,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.30429999099626304 * pr) >= 0,
+            0.3076051631433745 * pr + (- 0.9892551473670456 * pl) >= 0,
+            0.5570311848334633 * pf + (- 0.9892551473670456 * pb) >= 0,
+            1 * pb + (- 0.5510459668404677 * pf) >= 0 
+            };
+            [robf_u] (sched = 1) & (robact=3) &  (robrow = 2) & (robcol = 2)  & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robrow' = 3) & (sched' = 2)                   // Command successful 
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.5749279816103678,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.30429999099626304 * pr) >= 0,
+            0.3076051631433745 * pr + (-0.9892551473670456 * pl) >= 0,
+            0.5570311848334633 * pf + (-0.9892551473670456 * pb) >= 0,
+            1 * pb + (-0.5510459668404677 * pf) >= 0 
+            };
+
+            [robb_u] (sched = 1) & (robact=2) & (robrow = 2) & (robcol = 2)  & !end  -U->
+            pl : (robcol' = 1) & (sched' = 2) +         // The first four probabilistic options
+            pr : (robcol' = 2) & (sched' = 2) +   // corresponds to environments setbacks
+            pf : (robrow' = 3) & (sched' = 2) +
+            pb : (robrow' = 1) & (sched' = 2) +
+            pm : (robrow' = 1) & (sched' = 2)           // Command successful
+            {
+            // Success is affected by the quality and inclination of the terrain
+            pm <= 0.5749279816103678,
+            // The following are the conditions for the probabilities of sideways and frontal displacements
+            1 * pl + (- 0.30429999099626304 * pr) >= 0,
+            0.3076051631433745 * pr + (- 0.9892551473670456 * pl) >= 0,
+            0.5570311848334633 * pf + (- 0.9892551473670456 * pb) >= 0,
+            1 * pb + (- 0.5510459668404677 * pf) >= 0
+            };
+endmodule
+ // Module for Rigoborto, in case a collision the games finishes
+            module rigoborto
+            //rigcol : [0..2] init 2;
+            //rigrow : [0..3] init 2;
+                [rigl] (sched = 2) & !end  -> (sched'=3)&(rigact'=0); 
+    [rigr] (sched = 2) & !end  -> (sched'=3)&(rigact'=1); 
+    [rigb] (sched = 2) & !end  -> (sched'=3)&(rigact'=2); 
+    [rigf] (sched = 2) & !end  -> (sched'=3)&(rigact'=3); 
+
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 0) & (rigcol = 0) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 0) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.4829718016862876,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.5135900827998208 * pr) >= 0,
+	            0.5776164606094407 * pr + (- 0.8891541668634825 * pl) >= 0,
+	            0.3248440486748543 * pf + (- 0.8891541668634825 * pb) >= 0,
+	            1 * pb + (- 0.2888364394600506 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 0) & (rigcol = 0) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 1) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.4829718016862876,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.5135900827998208 * pr) >= 0,
+	            0.5776164606094407 * pr + (- 0.8891541668634825 * pl) >= 0,
+	            0.3248440486748543 * pf + (- 0.8891541668634825 * pb) >= 0,
+	            1 * pb + (- 0.2888364394600506 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 0 & rigcol = 0 -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 1) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.4829718016862876,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.5135900827998208 * pr) >= 0,
+	            0.5776164606094407 * pr + (- 0.8891541668634825 * pl) >= 0,
+	            0.3248440486748543 * pf + (- 0.8891541668634825 * pb) >= 0,
+	            1 * pb + (- 0.2888364394600506 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 0 & rigcol = 0 & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 0) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.4829718016862876,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.5135900827998208 * pr) >= 0,
+	            0.5776164606094407 * pr + (- 0.8891541668634825 * pl) >= 0,
+	            0.3248440486748543 * pf + (- 0.8891541668634825 * pb) >= 0,
+	            1 * pb + (- 0.2888364394600506 * pf) >= 0
+                };
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 0) & (rigcol = 1) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 0) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.33743920913440906,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.09928694790085371 * pr) >= 0,
+	            0.12711882640108074 * pr + (- 0.7810562031747139 * pl) >= 0,
+	            0.8870913546951331 * pf + (- 0.7810562031747139 * pb) >= 0,
+	            1 * pb + (- 0.6928682053672941 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 0) & (rigcol = 1) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 2) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.33743920913440906,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.09928694790085371 * pr) >= 0,
+	            0.12711882640108074 * pr + (- 0.7810562031747139 * pl) >= 0,
+	            0.8870913546951331 * pf + (- 0.7810562031747139 * pb) >= 0,
+	            1 * pb + (- 0.6928682053672941 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 0 & rigcol = 1 -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 1) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.33743920913440906,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.09928694790085371 * pr) >= 0,
+	            0.12711882640108074 * pr + (- 0.7810562031747139 * pl) >= 0,
+	            0.8870913546951331 * pf + (- 0.7810562031747139 * pb) >= 0,
+	            1 * pb + (- 0.6928682053672941 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 0 & rigcol = 1 & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 0) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.33743920913440906,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.09928694790085371 * pr) >= 0,
+	            0.12711882640108074 * pr + (- 0.7810562031747139 * pl) >= 0,
+	            0.8870913546951331 * pf + (- 0.7810562031747139 * pb) >= 0,
+	            1 * pb + (- 0.6928682053672941 * pf) >= 0
+                };
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 0) & (rigcol = 2) & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 1) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.5540739859728191,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            0.8442139999228304 * pl + (- 0.7520938793090747 * pr) >= 0,
+	            1 * pr + (- 0.6349281821689924 * pl) >= 0,
+	            0.7154112741351089 * pf + (- 0.7520938793090747 * pb) >= 0,
+	            1 * pb + (- 0.5380564404657219 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 0) & (rigcol = 2) & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 2) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.5540739859728191,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            0.8442139999228304 * pl + (- 0.7520938793090747 * pr) >= 0,
+	            1 * pr + (- 0.6349281821689924 * pl) >= 0,
+	            0.7154112741351089 * pf + (- 0.7520938793090747 * pb) >= 0,
+	            1 * pb + (- 0.5380564404657219 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 0 & rigcol = 2 -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 1) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.5540739859728191,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            0.8442139999228304 * pl + (- 0.7520938793090747 * pr) >= 0,
+	            1 * pr + (- 0.6349281821689924 * pl) >= 0,
+	            0.7154112741351089 * pf + (- 0.7520938793090747 * pb) >= 0,
+	            1 * pb + (- 0.5380564404657219 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 0 & rigcol = 2 & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 1) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 0) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.5540739859728191,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            0.8442139999228304 * pl + (- 0.7520938793090747 * pr) >= 0,
+	            1 * pr + (- 0.6349281821689924 * pl) >= 0,
+	            0.7154112741351089 * pf + (- 0.7520938793090747 * pb) >= 0,
+	            1 * pb + (- 0.5380564404657219 * pf) >= 0
+                };
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 1) & (rigcol = 0) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 0) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.44665263406872224,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.300312576454783 * pr) >= 0,
+	            0.33992861345134595 * pr + (- 0.8834577748712137 * pl) >= 0,
+	            1 * pf + (- 0.328480672003927 * pb) >= 0,
+	            0.3718125317894354 * pb + (- 0.8834577748712137 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 1) & (rigcol = 0) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 1) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.44665263406872224,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.300312576454783 * pr) >= 0,
+	            0.33992861345134595 * pr + (- 0.8834577748712137 * pl) >= 0,
+	            1 * pf + (- 0.328480672003927 * pb) >= 0,
+	            0.3718125317894354 * pb + (- 0.8834577748712137 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 1 & rigcol = 0 -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 2) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.44665263406872224,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.300312576454783 * pr) >= 0,
+	            0.33992861345134595 * pr + (- 0.8834577748712137 * pl) >= 0,
+	            1 * pf + (- 0.328480672003927 * pb) >= 0,
+	            0.3718125317894354 * pb + (- 0.8834577748712137 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 1 & rigcol = 0 & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 0) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.44665263406872224,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.300312576454783 * pr) >= 0,
+	            0.33992861345134595 * pr + (- 0.8834577748712137 * pl) >= 0,
+	            1 * pf + (- 0.328480672003927 * pb) >= 0,
+	            0.3718125317894354 * pb + (- 0.8834577748712137 * pf) >= 0
+                };
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 1) & (rigcol = 1) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 0) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.3894835202276997,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.5832734535245608 * pr) >= 0,
+	            0.659388867171858 * pr + (- 0.8845667292295079 * pl) >= 0,
+	            0.014913175647869759 * pf + (- 0.8845667292295079 * pb) >= 0,
+	            1 * pb + (- 0.0131916990052613 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 1) & (rigcol = 1) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 2) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.3894835202276997,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.5832734535245608 * pr) >= 0,
+	            0.659388867171858 * pr + (- 0.8845667292295079 * pl) >= 0,
+	            0.014913175647869759 * pf + (- 0.8845667292295079 * pb) >= 0,
+	            1 * pb + (- 0.0131916990052613 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 1 & rigcol = 1 -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 2) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.3894835202276997,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.5832734535245608 * pr) >= 0,
+	            0.659388867171858 * pr + (- 0.8845667292295079 * pl) >= 0,
+	            0.014913175647869759 * pf + (- 0.8845667292295079 * pb) >= 0,
+	            1 * pb + (- 0.0131916990052613 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 1 & rigcol = 1 & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 0) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.3894835202276997,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.5832734535245608 * pr) >= 0,
+	            0.659388867171858 * pr + (- 0.8845667292295079 * pl) >= 0,
+	            0.014913175647869759 * pf + (- 0.8845667292295079 * pb) >= 0,
+	            1 * pb + (- 0.0131916990052613 * pf) >= 0
+                };
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 1) & (rigcol = 2) & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 1) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.475585107351874,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            0.6067370218658352 * pl + (- 0.8906094813311557 * pr) >= 0,
+	            1 * pr + (- 0.5403657443483416 * pl) >= 0,
+	            0.28010694240942025 * pf + (- 0.8906094813311557 * pb) >= 0,
+	            1 * pb + (- 0.24946589869650967 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 1) & (rigcol = 2) & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigcol' = 2) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.475585107351874,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            0.6067370218658352 * pl + (- 0.8906094813311557 * pr) >= 0,
+	            1 * pr + (- 0.5403657443483416 * pl) >= 0,
+	            0.28010694240942025 * pf + (- 0.8906094813311557 * pb) >= 0,
+	            1 * pb + (- 0.24946589869650967 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 1 & rigcol = 2 -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 2) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.475585107351874,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            0.6067370218658352 * pl + (- 0.8906094813311557 * pr) >= 0,
+	            1 * pr + (- 0.5403657443483416 * pl) >= 0,
+	            0.28010694240942025 * pf + (- 0.8906094813311557 * pb) >= 0,
+	            1 * pb + (- 0.24946589869650967 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 1 & rigcol = 2 & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 0) & (sched' = 0) +
+                pm : (rigrow' = 0) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.475585107351874,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            0.6067370218658352 * pl + (- 0.8906094813311557 * pr) >= 0,
+	            1 * pr + (- 0.5403657443483416 * pl) >= 0,
+	            0.28010694240942025 * pf + (- 0.8906094813311557 * pb) >= 0,
+	            1 * pb + (- 0.24946589869650967 * pf) >= 0
+                };
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 2) & (rigcol = 0) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigcol' = 0) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.3699129950240134,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.6352894049590057 * pr) >= 0,
+	            0.8248387877128811 * pr + (- 0.7701982671311332 * pl) >= 0,
+	            1 * pf + (- 0.18621847511196887 * pb) >= 0,
+	            0.24177991961161283 * pb + (- 0.7701982671311332 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 2) & (rigcol = 0) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigcol' = 1) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.3699129950240134,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.6352894049590057 * pr) >= 0,
+	            0.8248387877128811 * pr + (- 0.7701982671311332 * pl) >= 0,
+	            1 * pf + (- 0.18621847511196887 * pb) >= 0,
+	            0.24177991961161283 * pb + (- 0.7701982671311332 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 2 & rigcol = 0 -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigrow' = 2) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.3699129950240134,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.6352894049590057 * pr) >= 0,
+	            0.8248387877128811 * pr + (- 0.7701982671311332 * pl) >= 0,
+	            1 * pf + (- 0.18621847511196887 * pb) >= 0,
+	            0.24177991961161283 * pb + (- 0.7701982671311332 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 2 & rigcol = 0 & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 1) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigrow' = 1) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.3699129950240134,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.6352894049590057 * pr) >= 0,
+	            0.8248387877128811 * pr + (- 0.7701982671311332 * pl) >= 0,
+	            1 * pf + (- 0.18621847511196887 * pb) >= 0,
+	            0.24177991961161283 * pb + (- 0.7701982671311332 * pf) >= 0
+                };
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 2) & (rigcol = 1) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigcol' = 0) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.4333065339086626,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.20098657344905319 * pr) >= 0,
+	            0.23504199833628459 * pr + (- 0.8551091927047572 * pl) >= 0,
+	            1 * pf + (- 0.5689814227401191 * pb) >= 0,
+	            0.6653903707202582 * pb + (- 0.8551091927047572 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 2) & (rigcol = 1) & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigcol' = 2) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.4333065339086626,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.20098657344905319 * pr) >= 0,
+	            0.23504199833628459 * pr + (- 0.8551091927047572 * pl) >= 0,
+	            1 * pf + (- 0.5689814227401191 * pb) >= 0,
+	            0.6653903707202582 * pb + (- 0.8551091927047572 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 2 & rigcol = 1 -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigrow' = 2) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.4333065339086626,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.20098657344905319 * pr) >= 0,
+	            0.23504199833628459 * pr + (- 0.8551091927047572 * pl) >= 0,
+	            1 * pf + (- 0.5689814227401191 * pb) >= 0,
+	            0.6653903707202582 * pb + (- 0.8551091927047572 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 2 & rigcol = 1 & !end  -U->
+                pl : (rigcol' = 0) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigrow' = 1) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.4333065339086626,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.20098657344905319 * pr) >= 0,
+	            0.23504199833628459 * pr + (- 0.8551091927047572 * pl) >= 0,
+	            1 * pf + (- 0.5689814227401191 * pb) >= 0,
+	            0.6653903707202582 * pb + (- 0.8551091927047572 * pf) >= 0
+                };
+                [rigl_u] (sched = 3) & (rigact=0) & (rigrow = 2) & (rigcol = 2) & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +        // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigcol' = 1) & (sched' = 0)           // Command successful
+                {
+
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.5749279816103678,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.30429999099626304 * pr) >= 0,
+	            0.3076051631433745 * pr + (- 0.9892551473670456 * pl) >= 0,
+	            0.5570311848334633 * pf + (- 0.9892551473670456 * pb) >= 0,
+	            1 * pb + (- 0.5510459668404677 * pf) >= 0 
+            }; 
+                [rigr_u] (sched = 3)& (rigact=1) & (rigrow = 2) & (rigcol = 2) & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigcol' = 2) & (sched' = 0)     // Command successful 
+                {
+ 
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.5749279816103678,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.30429999099626304 * pr) >= 0,
+	            0.3076051631433745 * pr + (- 0.9892551473670456 * pl) >= 0,
+	            0.5570311848334633 * pf + (- 0.9892551473670456 * pb) >= 0,
+	            1 * pb + (- 0.5510459668404677 * pf) >= 0
+                };
+
+                [rigf_u] (sched = 3)& (rigact=3) & !end  & rigrow = 2 & rigcol = 2 -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigrow' = 2) & (sched' = 0)    // Command successful
+                {
+                // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.5749279816103678,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.30429999099626304 * pr) >= 0,
+	            0.3076051631433745 * pr + (- 0.9892551473670456 * pl) >= 0,
+	            0.5570311848334633 * pf + (- 0.9892551473670456 * pb) >= 0,
+	            1 * pb + (- 0.5510459668404677 * pf) >= 0
+                };
+
+                [rigb_u] (sched = 3) & (rigact=2) &  rigrow = 2 & rigcol = 2 & !end  -U->
+                pl : (rigcol' = 1) & (sched' = 0) +         // The first four probabilistic options
+                pr : (rigcol' = 2) & (sched' = 0) +   // corresponds to environments setbacks
+                pf : (rigrow' = 2) & (sched' = 0) +
+                pb : (rigrow' = 1) & (sched' = 0) +
+                pm : (rigrow' = 1) & (sched' = 0)           // Command successful
+                {
+	            // Success is affected by the quality and inclination of the terrain
+	            pm <= 0.5749279816103678,
+	            // The following are the conditions for the probabilities of sideways and frontal displacements
+	            1 * pl + (- 0.30429999099626304 * pr) >= 0,
+	            0.3076051631433745 * pr + (- 0.9892551473670456 * pl) >= 0,
+	            0.5570311848334633 * pf + (- 0.9892551473670456 * pb) >= 0,
+	            1 * pb + (- 0.5510459668404677 * pf) >= 0
+                };endmodule

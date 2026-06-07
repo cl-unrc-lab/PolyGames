@@ -1,0 +1,110 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\title{Table Roborta vs Rigoborto:  size: $4 \times 4$}
+    \author{}
+    \date{}
+    \begin{document}    
+    \maketitle
+\begin{tikzpicture}
+\matrix [nodes=draw, column sep=-0mm]
+{
+                
+    \node (a00) [fill=red! 42.2210925762524 ,minimum size=2cm]  {\begin{tabular}{c}   \   \includegraphics[width=.25\textwidth]{pics/roborta.png}  \  \end{tabular}}; 
+     & 
+                            
+    \node (a01) [fill=red! 37.89772014701512 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a02) [fill=red! 21.02857904154225 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a03) [fill=red! 12.945837514648167 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     \\ 
+    \node (a10) [fill=red! 25.563736068430426 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a11) [fill=red! 20.246706872520715 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a12) [fill=red! 39.18992945173863 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a13) [fill=red! 15.165636303946373 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     \\ 
+    \node (a20) [fill=red! 23.82984770761779 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a21) [fill=red! 29.16910197275156 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a22) [fill=red! 45.40564425976676 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a23) [fill=red! 25.234342790869512 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     \\ 
+    \node (a30) [fill=red! 14.09189221998519 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a31) [fill=red! 37.79021020786119 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a32) [fill=red! 30.91844983376658 ,minimum size=2cm]  {\begin{tabular}{c}   \   \;  \  \end{tabular}}; 
+     & 
+                            
+    \node (a33) [fill=red! 12.525317068122026 ,minimum size=2cm]  {\begin{tabular}{c}   \     \includegraphics[width=.25\textwidth]{pics/rigoborto.png}  \  \end{tabular}}; 
+     \\ 
+    };
+    \draw[line width=1ex,black!47.90153792160812,->] ([xshift=-5pt]a00.center) -- (a00.west); 
+    \draw[line width=1ex,black!61.00556540260447,->] ([xshift=5pt]a10.center) -- (a01.east); 
+    \draw[line width=1ex,black!9.739860767117857,->] ([xshift=5pt]a20.center) -- (a02.east); 
+    \draw[line width=1ex,black!97.19165996719622,->] ([xshift=-5pt]a30.center) -- (a30.west); 
+    \draw[line width=1ex,black!43.94093728079083,->] ([xshift=5pt]a01.center) -- (a10.east); 
+    \draw[line width=1ex,black!20.23529155514625,->] ([xshift=-5pt]a11.center) -- (a11.west); 
+    \draw[line width=1ex,black!64.9689954296466,->] ([xshift=5pt]a21.center) -- (a12.east); 
+    \draw[line width=1ex,black!33.63064024637017,->] ([xshift=5pt]a31.center) -- (a13.east); 
+    \draw[line width=1ex,black!99.77143613711435,->] ([xshift=-5pt]a02.center) -- (a02.west); 
+    \draw[line width=1ex,black!1.2844267069350712,->] ([xshift=-5pt]a12.center) -- (a12.west); 
+    \draw[line width=1ex,black!73.52055509855617,->] ([xshift=5pt]a22.center) -- (a22.east); 
+    \draw[line width=1ex,black!51.2178246225736,->] ([xshift=-5pt]a32.center) -- (a32.west); 
+    \draw[line width=1ex,black!34.95912745052199,->] ([xshift=-5pt]a03.center) -- (a03.west); 
+    \draw[line width=1ex,black!74.09424642173093,->] ([xshift=5pt]a13.center) -- (a31.east); 
+    \draw[line width=1ex,black!61.78658169952189,->] ([xshift=-5pt]a23.center) -- (a23.west); 
+    \draw[line width=1ex,black!13.502148124134372,->] ([xshift=5pt]a33.center) -- (a33.east); 
+    \draw[line width=1ex,black!81.94925119364802,->] ([yshift=5pt]a00.center) -- (a00.north);  
+    
+    \draw[line width=1ex,black!96.55709520753062,->] ([yshift=5pt]a01.center) -- (a01.north);  
+    
+    \draw[line width=1ex,black!62.04344719931791,->] ([yshift=5pt]a02.center) -- (a02.north);  
+    
+    \draw[line width=1ex,black!80.43319008791654,->] ([yshift=5pt]a03.center) -- (a03.north);  
+    
+    \draw[line width=1ex,black!37.970486136133474,->] ([yshift=-5pt]a10.center) -- (a10.south); 
+                    
+    \draw[line width=1ex,black!45.96634965202573,->] ([yshift=5pt]a11.center) -- (a11.north);  
+    
+    \draw[line width=1ex,black!79.7676575935987,->] ([yshift=5pt]a12.center) -- (a12.north);  
+    
+    \draw[line width=1ex,black!36.796786383088254,->] ([yshift=5pt]a13.center) -- (a13.north);  
+    
+    \draw[line width=1ex,black!5.5714569094573285,->] ([yshift=-5pt]a20.center) -- (a20.south); 
+                    
+    \draw[line width=1ex,black!79.85975838632685,->] ([yshift=-5pt]a21.center) -- (a21.south); 
+                    
+    \draw[line width=1ex,black!13.165632909243264,->] ([yshift=-5pt]a22.center) -- (a22.south); 
+                    
+    \draw[line width=1ex,black!22.177394688760323,->] ([yshift=5pt]a23.center) -- (a23.north);  
+    
+    \draw[line width=1ex,black!82.60221064757964,->] ([yshift=5pt]a30.center) -- (a30.north);  
+    
+    \draw[line width=1ex,black!93.32127355415176,->] ([yshift=5pt]a31.center) -- (a31.north);  
+    
+    \draw[line width=1ex,black!4.598044689456593,->] ([yshift=-5pt]a32.center) -- (a32.south); 
+                    
+    \draw[line width=1ex,black!73.06198555432802,->] ([yshift=5pt]a33.center) -- (a33.north);  
+    
+\end{tikzpicture}
+\end{document}

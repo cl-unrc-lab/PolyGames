@@ -1,0 +1,46 @@
+smg
+
+// Minimal test: single -U-> transition with dfr/fpf equations
+// State: (phase, time). Goal: reach time=2.
+// Player 1 (attacker) does nothing; player 3 fires the -U-> transition.
+// If the transition works, time advances and value should be finite.
+
+const int maxTime = 2;
+
+player p1
+    dummy
+endplayer
+
+player p2
+    env, [step]
+endplayer
+
+rewards "payoff"
+    // Reward for every packet received by attacker (bogus packets received)
+    phase = 1 & step_done : 1;
+endrewards
+
+global time : [0..2] init 0;
+global phase : [0..1] init 0;
+global step_done : bool init false;
+
+module dummy
+    // p1 does nothing meaningful
+    [] phase = 0 -> (phase' = 1);
+endmodule
+
+module env
+    // FTR uncertain transition: equations for probabilities from dfr/fpf
+    [step] phase = 1 & time < maxTime & !step_done -U-> &p_b_receive : (step_done' = true)
+                                                          + &p_other    : (step_done' = false)
+    {
+        0.85 <= &dfr,
+        &dfr <= 0.95,
+        0.05 <= &fpf,
+        &fpf <= 0.15,
+        &p_b_receive = 0.5 + -&dfr * 0.5,
+        &p_other     = 0.5 + &dfr * 0.5
+    };
+
+    [step] phase = 1 & step_done -> (step_done' = false) & (time' = time + 1) & (phase' = 0);
+endmodule

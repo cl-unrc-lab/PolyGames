@@ -1,0 +1,31 @@
+smg
+
+// A simple example to test expressions of the form &p1 >= c0, &p2 >= c0, ...
+
+const int k = 2; 
+player p1
+  host, [send1], [send2]
+endplayer
+
+player p2
+  client
+endplayer
+
+module host
+	h : [0..2] init 0;
+	[send1] h=0 -> (h'=1);	// send message 1
+	[send2] h=0 -> (h'=2);  // send message 2
+	[] c=0 -> (h'=0); // restart
+endmodule
+
+module client
+	c : [0..2] init 0;
+	[send1] c=0 -> 0.85 : (c'=1) + 0.15 : (c'=0); // receive message 1
+	[send2] c=0 -U-> &p1 : (c'=2) + &p2 : (c'=0) // receive message 2
+	{
+		&p1+c >= 0.25,
+		&p2+k >= 0.25
+	}; 
+	[] c!=0 -> (c'=0); // request another message
+	[] c!=0 -> true;   // wait
+endmodule

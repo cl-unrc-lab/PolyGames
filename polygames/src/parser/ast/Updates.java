@@ -121,6 +121,14 @@ public class Updates extends ASTElement
 	{
 		return updates;
 	}
+	
+	/**
+	 * Get access to the whole list of the probabilities
+	 */
+	public List<Expression> getProbabilities()
+	{
+		return this.probs;
+	}
 
 	/**
 	 *  Get the probability (or rate) of the ith update (may be null, which should be interpreted as constant 1.0)

@@ -52,6 +52,6 @@ public class UncertainExpression extends Expression{
 
   @Override
   public Expression deepCopy(DeepCopy copier) throws PrismLangException {
-    return null;
+    return new UncertainExpression(this.name);
   }
 }

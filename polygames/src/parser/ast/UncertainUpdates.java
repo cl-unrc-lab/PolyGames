@@ -2,14 +2,17 @@ package parser.ast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import parser.type.TypeDouble;
 import parser.visitor.ASTVisitor;
 import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 import prism.PrismException;
-
 import parma_polyhedra_library.Coefficient;
 import parma_polyhedra_library.Linear_Expression_Variable;
 import parma_polyhedra_library.Variable;
@@ -26,10 +29,12 @@ import explicit.PPLSupport;
 public class UncertainUpdates extends Updates {
 
 	private ArrayList<Expression> uncertains; // the list of uncertains
-	private HashMap<String, HashMap<Integer, Expression>> coefficients; // coefficients contains for each uncertain the corresponding column of coefficients
-																																	    // for instance, coefficients.get(uncertain).get(i) returns the coefficiente corresponding to row i, null if none
+	private HashMap<String, HashMap<Integer, Expression>> coefficients; 
+	// coefficients contains, for each uncertain, the corresponding column of coefficients
+    // for instance, coefficients.get(uncertain).get(i) returns the coefficient corresponding to row i, null if none
 	private ArrayList<Expression> constants; // constains the columns of constants in the equations
 	private List<Relation_Symbol> relationSymbols;
+	private boolean converted=false;
 	int div = 1; 	     // the divisor allows us to move the decimal point, PPL only allows for integers.
 	int precision = 6; // this is the precision, after that we truncate the number	
 
@@ -39,10 +44,11 @@ public class UncertainUpdates extends Updates {
 	 */
 	public UncertainUpdates() {
 		super();
-		this.uncertains = new ArrayList<Expression>();
-		this.coefficients = new HashMap<String, HashMap<Integer, Expression>>();
-		this.constants = new ArrayList<Expression>();
+		this.uncertains      = new ArrayList<Expression>();
+		this.coefficients    = new HashMap<String, HashMap<Integer, Expression>>();
+		this.constants       = new ArrayList<Expression>();
 		this.relationSymbols = new ArrayList<Relation_Symbol>();
+		this.converted		 = false;
 	}
 
 	public HashMap<String, HashMap<Integer, Expression>> coefficients() {
@@ -50,9 +56,18 @@ public class UncertainUpdates extends Updates {
 	}
 
 	public void setCoefficient(String uncertain, int row, Expression coefficient) {
-		this.coefficients.get(uncertain).put(row, coefficient);
+		if (this.coefficients.keySet().contains(uncertain))
+			this.coefficients.get(uncertain).put(row, coefficient);
+		else {
+			this.coefficients.put(uncertain, new HashMap<Integer,Expression>());
+			this.coefficients.get(uncertain).put(row, coefficient);
+		}
 	}
 
+	public List<Relation_Symbol> getRelations(){
+		return this.relationSymbols;
+	}
+	
 	public List<Expression> constants() {
 		return constants;
 	}
@@ -92,8 +107,17 @@ public class UncertainUpdates extends Updates {
 	 * @param i
 	 * @return
 	 */
-	public Expression getUncertain(int i) { return this.uncertains.get(i); }
+	public Expression getUncertain(int i) { 
+		return this.uncertains.get(i); 
+	}
 
+	public HashMap<String, HashMap<Integer, Expression>> getCoefficients(){
+		return this.coefficients;
+	}
+	
+	public ArrayList<Expression> getUncertains(){
+		return this.uncertains;
+	}
 	/**
 	 * 
 	 * @return
@@ -102,6 +126,54 @@ public class UncertainUpdates extends Updates {
 		return this.uncertains.size();
 	}
 
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumberConstants() {
+		return this.constants.size();
+	}
+	
+	
+	public Set<String> getUncertainNames(){
+		return coefficients.keySet();
+	}
+
+	/**
+	 * Returns all uncertain variable names: probability variables first (in order),
+	 * then auxiliary variables (those that appear only in the constraint block).
+	 * This is the full set of columns in the coefficient matrix.
+	 */
+	public List<String> getAllUncertainNames() {
+		LinkedHashSet<String> all = new LinkedHashSet<>();
+		// Probability variables first, preserving their order in uncertains[]
+		for (Expression e : this.uncertains) {
+			all.add(((UncertainExpression) e).getName());
+		}
+		// Auxiliary variables: any key in coefficients not already in the list
+		for (String name : this.coefficients.keySet()) {
+			all.add(name);
+		}
+		return new ArrayList<>(all);
+	}
+
+	/**
+	 * Returns the total number of uncertain variables (probability + auxiliary).
+	 */
+	public int getNumberAllUncertains() {
+		return getAllUncertainNames().size();
+	}
+	
+	public Expression getCoefficient(String uncertain, int row) throws PrismLangException {
+		Expression result = this.coefficients.get(uncertain).get(row);
+		if (result == null) {
+			// Variable does not appear in this constraint row: implicit coefficient 0.
+			return new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
+		}
+		return result;
+	}
+	
 	/**
 	 * 
 	 * @return The divisor indicating the number of decimals that one needs to shift the numbers
@@ -117,37 +189,63 @@ public class UncertainUpdates extends Updates {
 	public int getPrecision() {
 		return precision;
 	}
+	
 	/**
-	 * @param c
-	 * @param i			the row of the coefficient
-	 * @param uncertain	the uncertain to which the coefficient applies
+	 * 
+	 * @param coefficient
+	 * @param i
+	 * @param uncertain
+	 * @param isInLeftSide
 	 */
-	public void addCoefficient(Expression coefficient, int i, UncertainExpression uncertain, boolean isInLeftSide) {
-		
-		String uncertainName = uncertain.getName();
-		
-		// we check if the row for the uncertain was initialised
-		if (this.coefficients.get(uncertainName) == null)
-			this.coefficients.put(uncertainName, new HashMap<Integer, Expression>());
-		
-		if (!isInLeftSide)
-			coefficient = new ExpressionUnaryOp(2, coefficient);
+	public void addCoefficient(Expression coefficient, int row, UncertainExpression uncertainExpression, boolean isInLeftSide) {
+		String uncertain = uncertainExpression.getName();
 
-		if (this.coefficients.get(uncertainName).get(i) == null) { // if the uncertain hasn't a mapped coefficient
-			this.coefficients.get(uncertainName).put(i, coefficient);
-		} else { // if the uncertain has a mapped coefficient
-			this.coefficients.get(uncertainName).put(i, new ExpressionBinaryOp(11, coefficient, this.coefficients.get(uncertainName).get(i)));
+		if (Objects.isNull(coefficients.get(uncertain))) {
+			coefficients.put(uncertain, new HashMap<Integer, Expression>());
+		}
+		
+		if (!isInLeftSide) {
+			coefficient = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, coefficient);
+		}
+
+		Expression previousCoefficient = coefficients.get(uncertain).get(row);
+
+		if (Objects.isNull(previousCoefficient)) {
+			coefficients.get(uncertain).put(row, coefficient);
+		} else {
+			coefficients.get(uncertain).put(
+				row, new ExpressionUnaryOp(
+					ExpressionUnaryOp.PARENTH, new ExpressionBinaryOp(ExpressionBinaryOp.PLUS, coefficient, previousCoefficient)
+				)
+			);
+		}
+	}
+	
+	/**
+	 * Sets the coefficient for an uncertain
+	 */
+	public void setCoefficient(UncertainExpression uncertainExpression, int row, Expression coefficient) throws PrismLangException {
+		
+		if (coefficients.containsKey(uncertainExpression.getName())) {
+			coefficients.get(uncertainExpression.getName()).put(row, coefficient);
 		}
 	}
 
-	public void addConstant(Expression constant, int i, boolean isInLeftSide) {
-		if (isInLeftSide)
-			constant = new ExpressionUnaryOp(2, constant);
+	/**
+	 * 
+	 * @param constant
+	 * @param i
+	 * @param isInLeftSide
+	 */
+	public void addConstant(Expression constant, int row, boolean isInLeftSide) {
+		if (isInLeftSide) {
+			constant = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, constant);
+		}
 		
-		if ( i < this.constants.size() ) { // if there is already a constant for the i-th row then
-			this.constants.set(i, new ExpressionBinaryOp(11, constant, this.constants.get(i)));
+		if ( row < constants.size() ) { // if there is already a constant for the i-th row then
+			constants.set(row, new ExpressionBinaryOp(ExpressionBinaryOp.PLUS, constant, this.constants.get(row)));
 		} else {
-			this.constants.add(i, constant);
+			constants.add(row, constant);
 		}
 	}
 
@@ -179,33 +277,71 @@ public class UncertainUpdates extends Updates {
 	
 	@Override
 	public String toString() {
-		load_PPL();
-
 		String result = "";
-		
-		for (int j = 0; j < this.constants.size(); j++) {
-			for (int i = 0; i < this.uncertains.size(); i++) {
-				String uncertain = ((UncertainExpression) this.uncertains.get(i)).getName();
-				result += this.coefficients.get(uncertain).get(j) + uncertain;
+		result += super.toString()+"\n";
+		result += "{";
+		for (int row = 0; row < constants.size(); row++) {
+			for (int col = 0; col < uncertains.size(); col++) {
+				if (uncertains.get(col) != null ) {
+					String uncertain = ((UncertainExpression) uncertains.get(col)).getName();
+					result += uncertain + " * " + coefficients.get(uncertain).get(row);
+				}
+
+				if (col < uncertains.size() - 1) {
+					result += " + ";
+				}
 			}
 
-			result += " " + relationSymbols.get(j) + " " + constants.get(j) ;
+			result += " " + relationSymbols.get(row) + " " + constants.get(row) + "\n";
 		}
-		
+		result += "}";
 		return result;
 	}
 	
 	@Override
 	public UncertainUpdates deepCopy(DeepCopy copier) throws PrismLangException
 	{
+		UncertainUpdates result = new UncertainUpdates();
 		super.deepCopy(copier);
-		return this;
+		
+		ArrayList<Expression> newuncertains = (ArrayList<Expression>) copier.copyAll(this.uncertains);
+		ArrayList<Expression> newconstants  = (ArrayList<Expression>) copier.copyAll(this.constants);
+		
+		for (Expression e : newconstants) {
+			Expression ecopy = copier.copy(e);
+			result.constants().add(ecopy);
+		}
+		
+		for (Expression e : newuncertains) {
+			Expression ecopy = copier.copy(e);
+			result.getUncertains().add(ecopy);
+		}
+		
+		
+		HashMap<String, HashMap<Integer, Expression>> coefficients_new = new HashMap<String, HashMap<Integer, Expression>>();
+		for (String key : this.coefficients.keySet()) { // for all uncertain names
+			HashMap<Integer, Expression> uncertain_coeffs = coefficients.get(key);
+			HashMap<Integer, Expression> new_uncertain_coeffs = new HashMap<Integer, Expression>();
+			for (Integer i : uncertain_coeffs.keySet()) {
+				//new_uncertain_coeffs.put(i, (Expression) uncertain_coeffs.get(i).accept(copier));
+				//new_uncertain_coeffs.put(i, (Expression) copier.copy(uncertain_coeffs.get(i)));
+				result.setCoefficient(key, i, (Expression) copier.copy(uncertain_coeffs.get(i)));
+			}
+				
+			//coefficients_new.put(key, new_uncertain_coeffs);
+		}
+		//this.coefficients = coefficients_new;
+		result.getRelations().addAll(this.getRelations());
+		result.getUpdates().addAll(copier.copyAll(this.updates));
+		result.getProbabilities().addAll(copier.copyAll(this.getProbabilities()));
+		return result;
 	}
 	
 	@SuppressWarnings("unchecked")
 	@Override
 	public UncertainUpdates clone() {
 		UncertainUpdates clone = (UncertainUpdates) super.clone();
+
 		clone.uncertains   = (ArrayList<Expression>) uncertains.clone();
 		clone.coefficients = (HashMap<String, HashMap<Integer, Expression>>) coefficients.clone();
 		clone.constants    = (ArrayList<Expression>) constants.clone();
@@ -221,26 +357,34 @@ public class UncertainUpdates extends Updates {
 		load_PPL();
 
 		Constraint_System constraint_System = new Constraint_System();
-		
-		// Each variable corresponds to an uncertain. The uncertains are mapped using their index in {@code uncertains}.
+
+		// Build the full ordered list of all variable names: probability vars first, then auxiliary vars.
+		List<String> allNames = getAllUncertainNames();
+		int numAll   = allNames.size();
+		int numProbs = this.uncertains.size(); // first numProbs entries are probability variables
+
+		// Each PPL variable corresponds to one entry in allNames (by position/index).
 		ArrayList<Variable> vars = new ArrayList<Variable>();
-		for (int i = 0; i < this.uncertains.size() ; i++) {
+		for (int i = 0; i < numAll; i++) {
 			vars.add(new Variable(i));
 		}
 
-		// linear_Expressions[i] represents the left linear expression in the i-th row of the constraint system
+		// linear_Expressions[i] represents the left linear expression in the i-th row of the constraint system.
+		// We iterate over ALL columns (probability + auxiliary) so that auxiliary-only constraints
+		// (e.g. "0.85 <= &dfr") are correctly encoded rather than dropped.
 		Linear_Expression[] linear_Expressions = new Linear_Expression[this.constants.size()];
 
 		for (int i = 0; i < this.constants.size(); i++) {
 			Linear_Expression linear_Expression = new Linear_Expression_Coefficient(new Coefficient(0));
 
-			for (int j = 0; j < this.uncertains.size(); j++) {
-				String uncertain = ((UncertainExpression) this.uncertains.get(j)).getName();
+			for (int j = 0; j < numAll; j++) {
+				String uncertain = allNames.get(j);
 
-				if (this.coefficients.get(uncertain).get(i) == null)
-					continue ;
+				HashMap<Integer, Expression> colMap = this.coefficients.get(uncertain);
+				if (colMap == null || colMap.get(i) == null)
+					continue;
 
-				Integer coefficient = ((Double) this.coefficients.get(uncertain).get(i).evaluate()).intValue();
+				Integer coefficient = ((Double) colMap.get(i).evaluate()).intValue();
 				Linear_Expression times = new Linear_Expression_Times(new Coefficient(coefficient), vars.get(j));
 				linear_Expression = new Linear_Expression_Sum(linear_Expression, times);
 			}
@@ -250,13 +394,17 @@ public class UncertainUpdates extends Updates {
 
 		for (int i = 0; i < this.constants.size(); i++) {
 			constraint_System.add(
-				new Constraint(linear_Expressions[i], this.relationSymbols.get(i), new Linear_Expression_Coefficient(new Coefficient(((Double) constants.get(i).evaluate()).intValue())))
+				new Constraint(
+					linear_Expressions[i], this.relationSymbols.get(i), new Linear_Expression_Coefficient(new Coefficient(((Double) constants.get(i).evaluate()).intValue()))
+				)
 			);
 		}
 
-		// Structural constraints
+		// Structural constraints applied only to probability variables (first numProbs PPL vars).
+		// Auxiliary variables (dfr, fpf, rnd, ...) are already bounded by the user-supplied constraints.
+
 		// Each p_i must lie within the interval [0, 1].
-		for (int i = 0; i < vars.size(); i++) {
+		for (int i = 0; i < numProbs; i++) {
 			constraint_System.add(
 				new Constraint(new Linear_Expression_Variable(vars.get(i)), Relation_Symbol.LESS_OR_EQUAL, new Linear_Expression_Coefficient(new Coefficient(1)))
 			);
@@ -268,7 +416,7 @@ public class UncertainUpdates extends Updates {
 
 		// The sum of all the p_i must equal 1.
 		Linear_Expression sum = new Linear_Expression_Coefficient(new Coefficient(0));
-		for (int i = 0; i < vars.size(); i++) {
+		for (int i = 0; i < numProbs; i++) {
 			sum = new Linear_Expression_Sum(sum, new Linear_Expression_Variable(vars.get(i)));
 		}
 
@@ -281,21 +429,38 @@ public class UncertainUpdates extends Updates {
 	 * Converts all the coefficients to integers. This conversion is required for PPL (Parma Polyhedra Library) operations.
 	 */
 	public void convertToInt() throws PrismLangException{
-		for (int i = 0; i < this.uncertains.size(); i++) {
-			String uncertainName = ((UncertainExpression) this.uncertains.get(i)).getName();
-			for (int j = 0; j < this.constants.size(); j++) {
-				if (this.coefficients.get(uncertainName) != null && this.coefficients.get(uncertainName).get(j) != null) {
-					this.coefficients.get(uncertainName).put(
-						j, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.coefficients.get(uncertainName).get(j).evaluateDouble() * Math.pow(10, precision)))
-					);
+		if (!converted) { // if it was not converted before
+			// Iterate over ALL uncertain variable names (probability + auxiliary) so that
+			// auxiliary variable coefficients are also scaled to integers for PPL.
+			for (String uncertainName : this.coefficients.keySet()) {
+				for (int j = 0; j < this.constants.size(); j++) {
+					if (this.coefficients.get(uncertainName).get(j) != null) {
+						this.coefficients.get(uncertainName).put(
+							j, new ExpressionLiteral(TypeDouble.getInstance(), (double) Math.round(this.coefficients.get(uncertainName).get(j).evaluateDouble() * Math.pow(10, precision)))
+						);
+					}
 				}
 			}
+			
+			for (int i = 0; i < this.constants.size(); i++) {
+				this.constants.set(
+					i, new ExpressionLiteral(TypeDouble.getInstance(), (double) Math.round(this.constants.get(i).evaluateDouble() * Math.pow(10, precision)))
+				);
+			}
+			converted = true;
 		}
 		
-		for (int i = 0; i < this.constants.size(); i++) {
-			this.constants.set(
-				i, new ExpressionLiteral(TypeDouble.getInstance(), Math.floor(this.constants.get(i).evaluateDouble() * Math.pow(10, precision)))
-			);
+	}
+
+	public void initializeConstraintSystem() {
+		Expression ZERO = new ExpressionLiteral(TypeDouble.getInstance(), 0.0);
+		for (int i = 0; i < this.uncertains.size(); i++) {
+			UncertainExpression uncertain = ((UncertainExpression) this.uncertains.get(i));
+			for (int j = 0; j < this.uncertains.size(); j++) {
+				addCoefficient(
+					ZERO.clone().deepCopy(), j, uncertain, true
+				);
+			}
 		}
 	}
 

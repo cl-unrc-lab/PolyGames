@@ -464,6 +464,7 @@ TOKEN :
 |	< MAXMAX:			"maxmax" >
 |	< MAXMIN:			"maxmin" >
 |	< MAX:				"max" >
+|   < ABS:              "abs" >
 |	< MDP:				"mdp" >
 |	< MINMAX:			"minmax" >
 |	< MINMIN:			"minmin" >

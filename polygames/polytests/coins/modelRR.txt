@@ -1,0 +1,58 @@
+smg
+
+player p1
+	scheduler
+endplayer
+
+player p2
+	player1
+endplayer
+
+player p3
+	player2
+endplayer
+
+label "correct" = guess=coin&sched=3;
+
+const bool sched_random = true;
+const bool sched_nondet = !sched_random;
+
+global sched : [0..3];
+
+module scheduler
+
+	[] sched_nondet&sched=0 -> (sched'=1);
+	[] sched!=0&coin!=0&guess!=0 -> (sched'=3);
+	[] sched_nondet&sched=0 -> (sched'=2);
+	[] sched_random&sched=0 -> 1/2 : (sched'=1) + 1/2 : (sched'=2);
+
+endmodule
+
+module player1
+
+	coin : [0..2];
+
+	[] sched=1&coin=0&guess!=0 -> 0.25 : (coin'=1) + 0.75 : (coin'=2);
+	[] sched=1&coin=0&guess!=0 -> 0.75 : (coin'=1) + 0.25 : (coin'=2);
+	[] sched=1&coin=0&guess=0 -> 0.25 : (coin'=1) & (sched'=2) + 0.75 : (coin'=2) & (sched'=2);
+	[] sched=1&coin=0&guess=0 -> 0.75 : (coin'=1) & (sched'=2) + 0.25 : (coin'=2) & (sched'=2);
+
+endmodule
+
+module player2
+
+	guess : [0..2];
+
+	[] sched=2&guess=0&coin=0 -> (guess'=2) & (sched'=1);
+	[] sched=2&guess=0&coin!=0 -> (guess'=2);
+	[] sched=2&guess=0&coin!=0 -> (guess'=1);
+	[] sched=2&guess=0&coin=0 -> (guess'=1) & (sched'=1);
+
+endmodule
+
+rewards "correct_guess" 
+
+	guess!=0&guess=coin : 5;
+
+endrewards
+

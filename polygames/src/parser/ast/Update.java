@@ -88,6 +88,10 @@ public class Update extends ASTElement implements Iterable<UpdateElement>
 	{
 		elements.set(i, e);
 	}
+	
+	public ArrayList<UpdateElement> getElements(){
+		return this.elements;
+	}
 
 	/**
 	 * Set the variable {@code v} for the {@code i}th variable assignment of this update.

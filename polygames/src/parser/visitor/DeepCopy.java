@@ -40,7 +40,7 @@ import parser.ast.DeclarationBool;
 import parser.ast.DeclarationClock;
 import parser.ast.DeclarationInt;
 import parser.ast.DeclarationIntUnbounded;
-import parser.ast.ExpressionArrayIndex;
+import parser.ast.ExpressionArray;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConstant;
 import parser.ast.ExpressionExists;
@@ -53,6 +53,7 @@ import parser.ast.ExpressionIdent;
 import parser.ast.ExpressionInterval;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionLiteral;
+import parser.ast.ExpressionMinMax;
 import parser.ast.ExpressionMultiNash;
 import parser.ast.ExpressionMultiNashProb;
 import parser.ast.ExpressionMultiNashReward;
@@ -498,12 +499,17 @@ public class DeepCopy implements ASTVisitor
 	}
 
 	@Override
-	public Object visit(ExpressionArrayIndex e) throws PrismLangException {
-		return e;
+	public Object visit(ExpressionArray e) throws PrismLangException {
+		return e.clone().deepCopy(this);
 	}
 
 	@Override
 	public Object visit(RewardStructWithArrays e) throws PrismLangException {
+		return e.clone().deepCopy(this);
+	}
+
+	@Override
+	public Object visit(ExpressionMinMax e) throws PrismLangException {
 		return e.clone().deepCopy(this);
 	}
 }

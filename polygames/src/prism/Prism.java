@@ -1,6 +1,5 @@
 //==============================================================================
 //	
-//	Authors:
 //	* Dave Parker <david.parker@comlab.ox.ac.uk> (University of Oxford, formerly University of Birmingham)
 //	* Andrew Hinton <ug60axh@cs.bham.ac.uk> (University of Birmingham)
 //	
@@ -67,8 +66,16 @@ import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
-import parser.visitor.ASTElementsWithArraysReplacerVisitor;
+import parser.visitor.ASTElementWithArraysReplacerVisitor;
+import parser.visitor.FindAllConstants;
+import parser.visitor.ASTTraverseModify;
 import parser.visitor.ASTVisitor;
+import parser.visitor.ExpressionIdentReplacerVisitor;
+import parser.visitor.ExpressionMinMaxReplacerVisitor;
+import parser.visitor.ReplaceConstants;
+import parser.visitor.ReplaceVariables;
+import parser.visitor.ReplaceMinMaxArrays;
+import parser.visitor.DeepCopy;
 import prism.Accuracy.AccuracyLevel;
 import pta.DigitalClocks;
 import pta.PTAModelChecker;
@@ -1290,11 +1297,11 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		} catch (InterruptedException ie) {
 			throw new PrismLangException("Concurrency error in parser");
 		}
+		//System.out.println(modulesFile);
 		
-		ASTElementsWithArraysReplacerVisitor visitor = new ASTElementsWithArraysReplacerVisitor(modulesFile);
-		modulesFile = (ModulesFile) visitor.visit(modulesFile);
+		
+		//System.out.println(modulesFile);
 		modulesFile.tidyUp();
-
 		return modulesFile;
 	}
 

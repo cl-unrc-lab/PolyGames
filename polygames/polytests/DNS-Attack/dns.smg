@@ -1,0 +1,1339 @@
+
+smg
+
+const double AF = 15.31;
+const int BW = 458;       
+const max_succs_attacks = 3;
+const attack_latency = 2;    
+global sched : [0..2]; // 0 attacker, 1 defender, 2 victim 
+global zombies : [0..100];
+global strat : [0..5]; // the strategy used 0:NOFIX, 1:FTR,2:RND,3:RDR,4: AGR, 5:AGF
+const int maxTime = 15;
+global time : [0..15];
+
+player p1 
+   Attacker, [ch1],[ch2],[ch3],[ch4],[ch5],[ch6]
+endplayer
+
+player p2
+   Defender, [nofix],[FTR0],[FTR1],[FTR2],[FTR3],[FTR4],[FTR5],[FTR6],[FTR7],[FTR8],[RND0],[RND1],[RND2],[AGR1],[AGR2],[AGR3],[RDR0],[RDR1],[RDR2],[RDR3],[RDR4],[RDR5],[RDR6],[RDR7],[RDR8],[AGF0],[AGF1],[AGF2],[AGF3],[AGF4],[AGF5],[AGF6],[AGF7],[AGF8],[AGF9],[AGF10],[AGF11],[AGF12],[AGF13],[AGF14],[AGF15],[AGF16],[AGF17],[AGF18],[AGF19],[AGF20],[AGF21],[AGF22],[AGF23],[AGF24],[AGF25],[AGF26]
+endplayer
+
+module Attacker 
+    succsAttacks : [0..3];
+    attackLatency : [0..1];
+	[ch1] sched = 0 & time < maxTime & (attackLatency>0 | succsAttacks = 3)  -> (zombies' = 0) & (sched' = 1) & (time' = time+1) & (succsAttacks' = 0) & (attackLatency' = mod(attackLatency+1,2));
+	[ch2] sched = 0 & time < maxTime & attackLatency=0 & succsAttacks < 3  -> (zombies' = 20) & (sched' = 1) & (time' = time+1) & (succsAttacks' = succsAttacks+1);
+	[ch3] sched = 0 & time < maxTime & attackLatency=0 & succsAttacks < 3-> (zombies' = 40) & (sched' = 1) & (time' = time+1) & (succsAttacks' = succsAttacks+1);
+	[ch4] sched = 0 & time < maxTime & attackLatency=0 & succsAttacks < 3-> (zombies' = 60) & (sched' = 1) & (time' = time+1) & (succsAttacks' = succsAttacks+1);
+	[ch5] sched = 0 & time < maxTime & attackLatency=0 & succsAttacks < 3-> (zombies' = 80) & (sched' = 1) & (time' = time+1) & (succsAttacks' = succsAttacks+1);
+	[ch6] sched = 0 & time < maxTime & attackLatency=0 & succsAttacks < 3-> (zombies' = 100) & (sched' = 1) & (time' = time+1) & (succsAttacks' = succsAttacks+1);
+endmodule                 
+
+module Defender
+    df :[0..2]; // fraction of attcak traffick detected as bogus
+    pfp : [0..2]; // false positives 
+    retries : [2..6];
+    rdf : [0..2];
+	receive_status : [0..3]; //0:p_b_receive,1:p_l_receive, 2:p_b_drop, 3:p_l_drop
+	[nofix] sched = 1  & time < maxTime ->  (sched' = 2) & (strat' = 0) & (time' = time+1);
+[FTR0] sched = 1  & time < maxTime -> (sched' = 2) & (df'=0) & (pfp' = 0) & (strat' = 1) & (time' = time+1);
+[FTR1] sched = 1  & time < maxTime -> (sched' = 2) & (df'=0) & (pfp' = 1) & (strat' = 1) & (time' = time+1);
+[FTR2] sched = 1  & time < maxTime -> (sched' = 2) & (df'=0) & (pfp' = 2) & (strat' = 1) & (time' = time+1);
+[FTR3] sched = 1  & time < maxTime -> (sched' = 2) & (df'=1) & (pfp' = 0) & (strat' = 1) & (time' = time+1);
+[FTR4] sched = 1  & time < maxTime -> (sched' = 2) & (df'=1) & (pfp' = 1) & (strat' = 1) & (time' = time+1);
+[FTR5] sched = 1  & time < maxTime -> (sched' = 2) & (df'=1) & (pfp' = 2) & (strat' = 1) & (time' = time+1);
+[FTR6] sched = 1  & time < maxTime -> (sched' = 2) & (df'=2) & (pfp' = 0) & (strat' = 1) & (time' = time+1);
+[FTR7] sched = 1  & time < maxTime -> (sched' = 2) & (df'=2) & (pfp' = 1) & (strat' = 1) & (time' = time+1);
+[FTR8] sched = 1  & time < maxTime -> (sched' = 2) & (df'=2) & (pfp' = 2) & (strat' = 1) & (time' = time+1);
+[RND0] sched = 1  & time < maxTime -> (sched' = 2)   & (strat' = 2) & (rdf'=0) & (time' = time+1); // this is a parameter?
+[RND1] sched = 1  & time < maxTime -> (sched' = 2)   & (strat' = 2) & (rdf'=1) & (time' = time+1); // this is a parameter?
+[RND2] sched = 1  & time < maxTime -> (sched' = 2)   & (strat' = 2) & (rdf'=2) & (time' = time+1); // this is a parameter?
+[AGR1] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=2) & (strat' = 3) & (time' = time+1);
+ [AGR2] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=4) & (strat' = 3) & (time' = time+1);
+ [AGR3] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=6) & (strat' = 3) & (time' = time+1);
+ [RDR0] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=2) & (rdf'=0) & (strat' = 4) & (time' = time+1);
+ [RDR1] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=2) & (rdf'=1) & (strat' = 4) & (time' = time+1);
+ [RDR2] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=2) & (rdf'=2) & (strat' = 4) & (time' = time+1);
+ [RDR3] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=4) & (rdf'=0) & (strat' = 4) & (time' = time+1);
+ [RDR4] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=4) & (rdf'=1) & (strat' = 4) & (time' = time+1);
+ [RDR5] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=4) & (rdf'=2) & (strat' = 4) & (time' = time+1);
+ [RDR6] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=6) & (rdf'=0) & (strat' = 4) & (time' = time+1);
+ [RDR7] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=6) & (rdf'=1) & (strat' = 4) & (time' = time+1);
+ [RDR8] sched = 1  & time < maxTime -> (sched' = 2) & (retries'=6) & (rdf'=2) & (strat' = 4) & (time' = time+1);
+ [AGF0] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 0) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF1] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 0) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF2] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 0) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[AGF3] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 1) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF4] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 1) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF5] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 1) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[AGF6] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 2) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF7] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 2) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF8] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 2) & (df'= 2) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[AGF9] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 0) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF10] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 0) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF11] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 0) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[AGF12] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 1) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF13] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 1) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF14] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 1) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[AGF15] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 2) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF16] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 2) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF17] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 4) & (df'= 2) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[AGF18] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 0) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF19] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 0) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF20] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 0) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[AGF21] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 1) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF22] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 1) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF23] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 1) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[AGF24] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 2) & (pfp' = 0)  & (strat' = 5) & (time' = time+1);
+[AGF25] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 2) & (pfp' = 1)  & (strat' = 5) & (time' = time+1);
+[AGF26] sched = 1  & time < maxTime -> (sched' = 2) & (retries' = 6) & (df'= 2) & (pfp' = 2)  & (strat' = 5) & (time' = time+1);
+[] sched = 2 & strat = 0 & zombies = 0  -> 0.0: (receive_status'=0) & (sched' = 0) 
+                                                    + 1.0:(receive_status'=1) &  (sched' = 0);
+ [] sched = 2 & strat = 0 & zombies = 20  -> 0.14026423039885808: (receive_status'=0) & (sched' = 0) +  0.004580804389250754:(receive_status'=1) + 0.8281102161539566:(receive_status'=2) & (sched' = 0) + 0.02704474905793457:(receive_status'=3) & (sched' = 0);
+ [] sched = 2 & strat = 0 & zombies = 40  -> 0.07240382200752048: (receive_status'=0) & (sched' = 0) +  0.0011822962444075847:(receive_status'=1) + 0.911529339946207:(receive_status'=2) & (sched' = 0) + 0.014884541801864909:(receive_status'=3) & (sched' = 0);
+ [] sched = 2 & strat = 0 & zombies = 60  -> 0.04879042042497705: (receive_status'=0) & (sched' = 0) +  0.0005311389116587965:(receive_status'=1) + 0.9404406801565435:(receive_status'=2) & (sched' = 0) + 0.010237760506820636:(receive_status'=3) & (sched' = 0);
+ [] sched = 2 & strat = 0 & zombies = 80  -> 0.03679064604076004: (receive_status'=0) & (sched' = 0) +  0.0003003808461851734:(receive_status'=1) + 0.9551108764730074:(receive_status'=2) & (sched' = 0) + 0.007798096640047415:(receive_status'=3) & (sched' = 0);
+ [] sched = 2 & strat = 0 & zombies = 100  -> 0.02952809240483244: (receive_status'=0) & (sched' = 0) +  0.00019286801048224976:(receive_status'=1) + 0.9639826149280682:(receive_status'=2) & (sched' = 0) + 0.006296424656617036:(receive_status'=3) & (sched' = 0);
+ [] sched = 2 & zombies = 0 & strat = 1 & df = 0 & pfp = 0 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.95: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.05 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 1 & df = 0 & pfp = 1 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.9: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.1 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 1 & df = 0 & pfp = 2 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.85: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.15 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 1 & df = 1 & pfp = 0 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.95: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.05 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 1 & df = 1 & pfp = 1 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.9: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.1 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 1 & df = 1 & pfp = 2 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.85: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.15 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 1 & df = 2 & pfp = 0 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.95: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.05 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 1 & df = 2 & pfp = 1 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.9: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.1 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 1 & df = 2 & pfp = 2 -> 0.0: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.85: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.15 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 1 & df = 0 & pfp = 0 -> 0.12002043023304776: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.02482460455506104: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.8483540163197668: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006800948892124288: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 20 & strat = 1 & df = 0 & pfp = 1 -> 0.12111291548912866: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.023732119298980135: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.847261531063686: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.007893434148205187: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 20 & strat = 1 & df = 0 & pfp = 2 -> 0.1222254721259937: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.022619562662115095: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.8461489744268209: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.009005990785070231: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 20 & strat = 1 & df = 1 & pfp = 0 -> 0.09683744465528145: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.03004427577482606: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.8715370018975332 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.0015812776723592662 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 1 & df = 1 & pfp = 1 -> 0.09683744465528145: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.028462998102466792: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.8715370018975332 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.0031625553447185324 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 1 & df = 1 & pfp = 2 -> 0.09683744465528145: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.026881720430107527: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.8715370018975332 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.004743833017077799 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 1 & df = 2 & pfp = 0 -> 0.04841872232764078: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.03004427577482606: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.919955724225174 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.0015812776723592662 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 1 & df = 2 & pfp = 1 -> 0.04841872232764078: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.028462998102466792: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.919955724225174 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.0031625553447185324 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 1 & df = 2 & pfp = 2 -> 0.04841872232764078: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.026881720430107527: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.919955724225174 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.004743833017077799 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 1 & df = 0 & pfp = 0 -> 0.0666892346351826: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.006896883616745423: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9172439273185449: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.00916995442952707: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 40 & strat = 1 & df = 0 & pfp = 1 -> 0.06701983762266614: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.006566280629261868: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9169133243310613: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.009500557417010625: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 40 & strat = 1 & df = 0 & pfp = 2 -> 0.06735373478100944: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.006232383470918573: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.916579427172718: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.00983445457535392: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 40 & strat = 1 & df = 1 & pfp = 0 -> 0.06370389993989357: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.00988221831203444: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9202292620138339: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006184619734238053: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 40 & strat = 1 & df = 1 & pfp = 1 -> 0.06415737303172085: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.009428745220207181: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9197757889220066: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006638092826065314: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 40 & strat = 1 & df = 1 & pfp = 2 -> 0.06461734846211746: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.008968769789810557: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9193158134916101: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.007098068256461936: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 40 & strat = 1 & df = 2 & pfp = 0 -> 0.04919665809768642: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.015263496143958869: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.9347365038560411 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.0008033419023136247 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 1 & df = 2 & pfp = 1 -> 0.04919665809768642: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.014460154241645245: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.9347365038560411 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.0016066838046272494 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 1 & df = 2 & pfp = 2 -> 0.04919665809768642: (receive_status' = 0) & (sched' = 0)
+                                                                                              + 0.01365681233933162: (receive_status' = 1) & (sched' = 0)
+                                                                                              + 0.9347365038560411 : (receive_status' = 2) & (sched' = 0)
+                                                                                              + 0.002410025706940874 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 1 & df = 0 & pfp = 0 -> 0.046140387405764455: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.003181171930871343: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.943090713175756: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.007587727487608088: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 60 & strat = 1 & df = 0 & pfp = 1 -> 0.04629755201985861: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0030240073167771783: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9429335485616619: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.007744892101702252: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 60 & strat = 1 & df = 0 & pfp = 2 -> 0.04645579096995725: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0028657683666785446: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9427753096115632: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.007903131051800887: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 60 & strat = 1 & df = 1 & pfp = 0 -> 0.04469887964348228: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.004622679693153513: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9445322209380382: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006146219725325918: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 60 & strat = 1 & df = 1 & pfp = 1 -> 0.044920468378577876: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0044010909580579245: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9443106322029426: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006367808460421506: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 60 & strat = 1 & df = 1 & pfp = 2 -> 0.04514426505244484: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.004177294284190956: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9440868355290757: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006591605134288476: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 60 & strat = 1 & df = 2 & pfp = 0 -> 0.04086846870524414: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.00845309063139166: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9483626318762763: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.0023158087870877716: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 60 & strat = 1 & df = 2 & pfp = 1 -> 0.041240473699830374: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.008081085636805421: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9479906268816901: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.002687813781674009: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 60 & strat = 1 & df = 2 & pfp = 2 -> 0.04161931325246523: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.007702246084170567: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9476117873290553: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.0030666533343088644: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 0 & pfp = 0 -> 0.03526738153229263: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.001823645354652623: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9566341409814747: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006274832131579966: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 0 & pfp = 1 -> 0.0353588805503818: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0017321463365634452: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9565426419633856: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006366331149669143: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 0 & pfp = 2 -> 0.0354508555804265: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0016401713065187526: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9564506669333408: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.006458306179713836: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 1 & pfp = 0 -> 0.034421192401220296: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0026698344857249584: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9574803301125472: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.00542864300050763: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 1 & pfp = 1 -> 0.034552091368368225: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0025389355185770255: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9573494311453993: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.005559541967655562: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 1 & pfp = 2 -> 0.034683989716850314: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.002407037170094936: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9572175327969172: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.005691440316137652: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 2 & pfp = 0 -> 0.03210990226967101: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.004981124617274239: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9597916202440965: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.0031173528689583496: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 2 & pfp = 1 -> 0.03233847503639704: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.004752551850548221: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9595630474773704: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.003345925635684367: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 80 & strat = 1 & df = 2 & pfp = 2 -> 0.032570325301928986: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.004520701585016266: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9593311972118385: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.003577775901216322: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 0 & pfp = 0 -> 0.028540324312678347: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0011806361026363782: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9649703830202224: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.005308656564462908: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 0 & pfp = 1 -> 0.028600119670551132: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0011208407447635973: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9649105876623496: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.0053684519223356885: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 0 & pfp = 2 -> 0.028660166111177953: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0010607943041367844: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9648505412217228: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.0054284983629625016: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 1 & pfp = 0 -> 0.0279844959384052: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0017364644769095328: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9655262113944955: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.0047528281901897534: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 1 & pfp = 1 -> 0.028070814556352165: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0016501458589625703: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9654398927765485: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.004839146808136715: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 1 & pfp = 2 -> 0.028157667324162656: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.0015632930911520745: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.965353040008738: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.004925999575947211: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 2 & pfp = 0 -> 0.02643973875412368: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.003281221661191048: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9670709685787771: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.003208071005908238: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 2 & pfp = 1 -> 0.026594266742166486: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.003126693673148245: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9669164405907342: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.003362598993951041: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 100 & strat = 1 & df = 2 & pfp = 2 -> 0.026750611637770053: (receive_status' = 0) & (sched' = 0)
+                                                                                             + 0.00297034877754468: (receive_status'=1) & (sched' = 0)
+                                                                                             + 0.9667600956951307: (receive_status'=2) & (sched' = 0)
+                                                                                             + 0.0035189438895546063: (receive_status'=3) & (sched' = 0);
+	        [] sched = 2 & zombies = 0 & strat = 2 & rdf = 0  ->  0.0: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.18999999999999992: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.81 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 2 & rdf = 1  ->  0.0: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.09999999999999998: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.9 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 2 & rdf = 2  ->  0.0: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.010000000000000009: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.99 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 2 & rdf = 0  ->  0.14026423039885802: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.004580804389250751: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.8281102161539566 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.02704474905793457 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 2 & rdf = 1  ->  0.09683744465528145: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.003162555344718532: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.8715370018975332 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.028462998102466792 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 2 & rdf = 2  ->  0.009683744465528155: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.00031625553447185353: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9586907020872866 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.031309297912713474 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 2 & rdf = 0  ->  0.07240382200752045: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.0011822962444075838: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9115293399462071 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.014884541801864909 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 2 & rdf = 1  ->  0.07240382200752044: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.0011822962444075838: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9115293399462071 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.01488454180186491 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 2 & rdf = 2  ->  0.009839331619537284: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.0001606683804627251: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9740938303341903 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.01590616966580977 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 2 & rdf = 0  ->  0.04879042042497699: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.0005311389116587959: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9404406801565436 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.010237760506820636 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 2 & rdf = 1  ->  0.048790420424977006: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.000531138911658796: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9404406801565436 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.010237760506820634 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 2 & rdf = 2  ->  0.009892311005815215: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.00010768899418479442: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9793387895757053 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.010661210424294637 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 2 & rdf = 0  ->  0.03679064604076008: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.0003003808461851737: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9551108764730074 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.007798096640047414 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 2 & rdf = 1  ->  0.036790646040760086: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.0003003808461851738: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9551108764730074 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.0077980966400474135 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 2 & rdf = 2  ->  0.009919015225137683: (receive_status' = 0) & (sched' = 0)
+                                                                + 8.098477486232595e-05: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9819825072886298 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.008017492711370262 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 2 & rdf = 0  ->  0.029528092404832482: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.00019286801048225006: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9639826149280682 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.006296424656617035 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 2 & rdf = 1  ->  0.02952809240483248: (receive_status' = 0) & (sched' = 0)
+                                                                + 0.00019286801048225: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9639826149280681 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.006296424656617036 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 2 & rdf = 2  ->  0.009935107073329017: (receive_status' = 0) & (sched' = 0)
+                                                                + 6.489292667099293e-05: (receive_status' = 1) & (sched' = 0)
+                                                                + 0.9835756002595717 : (receive_status' = 2) & (sched' = 0)
+                                                                + 0.006424399740428293 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 3 & retries=2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +1.0 : (receive_status' = 1) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 3 & retries=4 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.71375 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 3 & retries=6 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.07156249999999997 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.9284375 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 3 & retries=2 -> 0.11700826435799956 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.015285207623513986 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.7674515854398052 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.10025494257868128 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 3 & retries=4 -> 0.06452471960837472 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.03371637863272356 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.5922749371912821 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.3094839645676196 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 3 & retries=6 -> 0.015664075831857065 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.032740067055481784 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.3079461545634082 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.6436497025492529 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 3 & retries=2 -> 0.06589807910122734 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.004304250757754888 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.8727898424193122 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.05700782772170557 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 3 & retries=4 -> 0.047012801303167415 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.012282900405791618 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.7458406425083292 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.19486365578271175 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 3 & retries=6 -> 0.01788193624485 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.01868784976600914 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.47109921993528414 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.4923309940538567 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 3 & retries=2 -> 0.04578435177979017 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.001993657817539306 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.9124881289212322 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.03973386148143837 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 3 & retries=4 -> 0.036163552556900805 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.006298898768891933 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.8154960061302863 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.14204154254392098 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 3 & retries=6 -> 0.017318990551243574 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.012066355271931076 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.5720560896489362 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.3985585645278893 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 3 & retries=2 -> 0.03506605759971455 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.0011452010973126894 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.9333083889531001 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.030480352349872637 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 3 & retries=4 -> 0.029252066089499915 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.0038213019058784994 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.8552077837083049 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.11171884829631677 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 3 & retries=6 -> 0.016131179902093663 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.008429094658180881 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.6406684768975631 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.33477124854216234 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 3 & retries=2 -> 0.0284111163469327 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.0007422891272875951 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.9461273941559317 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.02471920036984799 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 3 & retries=4 -> 0.02452186253379549 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.002562702812153676 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.880859568572059 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.0920558660819918 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 3 & retries=6 -> 0.014877193846018029 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.0062190751544425465 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.6903277808200344 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.28857595017950494 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 4 & retries=2 & rdf=0 -> 0.0 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.18999999999999992 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.81 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 4 & retries=4 & rdf=0 -> 0.0 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.18999999999999992 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.81 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 4 & retries=6 & rdf=0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0715625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 4 & retries=2 & rdf=1 -> 0.0 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.09999999999999998 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.9 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 4 & retries=4 & rdf=1 -> 0.0 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.09999999999999998 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.9 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 4 & retries=6 & rdf=1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0715625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 4 & retries=2 & rdf=2 -> 0.0 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.010000000000000009 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.99 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 4 & retries=4 & rdf=2 -> 0.0 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.010000000000000009 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.99 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 4 & retries=6 & rdf=2 -> 0.0 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.010000000000000009 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.99 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 4 & retries=2 & rdf=0 -> 0.11700826435799959 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.015285207623513986 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7674515854398052 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.10025494257868127 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 4 & retries=4 & rdf=0 -> 0.06452471960837469 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.033716378632723545 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5922749371912821 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3094839645676196 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 4 & retries=6 & rdf=0 -> 0.015664075831857065 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03274006705548178 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.30794615456340824 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6436497025492529 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 4 & retries=2 & rdf=1 -> 0.08844598497978046 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.011554015020219525 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.7960138648180243 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.10398613518197573 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 4 & retries=4 & rdf=1 -> 0.06452471960837468 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.033716378632723545 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5922749371912822 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3094839645676196 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 4 & retries=6 & rdf=1 -> 0.01566407583185706 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03274006705548177 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.30794615456340824 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6436497025492529 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 4 & retries=2 & rdf=2 -> 0.008844598497978055 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.0011554015020219536 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.8756152512998268 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.11438474870017332 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 4 & retries=4 & rdf=2 -> 0.006567996567996574 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.003432003432003435 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.6502316602316602 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.33976833976833976 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 20 & strat = 4 & retries=6 & rdf=2 -> 0.0032361023039526554 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.006763897696047353 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.3203741280913126 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.6696258719086874 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 4 & retries=2 & rdf=0 -> 0.06589807910122732 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0043042507577548865 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8727898424193122 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.05700782772170557 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 4 & retries=4 & rdf=0 -> 0.04701280130316746 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01228290040579163 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7458406425083292 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.19486365578271173 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 4 & retries=6 & rdf=0 -> 0.017881936244850006 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.018687849766009148 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.47109921993528414 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.4923309940538567 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 4 & retries=2 & rdf=1 -> 0.06589807910122732 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.004304250757754887 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8727898424193123 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.05700782772170557 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 4 & retries=4 & rdf=1 -> 0.04701280130316746 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01228290040579163 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7458406425083293 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.19486365578271173 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 4 & retries=6 & rdf=1 -> 0.017881936244850006 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.018687849766009148 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.4710992199352842 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.49233099405385666 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 4 & retries=2 & rdf=2 -> 0.009386879215205403 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.000613120784794605 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.9293010423053342 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.06069895769466585 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 4 & retries=4 & rdf=2 -> 0.007928534438114972 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.0020714655618850357 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.7849249093733817 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.20507509062661833 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 40 & strat = 4 & retries=6 & rdf=2 -> 0.004889811561801346 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.005110188438198663 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.4840913446183328 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.5059086553816672 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 4 & retries=2 & rdf=0 -> 0.04578435177979013 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0019936578175393043 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9124881289212322 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.039733861481438364 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 4 & retries=4 & rdf=0 -> 0.03616355255690076 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.006298898768891925 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8154960061302863 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.14204154254392096 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 4 & retries=6 & rdf=0 -> 0.017318990551243564 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01206635527193107 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5720560896489361 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3985585645278893 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 4 & retries=2 & rdf=1 -> 0.045784351779790136 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.001993657817539305 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9124881289212322 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.03973386148143837 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 4 & retries=4 & rdf=1 -> 0.03616355255690077 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.006298898768891926 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8154960061302863 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.14204154254392098 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 4 & retries=6 & rdf=1 -> 0.017318990551243568 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.012066355271931072 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5720560896489361 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3985585645278893 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 4 & retries=2 & rdf=2 -> 0.009582724807010232 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.00041727519298977715 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.948689755894012 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.0413102441059879 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 4 & retries=4 & rdf=2 -> 0.00851659558687188 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.0014834044131281305 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.8431429631003152 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.14685703689968477 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 60 & strat = 4 & retries=6 & rdf=2 -> 0.005893750802001802 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.004106249197998207 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.5834813293981778 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.4065186706018222 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 4 & retries=2 & rdf=0 -> 0.03506605759971451 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.001145201097312688 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9333083889531002 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.030480352349872633 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 4 & retries=4 & rdf=0 -> 0.029252066089499887 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.003821301905878495 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8552077837083049 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.11171884829631676 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 4 & retries=6 & rdf=0 -> 0.01613117990209367 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.008429094658180885 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6406684768975631 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3347712485421623 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 4 & retries=2 & rdf=1 -> 0.03506605759971451 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.001145201097312688 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9333083889531002 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.030480352349872637 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 4 & retries=4 & rdf=1 -> 0.029252066089499897 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0038213019058784973 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8552077837083049 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.11171884829631676 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 4 & retries=6 & rdf=1 -> 0.01613117990209367 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.008429094658180886 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6406684768975632 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3347712485421623 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 4 & retries=2 & rdf=2 -> 0.009683744465528155 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.00031625553447185353 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.9586907020872866 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.031309297912713474 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 4 & retries=4 & rdf=2 -> 0.008844598497978055 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.0011554015020219536 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.8756152512998268 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.11438474870017332 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 80 & strat = 4 & retries=6 & rdf=2 -> 0.006567996567996574 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.003432003432003435 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.6502316602316602 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.33976833976833976 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 4 & retries=2 & rdf=0 -> 0.028411116346932653 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0007422891272875938 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9461273941559318 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02471920036984799 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 4 & retries=4 & rdf=0 -> 0.024521862533795465 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0025627028121536738 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.880859568572059 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.09205586608199179 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 4 & retries=6 & rdf=0 -> 0.014877193846018056 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.006219075154442557 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6903277808200344 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2885759501795049 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 4 & retries=2 & rdf=1 -> 0.028411116346932653 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0007422891272875937 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9461273941559317 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02471920036984799 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 4 & retries=4 & rdf=1 -> 0.024521862533795465 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0025627028121536738 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.880859568572059 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.0920558660819918 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 4 & retries=6 & rdf=1 -> 0.01487719384601806 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.006219075154442559 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6903277808200344 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.28857595017950494 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 4 & retries=2 & rdf=2 -> 0.009745385105028653 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.00025461489497135604 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.9647931253978358 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.025206874602164225 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 4 & retries=4 & rdf=2 -> 0.009053814311058552 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.0009461856889414556 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.896327616794796 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.09367238320520402 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 100 & strat = 4 & retries=6 & rdf=2 -> 0.0070520497466605315 : (receive_status' = 0) &  (sched' = 0)
+                                                            +0.0029479502533394774 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.698152924919392 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.29184707508060803 : (receive_status' = 3) & (sched' = 0);
+                [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 2 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.05 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.95 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 2 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.1 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.9 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 2 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.15 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.85 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 2 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.05 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.95 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 2 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.1 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.9 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 2 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.15 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.85 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 2 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.05 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.95 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 2 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.1 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.9 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 2 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            +0.15 : (receive_status' = 1) & (sched' = 0)
+                                                            +0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            +0.85 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 4 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 4 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 4 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 4 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 4 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 4 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 4 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 4 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 4 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.28625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.71375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 6 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07156250000000004 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284374999999999 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 6 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0715625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=0 & retries = 6 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07156250000000003 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 6 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07156250000000004 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284374999999999 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 6 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0715625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=1 & retries = 6 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07156250000000003 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 6 & pfp = 0 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07156250000000004 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284374999999999 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 6 & pfp = 1 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0715625 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 0 & strat = 5 & df=2 & retries = 6 & pfp = 2 -> 0.0 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07156250000000003 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.0 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.9284375 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 2 & pfp = 0 -> 0.0723965109985812 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.05989696098293239 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8120633387992235 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.055643189219262874 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 2 & pfp = 1 -> 0.07416378821080091 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.058129683770712655 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8102960615870038 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.05741046643148261 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 2 & pfp = 2 -> 0.0760195066697225 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.05627396531179108 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8084403431280822 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.05926618489040418 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 2 & pfp = 0 -> 0.059032732615475744 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07326073936603783 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.825427117182329 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.04227941083615742 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 2 & pfp = 1 -> 0.06080495514971398 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07148851683179959 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8236548946480907 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.044051633370395665 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 2 & pfp = 2 -> 0.06268687886217805 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.06960659311933554 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8217729709356267 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.04593355708285973 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 2 & pfp = 0 -> 0.03799311678928858 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.09430035519222499 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8464667330085163 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.021239795009970266 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 2 & pfp = 1 -> 0.03947404124024506 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.09281943074126851 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8449858085575598 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02272071946092675 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 2 & pfp = 2 -> 0.04107509746576707 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0912183745157465 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8433847523320377 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.024321775686448752 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 4 & pfp = 0 -> 0.022797017340542833 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07544408090055542 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6340026394591138 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2677562622997878 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 4 & pfp = 1 -> 0.02375724552315928 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.07448385271793893 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6330424112764974 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.26871649048240426 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 4 & pfp = 2 -> 0.024801921850237142 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0734391763908611 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6319977349494196 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2697611668094821 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 4 & pfp = 0 -> 0.016472141212038265 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.08176895702906001 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6403275155876186 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2614313861712832 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 4 & pfp = 1 -> 0.01722679205212706 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.08101430618897118 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6395728647475298 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.262186037011372 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 4 & pfp = 2 -> 0.018053909663560363 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.08018718857753789 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6387457471360966 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.26301315462280533 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 4 & pfp = 0 -> 0.008989726938444893 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.08925137130265334 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.647809929861212 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2539489718976899 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 4 & pfp = 1 -> 0.009441160090836828 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0887999381502614 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6473584967088201 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2544004050500818 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 4 & pfp = 2 -> 0.009940329218632051 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.08830076902246621 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6468593275810248 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.254899574177877 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 6 & pfp = 0 -> 0.003399755757979407 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04500438712935944 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.32021047463728586 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6313853824753753 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 6 & pfp = 1 -> 0.003574682492909932 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04482946039442893 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.32003554790235533 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6315603092103058 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=0 & retries = 6 & pfp = 2 -> 0.0037685865828411378 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04463555630449768 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.31984164381242414 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6317542133002371 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 6 & pfp = 0 -> 0.0023208400225647723 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04608330286477407 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.32128939037270055 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6303064667399607 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 6 & pfp = 1 -> 0.0024432673753096083 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.045960875512029216 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.3211669630199557 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6304288940927055 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=1 & retries = 6 & pfp = 2 -> 0.0025793304361322517 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04582481245120657 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.32103089995913303 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6305649571535281 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 6 & pfp = 0 -> 0.0011889227312335078 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04721522015610529 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.3224213076640318 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6291745494486295 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 6 & pfp = 1 -> 0.0012532638169575317 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.047150879070381284 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.32235696657830776 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.6292388905343534 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 20 & strat = 5 & df=2 & retries = 6 & pfp = 2 -> 0.0013249672410741054 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0470791756462647 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.3222852631541912 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.62931059395847 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 2 & pfp = 0 -> 0.049659525803527706 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.020542804055454524 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8890283957170119 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.040769274424005936 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 2 & pfp = 1 -> 0.050436305496997555 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.019766024361984668 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.888251616023542 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.04154605411747579 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 2 & pfp = 2 -> 0.051237772293390334 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01896455756559189 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8874501492271492 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.042347520913868564 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 2 & pfp = 0 -> 0.043321147526844725 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.026881182332137495 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8953667739936949 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.03443089614732296 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 2 & pfp = 1 -> 0.04421216249037505 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.025990167368607157 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8944757590301645 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.035321911110853296 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 2 & pfp = 2 -> 0.04514059933393606 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.025061730525046157 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8935473221866036 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.0362503479544143 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 2 & pfp = 0 -> 0.03132607607522642 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03887625378375581 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9073618454453132 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02243582469570465 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 2 & pfp = 1 -> 0.03226651666589668 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03793581319308554 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.906421404854643 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.023376265286374914 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 2 & pfp = 2 -> 0.033265170849304186 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03693715900967803 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9054227506712355 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.024374919469782423 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 4 & pfp = 0 -> 0.022336189448802512 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.036959512260156556 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7705172543626941 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.1701870439283468 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 4 & pfp = 1 -> 0.02309379784187646 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03620190386708262 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7697596459696202 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.17094465232142073 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 4 & pfp = 2 -> 0.023904604401759767 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.035391097307199304 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7689488394097368 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.17175545888130406 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 4 & pfp = 0 -> 0.01702902256920209 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04226667913975699 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7758244212422946 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.16487987704874638 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 4 & pfp = 1 -> 0.017692792694682588 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.041602909014276504 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7751606511168141 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.16554364717422684 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 4 & pfp = 2 -> 0.018410407486598324 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04088529422236076 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7744430363248984 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.1662612619661426 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 4 & pfp = 0 -> 0.009942144268581364 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04935355744037772 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7829112995429154 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.15779299874812563 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 4 & pfp = 1 -> 0.010397631349950339 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04889807035900874 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7824558124615464 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.15824848582949463 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 4 & pfp = 2 -> 0.010896857438052625 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.04839884427090645 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7819565863734441 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.1587477119175969 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 6 & pfp = 0 -> 0.004799960767807163 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.031769825243051976 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.48418119541232696 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.47924901857681385 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 6 & pfp = 1 -> 0.00502994720893229 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03153983880192683 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.4839512089712018 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.479479005017939 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=0 & retries = 6 & pfp = 2 -> 0.005283082035286893 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03128670397557228 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.4836980741448472 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.47973213984429364 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 6 & pfp = 0 -> 0.00334638350263734 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0332234025082218 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.48563477267749683 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.47779544131164403 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 6 & pfp = 1 -> 0.0035144273669339846 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03305535864392514 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.4854667288132002 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.4779634851759407 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=1 & retries = 6 & pfp = 2 -> 0.003700240723192477 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03286954528766669 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.4852809154569417 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.47814929853219923 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 6 & pfp = 0 -> 0.001753416503793349 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03481636950706581 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.48722773967634087 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.47620247431280005 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 6 & pfp = 1 -> 0.0018459115222915635 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.034723874488567584 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.48713524465784264 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.4762949693312983 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 40 & strat = 5 & df=2 & retries = 6 & pfp = 2 -> 0.001948708446716975 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03462107756414218 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.4870324477334172 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.4763977662557237 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 2 & pfp = 0 -> 0.03744997976230743 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.010328029835022007 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9208225009387149 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.03139948946395567 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 2 & pfp = 1 -> 0.037880959447701375 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.009897050149628054 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9203915212533209 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.03183046914934962 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 2 & pfp = 2 -> 0.03832197416855477 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.009456035428774674 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9199505065324675 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.032271483870203 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 2 & pfp = 0 -> 0.03379707347613338 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.013980936121196047 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.924475407224889 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.027746583177781628 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 2 & pfp = 1 -> 0.03432573096833006 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.013452278628999375 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9239467497326922 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.028275240669978302 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 2 & pfp = 2 -> 0.0348711899063299 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.012906819690999528 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9234012907946925 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.028820699607978145 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 2 & pfp = 0 -> 0.0261461215394417 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.021631888057887738 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9321263591615805 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02009563124108994 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 2 & pfp = 1 -> 0.026784376672834634 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0209936329244948 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9314881040281876 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02073388637448288 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 2 & pfp = 2 -> 0.027454572511013912 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.020323437086315524 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9308179081900083 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02140408221266215 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 4 & pfp = 0 -> 0.020190141717039842 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02227230960875285 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8314694169701472 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.12606813170406006 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 4 & pfp = 1 -> 0.020763338543528777 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.021699112782263906 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8308962201436583 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.12664132853054902 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 4 & pfp = 2 -> 0.0213700323904488 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0210924189353439 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8302895262967382 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.12724802237746902 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 4 & pfp = 0 -> 0.015995246365895666 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02646720495989703 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8356643123212913 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.12187323635291586 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 4 & pfp = 1 -> 0.016537779949068583 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.025924671376724107 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8351217787381184 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.12241576993608881 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 4 & pfp = 2 -> 0.017118409456628268 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.025344041869164433 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8345411492305588 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.12299639944364847 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 4 & pfp = 0 -> 0.009853485522122264 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03260896580367043 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8418060731650647 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.11573147550914246 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 4 & pfp = 1 -> 0.010268522031241296 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0321939292945514 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8413910366559457 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.11614651201826152 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 4 & pfp = 2 -> 0.010720059305192433 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.03174239202060025 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8409394993819945 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.11659804929221265 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 6 & pfp = 0 -> 0.0054291513709961705 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.023956194452178472 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5839459288291835 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3866687253476419 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 6 & pfp = 1 -> 0.005672546268475648 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.023712799554698984 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.583702533931704 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3869121202451214 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=0 & retries = 6 & pfp = 2 -> 0.005938788778033168 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02344655704514147 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5834362914221465 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3871783627546789 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 6 & pfp = 0 -> 0.003856968346979141 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.025528377476195498 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5855181118532005 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.38509654232362484 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 6 & pfp = 1 -> 0.0040417720290432495 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02534357379413142 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5853333081711364 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3852813460056889 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=1 & retries = 6 & pfp = 2 -> 0.004245176402536445 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.025140169420638216 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5851299037976432 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3854847503791822 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 6 & pfp = 0 -> 0.002063934876299318 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02732141094687534 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5873111453238803 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.383303508852945 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 6 & pfp = 1 -> 0.0021701299722772876 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.027215215850897378 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5872049502279023 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.383409703948923 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 60 & strat = 5 & df=2 & retries = 6 & pfp = 2 -> 0.0022878459031722615 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02709749992000238 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.5870872342970073 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.383527419879818 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 2 & pfp = 0 -> 0.03000510755826194 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.00620615113876526 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9383693389945527 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.025419402308420068 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 2 & pfp = 1 -> 0.03027822887228217 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0059330298247450355 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9380962176805324 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02569252362244029 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 2 & pfp = 2 -> 0.030556368031498422 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.005654890665528773 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9378180785213162 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02597066278165655 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 2 & pfp = 0 -> 0.02763680810824957 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.008574450588777628 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9407376384445651 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.023051102858407696 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 2 & pfp = 1 -> 0.027985581557369327 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.00822567713965787 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9403888649954454 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.023399876307527455 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 2 & pfp = 2 -> 0.02834327048320483 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.007867988213822374 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9400311760696098 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02375756523336295 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 2 & pfp = 0 -> 0.02234560139667419 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01386565730035301 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9460288451561406 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.017759896146832314 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 2 & pfp = 1 -> 0.022805198299115044 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01340606039791216 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9455692482536997 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.018219493049273165 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 2 & pfp = 2 -> 0.023284097885404732 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01292716081162247 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.94509034866741 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.018698392635562854 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 4 & pfp = 0 -> 0.01809912774964529 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.014974240245733092 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8663607220481595 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.10056590995646217 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 4 & pfp = 1 -> 0.018540947052700228 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.014532420942678164 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8659189027451045 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.10100772925951709 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 4 & pfp = 2 -> 0.019004876667430625 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01406849132794777 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8654549731303741 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.1014716588742475 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 4 & pfp = 0 -> 0.014758183153868933 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.018315184841509458 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8697016666439358 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.0972249653606858 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 4 & pfp = 1 -> 0.015201238787428495 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.017872129207949897 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8692586110103763 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.09766802099424536 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 4 & pfp = 2 -> 0.015671719715544513 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.017401648279833884 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8687881300822602 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.09813850192236137 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 4 & pfp = 0 -> 0.009498279197322147 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.023575088798056254 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8749615706004826 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.091965061404139 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 4 & pfp = 1 -> 0.009868510310061265 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.023204857685317125 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8745913394877436 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.09233529251687812 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 4 & pfp = 2 -> 0.010268774366441769 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02280459362893663 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8741910754313631 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.09273555657325863 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 6 & pfp = 0 -> 0.005699254335135708 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.018861020225138855 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.651100402464521 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.32433932297520435 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 6 & pfp = 1 -> 0.005939311380789825 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01862096317948475 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.650860345418867 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.32457938002085845 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=0 & retries = 6 & pfp = 2 -> 0.0062004804625592855 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.018359794097715276 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6505991763370974 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.32484054910262794 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 6 & pfp = 0 -> 0.004118035303009564 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02044223925726499 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6526816214966473 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3227581039430782 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 6 & pfp = 1 -> 0.004306698013031765 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.020253576547242795 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.652492958786625 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3229467666531004 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=1 & retries = 6 & pfp = 2 -> 0.0045134774158900924 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.020046797144384478 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6522861793837668 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.32315354605595875 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 6 & pfp = 0 -> 0.0022474317346112232 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.022312842825663336 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6545522250650456 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3208875003746799 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 6 & pfp = 1 -> 0.002360290022709206 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02219998453756534 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6544393667769477 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.3210003586627779 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 80 & strat = 5 & df=2 & retries = 6 & pfp = 2 -> 0.0024850823046580137 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.02207519225561656 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6543145744949989 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.32112515094472666 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 2 & pfp = 0 -> 0.025014308115653576 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.004139097358566669 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9495242023872108 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02132239213856891 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 2 & pfp = 1 -> 0.02520263341673133 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.003950772057488908 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9493358770861331 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.021510717439646675 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 2 & pfp = 2 -> 0.025393815919418465 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.003759589554801775 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.949144694583446 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02170189994233381 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 2 & pfp = 0 -> 0.023356286646274826 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.0057971188279454175 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9511822238565896 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.019664370669190162 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 2 & pfp = 1 -> 0.02360331241725605 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.005550093056964193 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9509351980856083 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.01991139644017139 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 2 & pfp = 2 -> 0.02385561933780395 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.005297786136416293 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9506828911650604 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.02016370336071929 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 2 & pfp = 0 -> 0.019482262671772676 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.009671142802447564 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9550562478310918 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.015790346694688016 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 2 & pfp = 1 -> 0.019828460142617146 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.009324945331603092 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9547100503602474 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.01613654416553249 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 2 & pfp = 2 -> 0.0201871839805659 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.008966221493654345 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.9543513265222986 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.016495268003481237 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 4 & pfp = 0 -> 0.01629757744450994 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.010786987901439192 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8890838536613446 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.08383158099270628 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 4 & pfp = 1 -> 0.01664651527284149 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.010438050073107661 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8887349158330131 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.08418051882103782 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 4 & pfp = 2 -> 0.017010721815116158 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.010073843530832995 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8883707092907384 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.08454472536331249 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 4 & pfp = 0 -> 0.013591107684250448 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.013493457661698682 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.891790323421604 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.0811251112324468 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 4 & pfp = 1 -> 0.013957074905637199 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.013127490440311933 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8914243562002173 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.08149107845383355 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 4 & pfp = 2 -> 0.014343296279712259 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.012741269066236885 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8910381348261422 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.08187729982790859 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 4 & pfp = 0 -> 0.009071640679205458 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.018012924666743677 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.896309790426649 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.0766056442274018 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 4 & pfp = 1 -> 0.009400695884073487 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01768386946187565 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.895980735221781 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.07693469943226983 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 4 & pfp = 2 -> 0.009754521181992036 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.017330044163957097 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.8956269099238625 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.07728852473018838 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 6 & pfp = 0 -> 0.005783749986218332 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.015312519014242305 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6994212246798341 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.27948250631970517 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 6 & pfp = 1 -> 0.006013477534854809 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01508279146560579 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6991914971311977 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2797122338683417 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=0 & retries = 6 & pfp = 2 -> 0.006262209236677804 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01483405976378282 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.6989427654293747 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.27996096557016464 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 6 & pfp = 0 -> 0.004243645754789805 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.016852623245670814 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7009613289112626 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.27794240208827664 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 6 & pfp = 1 -> 0.004429898208710084 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.016666370791750547 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7007750764573424 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.278128654542197 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=1 & retries = 6 & pfp = 2 -> 0.004633250299771224 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01646301870068939 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7005717243662812 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2783320066332581 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 6 & pfp = 0 -> 0.00235909632895371 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.018737172671506916 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7028458783370989 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.27605785266244054 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 6 & pfp = 1 -> 0.002474782609739119 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.018621486390721507 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7027301920563134 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.276173538943226 : (receive_status' = 3) & (sched' = 0);
+                    [] sched = 2 & zombies = 100 & strat = 5 & df=2 & retries = 6 & pfp = 2 -> 0.0026024001160023565 : (receive_status' = 0) & (sched' = 0)
+                                                            + 0.01849386888445827 : (receive_status' = 1) & (sched' = 0)
+                                                            + 0.7026025745500502 : (receive_status' = 2) & (sched' = 0)
+                                                            + 0.2763011564494892 : (receive_status' = 3) & (sched' = 0);
+                    endmodule
+// received bogus packages
+rewards "received_bogus"
+ sched=0 & receive_status=0 : 1;
+endrewards
+
+// received legal packages
+rewards "received_legal"
+ sched=0 & receive_status=1 : 1;
+endrewards
+
+// dropped bogus packages
+rewards "dropped_blogus"
+ sched=0 & receive_status=2 : 1;
+endrewards
+
+// droppes legal packages
+rewards "dropped_legal"
+ sched=0 & receive_status=3 : 1;
+endrewards

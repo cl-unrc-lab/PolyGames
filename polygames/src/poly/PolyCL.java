@@ -46,7 +46,6 @@ import java.util.Map.Entry;
 
 import prism.*;
 import parser.ast.ModulesFile;
-import prism.ModelType;
 import common.StackTraceHelper;
 import csv.CsvFormatException;
 import parser.Values;
@@ -54,7 +53,15 @@ import parser.ast.Expression;
 import parser.ast.ExpressionReward;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
+import parser.visitor.ASTElementWithArraysReplacerVisitor;
+import parser.visitor.ASTTraverseModify;
 import parser.visitor.ASTUncertainVisitor;
+import parser.visitor.ConstantsReplacerVisitor;
+import parser.visitor.ExpressionIdentReplacerVisitor;
+import parser.visitor.ExpressionMinMaxReplacerVisitor;
+import parser.visitor.ReplaceConstants;
+import parser.visitor.ReplaceMinMaxArrays;
+import parser.visitor.ReplaceVariables;
 import strat.StrategyExportOptions;
 import prism.ResultsExporter.ResultsExportShape;
 import prism.ResultsImporter.RawResultsCollection;
@@ -122,6 +129,7 @@ public class PolyCL implements PrismModelListener
 	private boolean nobuild = false;
 	private boolean test = false;
 	private boolean testExitsOnFail = true;
+	private boolean polyDebug = false;
 
 	// property info
 	private List<Object> propertyIndices = null;
@@ -698,25 +706,41 @@ public class PolyCL implements PrismModelListener
 				mainLog.println("...");
 				prism.loadModelFromExplicitFiles(sf, new File(modelFilename), lf, srf, typeOverride);
 			} else {	
-				// This is the main modification to PrismCL we load the game and compute the vertices of the polytopes
-				
+				// Load the game and compute the vertices of the polytopes (main modification to PrismCL)
 				mainLog.print("\nPoly: Parsing model file \"" + modelFilename + "\"...\n");
-				modulesFile = prism.parseModelFile(new File(modelFilename), typeOverride);	
+
+				modulesFile = prism.parseModelFile(new File(modelFilename), typeOverride);
+
+				modulesFile = resolveConstants(modulesFile);
+
+				//ASTTraverseModify[] visitors = {
+				//	new ASTElementWithArraysReplacerVisitor(), new ExpressionIdentReplacerVisitor(), new ExpressionMinMaxReplacerVisitor()
+				//};
+				
+				//ASTTraverseModify[] visitors = {
+				//		new ExpressionIdentReplacerVisitor(), new ExpressionMinMaxReplacerVisitor()
+				//	};
+
+				//for (ASTTraverseModify visitor : visitors) {
+				//	modulesFile = (ModulesFile) visitor.visit(modulesFile);
+				//}
+				// we replace the constants and variables for their possible values, this allows us
+				// to deal with arrays
+				ReplaceConstants replacerConstant = new ReplaceConstants(modulesFile.getConstantList());
+				ReplaceVariables replacerVariables = new ReplaceVariables();
+				ReplaceMinMaxArrays replacerArrays = new ReplaceMinMaxArrays(modulesFile);
 				ASTUncertainVisitor visitor = new ASTUncertainVisitor();
-				modulesFile = visitor.copy(modulesFile);
+				modulesFile = (ModulesFile) replacerConstant.visit(modulesFile); // we replace all constants
+				modulesFile = (ModulesFile) replacerVariables.visit(modulesFile); // we replace all variables
+				modulesFile = (ModulesFile) replacerArrays.visit(modulesFile); // we replace arrays and maxmins	
+				modulesFile                 = visitor.copy(modulesFile);
 				modulesFile.tidyUp();
-				//try {
-				//	PrintWriter writer = new PrintWriter("modelRR.txt", "UTF-8");
-				//	writer.println(modulesFile.toString());
-				//	writer.close();
-				//}
-				//catch (Exception e) {
-					
-				//}
-				//System.out.println(modulesFile.toString());
-				//modulesFile.setModelTypeInFile(typeOverride);
-				prism.loadPRISMModel(modulesFile);		
-				//prism.loadPRISMModel(modulesFile);
+				
+				// if polydebug is one we print out the model to a file
+				if (this.polyDebug){
+					writeModelToFile(modulesFile, "modelForDebugging.txt");
+				}
+				prism.loadPRISMModel(modulesFile);
 			}
 		} catch (FileNotFoundException e) {
 			errorAndExit("File \"" + modelFilename + "\" not found");
@@ -753,6 +777,26 @@ public class PolyCL implements PrismModelListener
 				mainLog.println("(" + (i + 1) + ") " + propertiesFile.getPropertyObject(i));
 			}
 		}
+	}
+
+	private ModulesFile resolveConstants(ModulesFile modulesFile) throws PrismException {
+		UndefinedConstants uModulesFileConstants = new UndefinedConstants(modulesFile, null);
+		uModulesFileConstants.defineUsingConstSwitch(constSwitch);
+
+		Values constantValuesForUndefinedMFConstants = uModulesFileConstants.getMFConstantValues();
+
+		ASTTraverseModify constantsReplacerVisitor = // This visitor will replace constants with their corresponding values
+			new ConstantsReplacerVisitor(constantValuesForUndefinedMFConstants);
+
+		return (ModulesFile) constantsReplacerVisitor.visit(modulesFile);
+	}
+
+	private void writeModelToFile(ModulesFile modulesFile, String outputPath) {
+    try (PrintWriter writer = new PrintWriter(outputPath, "UTF-8")) {
+        writer.println(modulesFile.toString());
+    } catch (IOException e) {
+        System.err.println("Failed to write model to file: " + e.getMessage());
+    }
 	}
 
 	/**
@@ -2045,6 +2089,9 @@ public class PolyCL implements PrismModelListener
 				// enable bisimulation minimisation before model checking (hidden option)
 				else if (sw.equals("bisim")) {
 					prism.setDoBisim(true);
+				}
+				else if (sw.equals("polydebug")) { // used for debugging polygames
+					this.polyDebug = true;
 				}
 
 				// Other switches - pass to PrismSettings
